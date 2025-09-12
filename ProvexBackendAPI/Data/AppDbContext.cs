@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Repository;
 using System;
 
 namespace ProvexBackendAPI.Data
@@ -16,7 +17,7 @@ namespace ProvexBackendAPI.Data
         {
         }
 
-        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -42,6 +43,9 @@ namespace ProvexBackendAPI.Data
                     .HasDefaultValueSql("NEWSEQUENTIALID()");
         }
 
-       
+        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+
+
     }
+
 }

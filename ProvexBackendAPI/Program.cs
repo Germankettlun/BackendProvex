@@ -1,21 +1,25 @@
 ﻿using Asp.Versioning;
-using ProvexBackendAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
-using System.Text;
+using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Repository;
+using ProvexBackendAPI.Repository.IRepository;
+using System.Text;
+using AutoMapper;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 //Repository
 //builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 //builder.Services.AddScoped<IProductRepository, ProductRepository>();
-//builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 
 // ===== EF Core + SQL Server =====
@@ -26,14 +30,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 
 //AutoMapper
-builder.Services.AddAutoMapper(cfg =>
-{
 
-    // cfg.AddProfile<CategoryProfile>();
-
-    cfg.AddMaps(typeof(Program).Assembly);
-
-});
+builder.Services.AddAutoMapper(typeof(Program));
 
 
 //:NET Identity con GUID
