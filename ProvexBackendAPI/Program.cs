@@ -1,25 +1,32 @@
 ﻿using Asp.Versioning;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
-using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
+using ProvexBackendAPI.Services.IServices;
 using System.Text;
-using AutoMapper;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Repository
-//builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-//builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Repo + Service
+// Repo
+builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
+                           ProvexBackendAPI.Repository.UserRepository>();
+
+// Service 
+builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
+                           ProvexBackendAPI.Services.UserService>();
 
 
 // ===== EF Core + SQL Server =====
@@ -31,7 +38,14 @@ builder.Services.AddControllers();
 
 //AutoMapper
 
-builder.Services.AddAutoMapper(typeof(Program));
+//builder.Services.AddAutoMapper(typeof(Program));
+
+//builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddAutoMapper(
+    cfg => { /* opcional: cfg.AddProfile<TuProfile>(); */ },
+    AppDomain.CurrentDomain.GetAssemblies()
+);
 
 
 //:NET Identity con GUID

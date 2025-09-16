@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace ProvexBackendAPI.Data.Models
+namespace ProvexBackendAPI.Data.Models.Users
 
 {
     public class ApplicationUser : IdentityUser<Guid>

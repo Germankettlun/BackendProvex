@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Repository;
 using System;
 
