@@ -12,10 +12,6 @@ namespace ProvexBackendAPI.Helpers.Mapping
     {
         public UserProfile()
         {
-            CreateMap<User, UserDto>().ReverseMap();
-            CreateMap<User, CreateUserDto>().ReverseMap();
-            CreateMap<User, LoginDto>().ReverseMap();
-            CreateMap<User, LoginResponseDto>().ReverseMap();
             CreateMap<ApplicationUser, UserDataDto>().ReverseMap();
             CreateMap<ApplicationUser, UserDto>().ReverseMap();
         }

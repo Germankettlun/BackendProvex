@@ -18,6 +18,7 @@ namespace ProvexBackendAPI.Dto.Authentication
         {
             public UserDataDto? User { get; set; }
             public string? Token { get; set; }
+            public DateTimeOffset? ExpiresAt { get; set; }
             public string? Message { get; set; }
         }
 
