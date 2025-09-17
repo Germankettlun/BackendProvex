@@ -16,7 +16,7 @@ namespace ProvexBackendAPI.Controllers
     // [ApiVersion("1.0")]
     // [ApiVersion("2.0")]
     [ApiVersionNeutral]
-    //[Authorize]
+    [Authorize]
     public class UserController : ControllerBase
     {
 

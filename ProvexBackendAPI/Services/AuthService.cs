@@ -20,18 +20,20 @@ namespace ProvexBackendAPI.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+        private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
-        private readonly IConfiguration _config;
+        //private readonly IConfiguration _config;
         private readonly IMapper _mapper;
 
-        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, IConfiguration config, IMapper mapper, IUserService userService
+        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IConfiguration config, IMapper mapper, IUserService userService
         )
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _userService = userService;
-            _config = config;
+            _tokenService = tokenService;
+            //_config = config;
             _mapper = mapper;
         }
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
@@ -88,48 +90,54 @@ namespace ProvexBackendAPI.Services
             }
 
             // ====== Generar JWT ======
-            var jwtSec = _config.GetSection("Jwt");
-            var secretKey = jwtSec["Key"];
-            if (string.IsNullOrWhiteSpace(secretKey))
-                throw new InvalidOperationException("JWT:Key no está configurada");
+            //        var jwtSec = _config.GetSection("Jwt");
+            //        var secretKey = jwtSec["Key"];
+            //        if (string.IsNullOrWhiteSpace(secretKey))
+            //            throw new InvalidOperationException("JWT:Key no está configurada");
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var roles = await _userManager.GetRolesAsync(user);
+            //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            //        var roles = await _userManager.GetRolesAsync(user);
 
-            var claims = new List<Claim>
-    {
-        new Claim("id", user.Id.ToString()),
-        new Claim("username", user.UserName ?? string.Empty),
-        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-    };
-            claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+            //        var claims = new List<Claim>
+            //{
+            //        new Claim("id", user.Id.ToString()),
+            //        new Claim("username", user.UserName ?? string.Empty),
+            //        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
+            //        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            //        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            //        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            //};
+            //        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
-            var minutes = int.TryParse(jwtSec["AccessTokenMinutes"], out var m) ? m : 120;
-            var expires = DateTime.UtcNow.AddMinutes(minutes);
+            //        var minutes = int.TryParse(jwtSec["AccessTokenMinutes"], out var m) ? m : 120;
+            //        var expires = DateTime.UtcNow.AddMinutes(minutes);
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = expires,
-                Issuer = jwtSec["Issuer"],
-                Audience = jwtSec["Audience"],
-                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature)
-            };
+            //        var tokenDescriptor = new SecurityTokenDescriptor
+            //        {
+            //            Subject = new ClaimsIdentity(claims),
+            //            Expires = expires,
+            //            Issuer = jwtSec["Issuer"],
+            //            Audience = jwtSec["Audience"],
+            //            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature)
+            //        };
 
-            var handler = new JwtSecurityTokenHandler();
-            var token = handler.CreateToken(tokenDescriptor);
+            //        var handler = new JwtSecurityTokenHandler();
+            //        var token = handler.CreateToken(tokenDescriptor);
+
+            var token = await _tokenService.GenerateAsync(
+            user,
+            rolesProvider: async u => await _userManager.GetRolesAsync(u)
+            );
 
             // Map a tu DTO de usuario (AutoMapper)
             var userDto = _mapper.Map<UserDataDto>(user);
 
             return new LoginResponseDto
             {
-                Token = handler.WriteToken(token),
+                //Token = handler.WriteToken(token),
+                Token = token.Token,
                 User = userDto,
-                ExpiresAt = expires,
+                ExpiresAt = token.ExpiresAtUtc,
                 Message = "Usuario logueado correctamente."
             };
 

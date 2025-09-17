@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models.Users;
+using ProvexBackendAPI.Infrastructure.Auth;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services;
@@ -31,6 +32,9 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 
 // ===== EF Core + SQL Server =====
