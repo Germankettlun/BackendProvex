@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ProvexBackendAPI.Data.Models
+namespace ProvexBackendAPI.Data.Models.Users
 {
     public class User
     {

@@ -1,25 +1,40 @@
 ﻿using Asp.Versioning;
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
-using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Data.Models.Users;
+using ProvexBackendAPI.Infrastructure.Auth;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
+using ProvexBackendAPI.Services;
+using ProvexBackendAPI.Services.IServices;
 using System.Text;
-using AutoMapper;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Repository
-//builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-//builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Repo + Service
+// Repo
+builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
+                           ProvexBackendAPI.Repository.UserRepository>();
+
+// Service 
+builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
+                           ProvexBackendAPI.Services.UserService>();
+
+builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
+                           ProvexBackendAPI.Services.AuthService>();
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 
 // ===== EF Core + SQL Server =====
@@ -31,7 +46,11 @@ builder.Services.AddControllers();
 
 //AutoMapper
 
-builder.Services.AddAutoMapper(typeof(Program));
+
+builder.Services.AddAutoMapper(
+    cfg => { /* opcional: cfg.AddProfile<TuProfile>(); */ },
+    AppDomain.CurrentDomain.GetAssemblies()
+);
 
 
 //:NET Identity con GUID
@@ -45,11 +64,15 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-var secretKey = builder.Configuration.GetValue<String>("ApiSettings:SecretKey");
-if (string.IsNullOrEmpty(secretKey))
-{
-    throw new InvalidOperationException("SecretKey no esta configurada");
-}
+//var secretKey = builder.Configuration.GetValue<String>("ApiSettings:SecretKey");
+var jwt = builder.Configuration.GetSection("Jwt");
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
+
+//if (string.IsNullOrEmpty(secretKey))
+//{
+//    throw new InvalidOperationException("SecretKey no esta configurada");
+//}
+
 //Authentication
 builder.Services.AddAuthentication(options =>
 {
@@ -62,10 +85,19 @@ builder.Services.AddAuthentication(options =>
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        //ValidateIssuerSigningKey = true,
+        ////IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        //IssuerSigningKey = signingKey,
+        //ValidateIssuer = false,
+        //ValidateAudience = false
+        ValidateIssuer = true,
+        ValidIssuer = jwt["Issuer"],
+        ValidateAudience = true,
+        ValidAudience = jwt["Audience"],
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        ValidateIssuer = false,
-        ValidateAudience = false
+        IssuerSigningKey = signingKey,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
     };
 }
 
