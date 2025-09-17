@@ -89,41 +89,6 @@ namespace ProvexBackendAPI.Services
                 };
             }
 
-            // ====== Generar JWT ======
-            //        var jwtSec = _config.GetSection("Jwt");
-            //        var secretKey = jwtSec["Key"];
-            //        if (string.IsNullOrWhiteSpace(secretKey))
-            //            throw new InvalidOperationException("JWT:Key no está configurada");
-
-            //        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            //        var roles = await _userManager.GetRolesAsync(user);
-
-            //        var claims = new List<Claim>
-            //{
-            //        new Claim("id", user.Id.ToString()),
-            //        new Claim("username", user.UserName ?? string.Empty),
-            //        new Claim(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
-            //        new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            //        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            //        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            //};
-            //        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
-
-            //        var minutes = int.TryParse(jwtSec["AccessTokenMinutes"], out var m) ? m : 120;
-            //        var expires = DateTime.UtcNow.AddMinutes(minutes);
-
-            //        var tokenDescriptor = new SecurityTokenDescriptor
-            //        {
-            //            Subject = new ClaimsIdentity(claims),
-            //            Expires = expires,
-            //            Issuer = jwtSec["Issuer"],
-            //            Audience = jwtSec["Audience"],
-            //            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature)
-            //        };
-
-            //        var handler = new JwtSecurityTokenHandler();
-            //        var token = handler.CreateToken(tokenDescriptor);
-
             var token = await _tokenService.GenerateAsync(
             user,
             rolesProvider: async u => await _userManager.GetRolesAsync(u)
