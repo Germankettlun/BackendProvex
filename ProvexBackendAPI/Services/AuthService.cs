@@ -129,7 +129,7 @@ namespace ProvexBackendAPI.Services
             rolesProvider: async u => await _userManager.GetRolesAsync(u)
             );
 
-            // Map a tu DTO de usuario (AutoMapper)
+            
             var userDto = _mapper.Map<UserDataDto>(user);
 
             return new LoginResponseDto
@@ -163,7 +163,7 @@ namespace ProvexBackendAPI.Services
                 throw new ApplicationException("El usuario ya existe.");
 
 
-            // Mapear DTO -> Identity user
+            
             var user = new ApplicationUser()
             {   
                 UserName = createUserDto.Username,
