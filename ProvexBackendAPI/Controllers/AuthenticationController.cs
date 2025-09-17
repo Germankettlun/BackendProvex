@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
@@ -45,7 +46,7 @@ namespace ProvexBackendAPI.Controllers
             return Ok(user);
         }
 
-        [HttpPost(Name = "RegisterUser")]
+        [HttpPost("Register", Name = "RegisterUser")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -63,7 +64,7 @@ namespace ProvexBackendAPI.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error al registrar el usuario");
             }
-            return CreatedAtRoute("GetUser", result);
+            return Ok(result);
         }
     }
 

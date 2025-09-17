@@ -11,6 +11,7 @@ using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
+using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
 using System.Text;
 
@@ -27,6 +28,9 @@ builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserReposito
 // Service 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
                            ProvexBackendAPI.Services.UserService>();
+
+builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
+                           ProvexBackendAPI.Services.AuthService>();
 
 
 // ===== EF Core + SQL Server =====

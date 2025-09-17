@@ -151,15 +151,20 @@ namespace ProvexBackendAPI.Services
 
             var exists = await _userService.IsUniqueUser(createUserDto.Username);
 
-                if (exists)
+                if (!exists)
                 throw new ApplicationException("El usuario ya existe.");
 
 
             // Mapear DTO -> Identity user
-            var user = _mapper.Map<ApplicationUser>(createUserDto);
+            var user = new ApplicationUser()
+            {   
+                UserName = createUserDto.Username,
+                Email = createUserDto.Username,
+                NormalizedEmail = createUserDto.Username.ToUpper(),
+                Name = createUserDto.Name
+            };
             user.Id = Guid.NewGuid();
-            user.UserName = createUserDto.Username; // asegurar username
-            user.EmailConfirmed = !string.IsNullOrWhiteSpace(createUserDto.Username);
+           
 
             var result = await _userManager.CreateAsync(user, createUserDto.Password);
             if (result.Succeeded)
