@@ -9,7 +9,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models.Users;
+using ProvexBackendAPI.Filters;
 using ProvexBackendAPI.Infrastructure.Auth;
+using ProvexBackendAPI.Middleware;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services;
@@ -42,11 +44,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Controllers 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{ 
+    //Filtro del middleware
+    options.Filters.Add<ApiResponseWrapperFilter>();
+}
+);
+
+
 
 //AutoMapper
-
-
 builder.Services.AddAutoMapper(
     cfg => { /* opcional: cfg.AddProfile<TuProfile>(); */ },
     AppDomain.CurrentDomain.GetAssemblies()
@@ -199,6 +206,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();

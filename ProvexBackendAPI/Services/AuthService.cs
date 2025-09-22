@@ -44,8 +44,7 @@ namespace ProvexBackendAPI.Services
                 {
                     Token = "",
                     User = null,
-                    ExpiresAt = null,
-                    Message = "El Username es requerido"
+                    ExpiresAt = null
                 };
             }
 
@@ -55,8 +54,7 @@ namespace ProvexBackendAPI.Services
                 {
                     Token = "",
                     User = null,
-                    ExpiresAt = null,
-                    Message = "Password requerido"
+                    ExpiresAt = null
                 };
             }
 
@@ -71,8 +69,7 @@ namespace ProvexBackendAPI.Services
                 {
                     Token = "",
                     User = null,
-                    ExpiresAt = null,
-                    Message = "Username no encontrado"
+                    ExpiresAt = null
                 };
             }
 
@@ -84,8 +81,7 @@ namespace ProvexBackendAPI.Services
                 {
                     Token = "",
                     User = null,
-                    ExpiresAt = null,
-                    Message = "Credenciales son incorrectas"
+                    ExpiresAt = null
                 };
             }
 
@@ -102,8 +98,7 @@ namespace ProvexBackendAPI.Services
                 //Token = handler.WriteToken(token),
                 Token = token.Token,
                 User = userDto,
-                ExpiresAt = token.ExpiresAtUtc,
-                Message = "Usuario logueado correctamente."
+                ExpiresAt = token.ExpiresAtUtc
             };
 
 
