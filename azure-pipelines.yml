@@ -249,26 +249,25 @@ stages:
           $p = '$(physicalPath)\appsettings.Production.json'
           if (-not (Test-Path $p)) { $p = '$(physicalPath)\appsettings.json' }
 
-          # Leer tal cual
+          # Leer
           $raw = Get-Content $p -Raw -Encoding UTF8
 
-          # 1) Quitar SOLO líneas que empiezan con // (no toca URLs dentro de comillas)
-          $rawNoLineComments = ($raw -split "`r?`n") |
-            ForEach-Object { if ($_ -match '^\s*//') { '' } else { $_ } } |
-            Out-String
+          # 1) Remueve SOLO líneas que empiezan con //
+          $lines = $raw -split "`r?`n"
+          $rawNoLineComments = ($lines | Where-Object { $_ -notmatch '^\s*//' }) -join "`n"
 
-          # 2) Quitar bloques /* ... */ simples (fuera de cadenas)
+          # 2) Remueve bloques /* ... */ simples
           $rawClean = [regex]::Replace($rawNoLineComments, '/\*.*?\*/', '', 'Singleline')
 
           try {
             $cfg = $rawClean | ConvertFrom-Json -ErrorAction Stop
           } catch {
-            Write-Error "JSON inválido en $p: $($_.Exception.Message)"
-            Write-Host "Verifica que AzureAd.Instance tenga https:// completo y que DefaultConnection esté en una sola línea."
+            Write-Error ("JSON inválido en {0}: {1}" -f $p, $_.Exception.Message)
+            Write-Host "Revisa: AzureAd.Instance con https:// completo y DefaultConnection en una sola línea."
             exit 1
           }
 
-          if (-not $cfg.Jwt -or -not $cfg.Jwt.Key) { throw "Jwt.Key no definido en $p" }
+          if (-not $cfg.Jwt -or -not $cfg.Jwt.Key) { throw "Jwt.Key no definido en $($p)" }
 
           $len = ($cfg.Jwt.Key).Length
           Write-Host "Jwt.Key length: $len"
