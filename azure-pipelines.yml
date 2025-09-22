@@ -1,10 +1,10 @@
 trigger:
   branches:
-    include: [ Prod ]
+    include: [ dev ]
 
 pr:
   branches:
-    include: [ Prod ]
+    include: [ dev ]
 
 pool:
   name: PoolPrxSII
@@ -32,37 +32,36 @@ variables:
     value: 8082
 
 stages:
-# ============================ BUILD ============================
   - stage: Build
-    displayName: 'Build & Publish'
+    displayName: Build & Publish
     jobs:
       - job: BuildAndPublish
         steps:
           - task: UseDotNet@2
-            displayName: 'Install .NET SDK $(dotnetVersion)'
+            displayName: Install .NET SDK
             inputs:
               packageType: sdk
               version: $(dotnetVersion)
 
           - task: DotNetCoreCLI@2
-            displayName: 'Restore'
+            displayName: Restore
             inputs:
               command: restore
               projects: '**/*.sln'
 
           - task: DotNetCoreCLI@2
-            displayName: 'Build'
+            displayName: Build
             inputs:
               command: build
               projects: '**/*.sln'
               arguments: '--configuration $(configuration) --no-restore'
 
           - task: DotNetCoreCLI@2
-            displayName: 'Publish (self-contained win-x64)'
+            displayName: Publish (self-contained win-x64)
             inputs:
               command: publish
               publishWebProjects: false
-              projects: '**/ProvexBackendAPI.csproj'   # ajusta si tu .csproj tiene otro nombre
+              projects: '**/ProvexBackendAPI.csproj'   # ajusta si el csproj tiene otro nombre
               arguments: >-
                 --configuration $(configuration)
                 --output $(publishFolder)
@@ -71,9 +70,8 @@ stages:
                 /p:SelfContained=true
                 --verbosity minimal
 
-          # ===== Generar appsettings.Production.json desde variables =====
           - task: PowerShell@2
-            displayName: 'Build appsettings.Production.json desde variables'
+            displayName: Build appsettings.Production.json
             inputs:
               targetType: inline
               script: |
@@ -100,27 +98,32 @@ stages:
                 Write-Host "Generado: $out"
 
           - task: PublishPipelineArtifact@1
-            displayName: 'Publish Artifact'
+            displayName: Publish Artifact
             inputs:
               targetPath: '$(publishFolder)'
               artifact:   ERPApi
 
-# ============================ DEPLOY ============================
   - stage: Deploy
-    displayName: 'Deploy to IIS (port $(bindingPort))'
+    displayName: Deploy to IIS (port $(bindingPort))
     dependsOn: Build
     condition: succeeded()
     jobs:
       - job: DeployToIIS
         steps:
           - task: DownloadPipelineArtifact@2
-            displayName: 'Download Artifacts'
+            displayName: Download Artifacts
             inputs:
               artifact: 'ERPApi'
               path: '$(deploySource)'
 
+          - powershell: |
+              Write-Host "deploySource: $(deploySource)"
+              Get-ChildItem -Recurse -Path "$(deploySource)" |
+                Select FullName,Length,LastWriteTime | Format-Table -AutoSize
+            displayName: 'DEBUG: list artifact'
+
           - task: PowerShell@2
-            displayName: 'Prepare target folder'
+            displayName: Prepare target folder
             inputs:
               targetType: inline
               script: |
@@ -128,7 +131,7 @@ stages:
                 if (-not (Test-Path '$(physicalPath)\logs')) { New-Item -Path '$(physicalPath)\logs' -ItemType Directory | Out-Null }
 
           - task: PowerShell@2
-            displayName: 'Stop App Pool if exists'
+            displayName: Stop App Pool if exists
             inputs:
               targetType: inline
               script: |
@@ -139,20 +142,20 @@ stages:
                 }
 
           - task: PowerShell@2
-            displayName: 'Robocopy to IIS folder'
+            displayName: Robocopy to IIS folder
             inputs:
               targetType: inline
               script: |
-                $exe = Get-ChildItem -Path "$(deploySource)" -Filter *.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-                if (-not $exe) {
-                  Write-Error "No se encontró ningún .exe en '$(deploySource)'."
-                  Get-ChildItem -Recurse -Path "$(deploySource)" | Format-Table FullName,Length,LastWriteTime
-                  exit 1
-                }
-                $src = Split-Path $exe.FullName -Parent
-                $dst = '$(physicalPath)'
+                # Detectar carpeta de publicación válida
+                $cands = @()
+                $cands += (Get-ChildItem -Path "$(deploySource)" -Recurse -File -Filter *.exe | Select-Object -First 1 | ForEach-Object { $_.DirectoryName })
+                $cands += (Get-ChildItem -Path "$(deploySource)" -Recurse -File -Filter *.dll | Select-Object -First 1 | ForEach-Object { $_.DirectoryName })
+                $cands += (Get-ChildItem -Path "$(deploySource)" -Recurse -File -Filter web.config | Select-Object -First 1 | ForEach-Object { $_.DirectoryName })
+                $src = ($cands | Where-Object { $_ } | Select-Object -Unique | Select-Object -First 1)
 
-                Write-Host "Origen detectado: $src"
+                if (-not $src) { throw "No se encontró carpeta de publicación con *.exe, *.dll o web.config en '$(deploySource)'." }
+                $dst = '$(physicalPath)'
+                Write-Host "Origen: $src"
                 Write-Host "Destino: $dst"
 
                 if (-not (Test-Path $dst)) { New-Item -Path $dst -ItemType Directory | Out-Null }
@@ -164,7 +167,7 @@ stages:
                 if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
 
           - task: PowerShell@2
-            displayName: 'Create/Configure IIS Site and Binding'
+            displayName: Create/Configure IIS Site and Binding
             inputs:
               targetType: inline
               script: |
@@ -183,7 +186,7 @@ stages:
                 if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
 
           - task: PowerShell@2
-            displayName: 'Open Windows Firewall port (if needed)'
+            displayName: Open Windows Firewall port
             inputs:
               targetType: inline
               script: |
@@ -193,7 +196,7 @@ stages:
                 }
 
           - task: PowerShell@2
-            displayName: 'Start App Pool and Site'
+            displayName: Start App Pool and Site
             inputs:
               targetType: inline
               script: |
