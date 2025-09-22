@@ -28,12 +28,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
                            ProvexBackendAPI.Repository.UserRepository>();
 
+builder.Services.AddScoped(
+    typeof(ProvexBackendAPI.Repository.IRepository.IGenericRepository<>),
+    typeof(ProvexBackendAPI.Repository.GenericRepository<>));
+
+builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
+    ProvexBackendAPI.Repository.UnitOfWork>();
+
+
 // Service 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
                            ProvexBackendAPI.Services.UserService>();
 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
+
+builder.Services.AddScoped(
+    typeof(ProvexBackendAPI.Services.IServices.IGenericService<>),
+    typeof(ProvexBackendAPI.Services.GenericService<>));
+
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();

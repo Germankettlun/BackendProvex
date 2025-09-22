@@ -1,4 +1,5 @@
-﻿using ProvexBackendAPI.Data.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using ProvexBackendAPI.Data.Models;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
 
@@ -15,29 +16,38 @@ namespace ProvexBackendAPI.Services
             _unitOfWork = unitOfWork;
         }
 
-        public Task<T> CreateAsync(T entity, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            throw new NotImplementedException();
-        }
+        public Task<IReadOnlyList<T>> ListAsync(CancellationToken ct = default)
+        => _genericRepository.GetAllAsync(ct);
 
         public Task<T?> GetAsync(Guid id, CancellationToken ct = default)
+            => _genericRepository.GetByIdAsync(id, ct);
+
+        public async Task<T> CreateAsync(T entity, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            await _genericRepository.AddAsync(entity, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return entity;
         }
 
-        public Task<IReadOnlyList<T>> ListAsync(CancellationToken ct = default)
+        public async Task<bool> UpdateAsync(Guid id, Action<T> mutate, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var entity = await _genericRepository.GetByIdAsync(id, ct);
+            if (entity is null) return false;
+
+            mutate(entity);
+            _genericRepository.Update(entity);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return true;
         }
 
-        public Task<bool> UpdateAsync(Guid id, Action<T> mutate, CancellationToken ct = default)
+        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            var entity = await _genericRepository.GetByIdAsync(id, ct);
+            if (entity is null) return false;
+
+            _genericRepository.Remove(entity); // hará soft-delete si T : BaseEntity
+            await _unitOfWork.SaveChangesAsync(ct);
+            return true;
         }
     }
 }
