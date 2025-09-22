@@ -216,11 +216,12 @@ stages:
                 }
 
           - task: PowerShell@2
-            displayName: Start App Pool and Site
+            displayName: 'Start App Pool and Site'
             inputs:
               targetType: inline
               script: |
                 Import-Module WebAdministration
                 Start-WebAppPool -Name '$(appPoolName)'
                 Start-Website   -Name '$(siteName)'
-                Write-Host "Publicado en http://$(env:COMPUTERNAME):$(bindingPort)/"
+                $comp = $env:COMPUTERNAME
+                Write-Host "Publicado en http://$comp:$(bindingPort)/"
