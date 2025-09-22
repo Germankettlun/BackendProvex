@@ -213,8 +213,8 @@ stages:
         script: |
           $dst = '$(physicalPath)'
           $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
-                 Where-Object { $_.Name -ne 'app_offline.exe' } |
-                 Sort-Object Length -Descending | Select-Object -First 1
+                Where-Object { $_.Name -ne 'app_offline.exe' } |
+                Sort-Object Length -Descending | Select-Object -First 1
           if (-not $exe) { throw "No .exe en $dst" }
 
           $wc = @"
@@ -226,9 +226,9 @@ stages:
                   <clear/>
                   <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
                 </handlers>
-                <aspNetCore processPath=".\$($exe.Name)" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout" hostingModel="InProcess">
+                <aspNetCore processPath=".\$($exe.Name)" hostingModel="inprocess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
                   <environmentVariables>
-                    <add name="ASPNETCORE_ENVIRONMENT" value="$(Environment)" />
+                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$(Environment)" />
                   </environmentVariables>
                 </aspNetCore>
               </system.webServer>
