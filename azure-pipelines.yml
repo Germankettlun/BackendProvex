@@ -142,29 +142,46 @@ stages:
                 }
 
           - task: PowerShell@2
-            displayName: Robocopy to IIS folder
+            displayName: 'Robocopy to IIS folder'
             inputs:
               targetType: inline
               script: |
-                # Detectar carpeta de publicación válida
-                $cands = @()
-                $cands += (Get-ChildItem -Path "$(deploySource)" -Recurse -File -Filter *.exe | Select-Object -First 1 | ForEach-Object { $_.DirectoryName })
-                $cands += (Get-ChildItem -Path "$(deploySource)" -Recurse -File -Filter *.dll | Select-Object -First 1 | ForEach-Object { $_.DirectoryName })
-                $cands += (Get-ChildItem -Path "$(deploySource)" -Recurse -File -Filter web.config | Select-Object -First 1 | ForEach-Object { $_.DirectoryName })
-                $src = ($cands | Where-Object { $_ } | Select-Object -Unique | Select-Object -First 1)
+                $root = "$(deploySource)"
 
-                if (-not $src) { throw "No se encontró carpeta de publicación con *.exe, *.dll o web.config en '$(deploySource)'." }
+                # 1) Si hay una sola subcarpeta y no hay archivos en la raíz, úsala
+                $kids = Get-ChildItem -Path $root
+                $candidateRoot = $root
+                if (($kids | ? { $_.PSIsContainer }).Count -eq 1 -and ($kids | ? { -not $_.PSIsContainer }).Count -eq 0) {
+                  $candidateRoot = ($kids | ? { $_.PSIsContainer }).FullName
+                }
+
+                # 2) Si hay un .zip, descomprimir a 'unzipped'
+                $zip = Get-ChildItem -Path $candidateRoot -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($zip) {
+                  $unz = Join-Path $root "unzipped"
+                  if (Test-Path $unz) { Remove-Item -Recurse -Force $unz }
+                  Expand-Archive -Path $zip.FullName -DestinationPath $unz -Force
+                  $candidateRoot = $unz
+                }
+
+                # 3) Ubicar carpeta publicable por *.exe | *.dll | web.config
+                $marker = Get-ChildItem -Path $candidateRoot -Recurse -File -Include *.exe,*.dll,web.config | Select-Object -First 1
+                if (-not $marker) { throw "No se encontró contenido publicable bajo '$candidateRoot'." }
+                $src = $marker.DirectoryName
                 $dst = '$(physicalPath)'
-                Write-Host "Origen: $src"
-                Write-Host "Destino: $dst"
+
+                Write-Host "Root: $root"
+                Write-Host "SearchRoot: $candidateRoot"
+                Write-Host "Source: $src"
+                Write-Host "Dest: $dst"
 
                 if (-not (Test-Path $dst)) { New-Item -Path $dst -ItemType Directory | Out-Null }
                 if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
 
                 robocopy "$src" "$dst" /MIR /XD "$dst\logs" /XF *.pdb /NFL /NDL /NJH /NJS /R:2 /W:1
                 $rc = $LASTEXITCODE
-                Write-Host "Robocopy RC: $rc"
                 if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
+
 
           - task: PowerShell@2
             displayName: Create/Configure IIS Site and Binding
