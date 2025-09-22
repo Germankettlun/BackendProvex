@@ -1,0 +1,191 @@
+trigger:
+  branches:
+    include: [ Prod ]
+
+pr:
+  branches:
+    include: [ Prod ]
+
+pool:
+  name: PoolPrxSII
+  demands:
+    - agent.name -equals IISAgent01
+    - agent.os    -equals Windows_NT
+
+variables:
+  - group: ERP-Backend-Production
+  - name: configuration
+    value: Release
+  - name: dotnetVersion
+    value: 9.0.203
+  - name: publishFolder
+    value: $(Build.ArtifactStagingDirectory)
+  - name: deploySource
+    value: $(Pipeline.Workspace)\drop
+  - name: siteName
+    value: ERPApiSite
+  - name: appPoolName
+    value: ERPApiPool
+  - name: physicalPath
+    value: C:\inetpub\wwwroot\ERPApi
+  - name: bindingPort
+    value: 8082
+
+stages:
+# ============================ BUILD ============================
+  - stage: Build
+    displayName: 'Build & Publish'
+    jobs:
+      - job: BuildAndPublish
+        steps:
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK $(dotnetVersion)'
+            inputs:
+              packageType: sdk
+              version: $(dotnetVersion)
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore'
+            inputs:
+              command: restore
+              projects: '**/*.sln'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Build'
+            inputs:
+              command: build
+              projects: '**/*.sln'
+              arguments: '--configuration $(configuration) --no-restore'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Publish (self-contained win-x64)'
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: '**/ProvexBackendAPI.csproj'   # ajusta si tu .csproj tiene otro nombre
+              arguments: >-
+                --configuration $(configuration)
+                --output $(publishFolder)
+                --runtime win-x64
+                /p:PublishTrimmed=false
+                /p:SelfContained=true
+                --verbosity minimal
+
+          # ===== Generar appsettings.Production.json desde variables =====
+          - task: PowerShell@2
+            displayName: 'Build appsettings.Production.json desde variables'
+            inputs:
+              targetType: inline
+              script: |
+                $cfg = [ordered]@{
+                  ApiSettings       = @{ SecretKey = "$(SecretKey)" }
+                  ConnectionStrings = @{ DefaultConnection = "$(ConnectionBD)" }
+                  Jwt = @{
+                    Issuer             = "$(Jwt.Issuer)"
+                    Audience           = "$(Jwt.Audience)"
+                    Key                = "$(Jwt.Key)"
+                    AccessTokenMinutes = [int]"$(Jwt.AccessTokenMinutes)"
+                  }
+                  AzureAd = @{
+                    Instance = "$(AzureAd.Instance)"
+                    Domain   = "$(AzureAd.Domain)"
+                    TenantId = "$(AzureAd.TenantId)"
+                    ClientId = "$(AzureAd.ClientId)"
+                  }
+                  AllowedHosts = "*"
+                }
+                $json = $cfg | ConvertTo-Json -Depth 8
+                $out  = Join-Path "$(publishFolder)" "appsettings.Production.json"
+                $json | Out-File -FilePath $out -Encoding utf8 -Force
+                Write-Host "Generado: $out"
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Artifact'
+            inputs:
+              targetPath: '$(publishFolder)'
+              artifact:   ERPApi
+
+# ============================ DEPLOY ============================
+  - stage: Deploy
+    displayName: 'Deploy to IIS (port $(bindingPort))'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: DeployToIIS
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download Artifacts'
+            inputs:
+              artifact: 'ERPApi'
+              path: '$(deploySource)'
+
+          - task: PowerShell@2
+            displayName: 'Prepare target folder'
+            inputs:
+              targetType: inline
+              script: |
+                if (-not (Test-Path '$(physicalPath)')) { New-Item -Path '$(physicalPath)' -ItemType Directory | Out-Null }
+                if (-not (Test-Path '$(physicalPath)\logs')) { New-Item -Path '$(physicalPath)\logs' -ItemType Directory | Out-Null }
+
+          - task: PowerShell@2
+            displayName: 'Stop App Pool if exists'
+            inputs:
+              targetType: inline
+              script: |
+                Import-Module WebAdministration
+                if (Test-Path "IIS:\AppPools\$(appPoolName)") {
+                  $state = (Get-WebAppPoolState -Name '$(appPoolName)').Value
+                  if ($state -ne 'Stopped') { Stop-WebAppPool -Name '$(appPoolName)' }
+                }
+
+          - task: PowerShell@2
+            displayName: 'Robocopy to IIS folder'
+            inputs:
+              targetType: inline
+              script: |
+                robocopy "$(deploySource)" "$(physicalPath)" /MIR /XD "$(physicalPath)\logs" /XF *.pdb /NP /NDL /NFL /NJH /NJS /R:2 /W:1
+                if ($LASTEXITCODE -ge 8) { Write-Error "Robocopy failed ($LASTEXITCODE)"; exit 1 }
+
+          - task: PowerShell@2
+            displayName: 'Create/Configure IIS Site and Binding'
+            inputs:
+              targetType: inline
+              script: |
+                Import-Module WebAdministration
+                # App Pool
+                if (-not (Test-Path "IIS:\AppPools\$(appPoolName)")) {
+                  New-WebAppPool -Name '$(appPoolName)' | Out-Null
+                  Set-ItemProperty "IIS:\AppPools\$(appPoolName)" -Name processModel.identityType -Value "ApplicationPoolIdentity"
+                }
+                # Site
+                if (-not (Test-Path "IIS:\Sites\$(siteName)")) {
+                  New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
+                } else {
+                  Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
+                  Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath   -Value '$(physicalPath)'
+                }
+                # Binding http si falta
+                $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
+                if (-not $b) {
+                  New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader ""
+                }
+
+          - task: PowerShell@2
+            displayName: 'Open Windows Firewall port (if needed)'
+            inputs:
+              targetType: inline
+              script: |
+                $rule = Get-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -ErrorAction SilentlyContinue
+                if (-not $rule) {
+                  New-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -Direction Inbound -Protocol TCP -LocalPort $(bindingPort) -Action Allow | Out-Null
+                }
+
+          - task: PowerShell@2
+            displayName: 'Start App Pool and Site'
+            inputs:
+              targetType: inline
+              script: |
+                Import-Module WebAdministration
+                Start-WebAppPool -Name '$(appPoolName)'
+                Start-Website   -Name '$(siteName)'
+                Write-Host "Publicado en http://$(env:COMPUTERNAME):$(bindingPort)/"
