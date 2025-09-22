@@ -208,9 +208,14 @@ stages:
         script: |
           $dst = '$(physicalPath)'
           $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
-                 Where-Object { $_.Name -ne 'app_offline.exe' } |
-                 Sort-Object Length -Descending | Select-Object -First 1
+                Where-Object { $_.Name -ne 'app_offline.exe' } |
+                Sort-Object Length -Descending | Select-Object -First 1
           if (-not $exe) { throw "No .exe en $dst" }
+
+          # Escapar la clave para XML
+          $jwtEsc = [System.Security.SecurityElement]::Escape("$(Jwt.Key)")
+          $envName = "$(Environment)"
+
           $wc = @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -222,18 +227,17 @@ stages:
                 </handlers>
                 <aspNetCore processPath=".\$($exe.Name)" hostingModel="inprocess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
                   <environmentVariables>
-                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$(Environment)" />
-                    <environmentVariable name="Jwt__Key" value="$(Jwt.Key)" />
+                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$envName" />
+                    <environmentVariable name="Jwt__Key" value="$jwtEsc" />
                   </environmentVariables>
                 </aspNetCore>
               </system.webServer>
             </location>
           </configuration>
           "@
-          $path = Join-Path $dst 'web.config'
-          $wc | Out-File -FilePath $path -Encoding utf8 -Force
-          Remove-Item (Join-Path $dst 'ProvexBackendAPI.zip') -ErrorAction SilentlyContinue
-          Write-Host "web.config reescrito (processPath=$($exe.Name))"
+
+          $wc | Out-File -FilePath (Join-Path $dst 'web.config') -Encoding utf8 -Force
+          Write-Host "web.config actualizado"
 
     - task: PowerShell@2
       displayName: 'Sanity: Jwt.Key bytes'
