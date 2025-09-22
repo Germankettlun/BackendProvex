@@ -244,15 +244,32 @@ stages:
       displayName: 'Sanity: Jwt.Key length'
       inputs:
         targetType: inline
+        errorActionPreference: 'stop'
         script: |
           $p = '$(physicalPath)\appsettings.Production.json'
           if (-not (Test-Path $p)) { $p = '$(physicalPath)\appsettings.json' }
 
-          # Quitar comentarios // para que sea JSON válido
+          # Leer tal cual
           $raw = Get-Content $p -Raw -Encoding UTF8
-          $raw = $raw -replace '(?m)//.*$',''
 
-          $cfg = $raw | ConvertFrom-Json
+          # 1) Quitar SOLO líneas que empiezan con // (no toca URLs dentro de comillas)
+          $rawNoLineComments = ($raw -split "`r?`n") |
+            ForEach-Object { if ($_ -match '^\s*//') { '' } else { $_ } } |
+            Out-String
+
+          # 2) Quitar bloques /* ... */ simples (fuera de cadenas)
+          $rawClean = [regex]::Replace($rawNoLineComments, '/\*.*?\*/', '', 'Singleline')
+
+          try {
+            $cfg = $rawClean | ConvertFrom-Json -ErrorAction Stop
+          } catch {
+            Write-Error "JSON inválido en $p: $($_.Exception.Message)"
+            Write-Host "Verifica que AzureAd.Instance tenga https:// completo y que DefaultConnection esté en una sola línea."
+            exit 1
+          }
+
+          if (-not $cfg.Jwt -or -not $cfg.Jwt.Key) { throw "Jwt.Key no definido en $p" }
+
           $len = ($cfg.Jwt.Key).Length
           Write-Host "Jwt.Key length: $len"
           if ($len -lt 32) { throw "Jwt.Key demasiado corta; usa ≥32 caracteres o Base64 de 32 bytes." }
