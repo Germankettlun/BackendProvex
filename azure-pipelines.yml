@@ -143,7 +143,6 @@ stages:
             inputs:
               targetType: inline
               script: |
-                # 1) Detectar carpeta origen correcta dentro del artefacto (donde está el .exe publicado)
                 $exe = Get-ChildItem -Path "$(deploySource)" -Filter *.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
                 if (-not $exe) {
                   Write-Error "No se encontró ningún .exe en '$(deploySource)'."
@@ -159,42 +158,29 @@ stages:
                 if (-not (Test-Path $dst)) { New-Item -Path $dst -ItemType Directory | Out-Null }
                 if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
 
-                # 2) Copia y RC normalizado (0–7 = éxito)
                 robocopy "$src" "$dst" /MIR /XD "$dst\logs" /XF *.pdb /NFL /NDL /NJH /NJS /R:2 /W:1
                 $rc = $LASTEXITCODE
                 Write-Host "Robocopy RC: $rc"
+                if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
 
-                if ($rc -ge 8) {
-                  Write-Error "Robocopy falló (RC $rc)."
-                  exit 1
+          - task: PowerShell@2
+            displayName: 'Create/Configure IIS Site and Binding'
+            inputs:
+              targetType: inline
+              script: |
+                Import-Module WebAdministration
+                if (-not (Test-Path "IIS:\AppPools\$(appPoolName)")) {
+                  New-WebAppPool -Name '$(appPoolName)' | Out-Null
+                  Set-ItemProperty "IIS:\AppPools\$(appPoolName)" -Name processModel.identityType -Value "ApplicationPoolIdentity"
                 }
-
-                # Forzar éxito para RC 0–7
-                [Environment]::Exit(0)
-
-                    - task: PowerShell@2
-                      displayName: 'Create/Configure IIS Site and Binding'
-                      inputs:
-                        targetType: inline
-                        script: |
-                          Import-Module WebAdministration
-                          # App Pool
-                          if (-not (Test-Path "IIS:\AppPools\$(appPoolName)")) {
-                            New-WebAppPool -Name '$(appPoolName)' | Out-Null
-                            Set-ItemProperty "IIS:\AppPools\$(appPoolName)" -Name processModel.identityType -Value "ApplicationPoolIdentity"
-                          }
-                          # Site
-                          if (-not (Test-Path "IIS:\Sites\$(siteName)")) {
-                            New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
-                          } else {
-                            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
-                            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath   -Value '$(physicalPath)'
-                          }
-                          # Binding http si falta
-                          $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
-                          if (-not $b) {
-                            New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader ""
-                          }
+                if (-not (Test-Path "IIS:\Sites\$(siteName)")) {
+                  New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
+                } else {
+                  Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
+                  Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath   -Value '$(physicalPath)'
+                }
+                $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
+                if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
 
           - task: PowerShell@2
             displayName: 'Open Windows Firewall port (if needed)'
