@@ -1,16 +1,14 @@
 trigger:
-  branches:
-    include: [ Prod ]
+  branches: { include: [ dev ] }
 
 pr:
-  branches:
-    include: [ Prod ]
+  branches: { include: [ dev ] }
 
 pool:
   name: PoolPrxSII
   demands:
     - agent.name -equals IISAgent01
-    - agent.os    -equals Windows_NT
+    - agent.os -equals Windows_NT
 
 variables:
   - group: ERP-Backend-Production
@@ -32,7 +30,6 @@ variables:
     value: 8082
 
 stages:
-# ============================ BUILD ============================
 - stage: Build
   displayName: Build & Publish
   jobs:
@@ -71,7 +68,6 @@ stages:
           /p:SelfContained=true
           --verbosity minimal
 
-    # Construye configs limpias (sin comentarios) en la carpeta publicada
     - task: PowerShell@2
       displayName: Build appsettings.json (+Production)
       inputs:
@@ -105,9 +101,8 @@ stages:
       displayName: Publish Artifact
       inputs:
         targetPath: '$(publishFolder)'
-        artifact:   ERPApi
+        artifact: ERPApi
 
-# ============================ DEPLOY ============================
 - stage: Deploy
   displayName: Deploy to IIS (port $(bindingPort))
   dependsOn: Build
@@ -118,7 +113,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download Artifacts
       inputs:
-        artifact: 'ERPApi'
+        artifact: ERPApi
         path: '$(deploySource)'
 
     - task: PowerShell@2
@@ -155,13 +150,9 @@ stages:
         targetType: inline
         script: |
           $root = "$(deploySource)"
-
-          # 1) Buscar .exe en artefacto EXCLUYENDO 'unzipped'
           $exe = Get-ChildItem -Path $root -Recurse -File -Filter *.exe -ErrorAction SilentlyContinue |
-                Where-Object { $_.FullName -notmatch '\\unzipped\\' } |
-                Select-Object -First 1
-
-          # 2) Si no hay .exe, recién entonces descomprimir el ZIP
+                 Where-Object { $_.FullName -notmatch '\\unzipped\\' } |
+                 Select-Object -First 1
           if (-not $exe) {
             $zip = Get-ChildItem -Path $root -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
             if (-not $zip) { throw "No se encontró .exe ni .zip en '$root'." }
@@ -171,21 +162,25 @@ stages:
             $exe = Get-ChildItem -Path $unz -Recurse -File -Filter *.exe | Select-Object -First 1
             if (-not $exe) { throw "El ZIP no contiene .exe publicable." }
           }
-
           $src = $exe.DirectoryName
           $dst = '$(physicalPath)'
-
-          Write-Host "Source: $src"
-          Write-Host "Dest:   $dst"
-
-          if (-not (Test-Path $dst)) { New-Item -Path $dst -ItemType Directory | Out-Null }
           if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
-
           robocopy "$src" "$dst" /MIR /XD "$dst\logs" /XF *.pdb /NFL /NDL /NJH /NJS /R:2 /W:1
           $rc = $LASTEXITCODE
-          Write-Host "Robocopy RC: $rc"
           if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
           $global:LASTEXITCODE = 0; $host.SetShouldExit(0); exit 0
+
+    - task: PowerShell@2
+      displayName: Copy appsettings*.json to target
+      inputs:
+        targetType: inline
+        script: |
+          $src = '$(deploySource)'
+          $dst = '$(physicalPath)'
+          foreach ($f in 'appsettings.json','appsettings.Production.json') {
+            $p = Join-Path $src $f
+            if (Test-Path $p) { Copy-Item $p $dst -Force; Write-Host "Copiado: $f" }
+          }
 
     - task: PowerShell@2
       displayName: Create/Configure IIS Site and Binding
@@ -201,7 +196,7 @@ stages:
             New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
           } else {
             Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
-            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath   -Value '$(physicalPath)'
+            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath -Value '$(physicalPath)'
           }
           $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
           if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
@@ -213,10 +208,9 @@ stages:
         script: |
           $dst = '$(physicalPath)'
           $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
-                Where-Object { $_.Name -ne 'app_offline.exe' } |
-                Sort-Object Length -Descending | Select-Object -First 1
+                 Where-Object { $_.Name -ne 'app_offline.exe' } |
+                 Sort-Object Length -Descending | Select-Object -First 1
           if (-not $exe) { throw "No .exe en $dst" }
-
           $wc = @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -229,6 +223,7 @@ stages:
                 <aspNetCore processPath=".\$($exe.Name)" hostingModel="inprocess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
                   <environmentVariables>
                     <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$(Environment)" />
+                    <environmentVariable name="Jwt__Key" value="$(Jwt.Key)" />
                   </environmentVariables>
                 </aspNetCore>
               </system.webServer>
@@ -238,41 +233,25 @@ stages:
           $path = Join-Path $dst 'web.config'
           $wc | Out-File -FilePath $path -Encoding utf8 -Force
           Remove-Item (Join-Path $dst 'ProvexBackendAPI.zip') -ErrorAction SilentlyContinue
-          Write-Host "web.config reescrito (processPath=$($exe.Name), ENV=$(Environment))"
+          Write-Host "web.config reescrito (processPath=$($exe.Name))"
 
     - task: PowerShell@2
-      displayName: 'Sanity: Jwt.Key length'
+      displayName: 'Sanity: Jwt.Key bytes'
       inputs:
         targetType: inline
         errorActionPreference: 'stop'
         script: |
           $p = '$(physicalPath)\appsettings.Production.json'
           if (-not (Test-Path $p)) { $p = '$(physicalPath)\appsettings.json' }
-
-          # Leer
           $raw = Get-Content $p -Raw -Encoding UTF8
-
-          # 1) Remueve SOLO líneas que empiezan con //
           $lines = $raw -split "`r?`n"
           $rawNoLineComments = ($lines | Where-Object { $_ -notmatch '^\s*//' }) -join "`n"
-
-          # 2) Remueve bloques /* ... */ simples
           $rawClean = [regex]::Replace($rawNoLineComments, '/\*.*?\*/', '', 'Singleline')
-
-          try {
-            $cfg = $rawClean | ConvertFrom-Json -ErrorAction Stop
-          } catch {
-            Write-Error ("JSON inválido en {0}: {1}" -f $p, $_.Exception.Message)
-            Write-Host "Revisa: AzureAd.Instance con https:// completo y DefaultConnection en una sola línea."
-            exit 1
-          }
-
-          if (-not $cfg.Jwt -or -not $cfg.Jwt.Key) { throw "Jwt.Key no definido en $($p)" }
-
-          $len = ($cfg.Jwt.Key).Length
-          Write-Host "Jwt.Key length: $len"
-          if ($len -lt 32) { throw "Jwt.Key demasiado corta; usa ≥32 caracteres o Base64 de 32 bytes." }
-
+          $cfg = $rawClean | ConvertFrom-Json
+          $val = $cfg.Jwt.Key
+          try { $bytes = [Convert]::FromBase64String($val); $mode='Base64' } catch { $bytes=[Text.Encoding]::UTF8.GetBytes($val); $mode='UTF8' }
+          Write-Host "Jwt.Key mode=$mode bytes=$($bytes.Length) bits=$($bytes.Length*8)"
+          if ($bytes.Length -lt 16) { throw "Jwt.Key demasiado corta; usa ≥16 bytes (128 bits). Recomendado 32 bytes Base64." }
 
     - task: PowerShell@2
       displayName: Open Windows Firewall port
@@ -291,5 +270,5 @@ stages:
         script: |
           Import-Module WebAdministration
           Start-WebAppPool -Name '$(appPoolName)'
-          Start-Website   -Name '$(siteName)'
+          Start-Website -Name '$(siteName)'
           Write-Host "Publicado en http://$env:COMPUTERNAME:$(bindingPort)/"
