@@ -156,32 +156,27 @@ stages:
         script: |
           $root = "$(deploySource)"
 
-          # Detectar subcarpeta única
-          $kids = Get-ChildItem -Path $root
-          $candidateRoot = $root
-          if (($kids | ? { $_.PSIsContainer }).Count -eq 1 -and ($kids | ? { -not $_.PSIsContainer }).Count -eq 0) {
-            $candidateRoot = ($kids | ? { $_.PSIsContainer }).FullName
-          }
+          # 1) Buscar .exe en artefacto EXCLUYENDO 'unzipped'
+          $exe = Get-ChildItem -Path $root -Recurse -File -Filter *.exe -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -notmatch '\\unzipped\\' } |
+                Select-Object -First 1
 
-          # Descomprimir si hay ZIP
-          $zip = Get-ChildItem -Path $candidateRoot -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($zip) {
+          # 2) Si no hay .exe, recién entonces descomprimir el ZIP
+          if (-not $exe) {
+            $zip = Get-ChildItem -Path $root -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $zip) { throw "No se encontró .exe ni .zip en '$root'." }
             $unz = Join-Path $root "unzipped"
             if (Test-Path $unz) { Remove-Item -Recurse -Force $unz }
             Expand-Archive -Path $zip.FullName -DestinationPath $unz -Force
-            $candidateRoot = $unz
+            $exe = Get-ChildItem -Path $unz -Recurse -File -Filter *.exe | Select-Object -First 1
+            if (-not $exe) { throw "El ZIP no contiene .exe publicable." }
           }
 
-          # Ubicar carpeta publicable
-          $marker = Get-ChildItem -Path $candidateRoot -Recurse -File -Include *.exe,*.dll,web.config | Select-Object -First 1
-          if (-not $marker) { throw "No se encontró contenido publicable bajo '$candidateRoot'." }
-          $src = $marker.DirectoryName
+          $src = $exe.DirectoryName
           $dst = '$(physicalPath)'
 
-          Write-Host "Root: $root"
-          Write-Host "SearchRoot: $candidateRoot"
           Write-Host "Source: $src"
-          Write-Host "Dest: $dst"
+          Write-Host "Dest:   $dst"
 
           if (-not (Test-Path $dst)) { New-Item -Path $dst -ItemType Directory | Out-Null }
           if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
@@ -245,16 +240,23 @@ stages:
           Remove-Item (Join-Path $dst 'ProvexBackendAPI.zip') -ErrorAction SilentlyContinue
           Write-Host "web.config reescrito (processPath=$($exe.Name), ENV=$(Environment))"
 
-    # Valida que la clave JWT efectiva sea suficientemente larga
     - task: PowerShell@2
       displayName: 'Sanity: Jwt.Key length'
       inputs:
         targetType: inline
         script: |
-          $p='$(physicalPath)\appsettings.json'
-          $len = ((Get-Content $p -Raw) | ConvertFrom-Json).Jwt.Key.Length
+          $p = '$(physicalPath)\appsettings.Production.json'
+          if (-not (Test-Path $p)) { $p = '$(physicalPath)\appsettings.json' }
+
+          # Quitar comentarios // para que sea JSON válido
+          $raw = Get-Content $p -Raw -Encoding UTF8
+          $raw = $raw -replace '(?m)//.*$',''
+
+          $cfg = $raw | ConvertFrom-Json
+          $len = ($cfg.Jwt.Key).Length
           Write-Host "Jwt.Key length: $len"
           if ($len -lt 32) { throw "Jwt.Key demasiado corta; usa ≥32 caracteres o Base64 de 32 bytes." }
+
 
     - task: PowerShell@2
       displayName: Open Windows Firewall port
