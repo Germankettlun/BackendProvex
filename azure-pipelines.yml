@@ -1,10 +1,10 @@
 trigger:
   branches:
-    include: [ dev ]
+    include: [ Prod ]
 
 pr:
   branches:
-    include: [ dev ]
+    include: [ Prod ]
 
 pool:
   name: PoolPrxSII
@@ -32,6 +32,7 @@ variables:
     value: 8082
 
 stages:
+# ============================ BUILD ============================
   - stage: Build
     displayName: Build & Publish
     jobs:
@@ -61,7 +62,7 @@ stages:
             inputs:
               command: publish
               publishWebProjects: false
-              projects: '**/ProvexBackendAPI.csproj'   # ajusta si el csproj tiene otro nombre
+              projects: '**/ProvexBackendAPI.csproj'   # ajusta si tu csproj se llama distinto
               arguments: >-
                 --configuration $(configuration)
                 --output $(publishFolder)
@@ -103,6 +104,7 @@ stages:
               targetPath: '$(publishFolder)'
               artifact:   ERPApi
 
+# ============================ DEPLOY ============================
   - stage: Deploy
     displayName: Deploy to IIS (port $(bindingPort))
     dependsOn: Build
@@ -116,11 +118,14 @@ stages:
               artifact: 'ERPApi'
               path: '$(deploySource)'
 
-          - powershell: |
-              Write-Host "deploySource: $(deploySource)"
-              Get-ChildItem -Recurse -Path "$(deploySource)" |
-                Select FullName,Length,LastWriteTime | Format-Table -AutoSize
+          - task: PowerShell@2
             displayName: 'DEBUG: list artifact'
+            inputs:
+              targetType: inline
+              script: |
+                Write-Host "deploySource: $(deploySource)"
+                Get-ChildItem -Recurse -Path "$(deploySource)" |
+                  Select FullName,Length,LastWriteTime | Format-Table -AutoSize
 
           - task: PowerShell@2
             displayName: Prepare target folder
@@ -142,18 +147,20 @@ stages:
                 }
 
           - task: PowerShell@2
-            displayName: 'Robocopy to IIS folder'
+            displayName: Robocopy to IIS folder
             inputs:
               targetType: inline
               script: |
                 $root = "$(deploySource)"
 
-                # Subcarpeta única o ZIP
+                # Detectar subcarpeta única
                 $kids = Get-ChildItem -Path $root
                 $candidateRoot = $root
                 if (($kids | ? { $_.PSIsContainer }).Count -eq 1 -and ($kids | ? { -not $_.PSIsContainer }).Count -eq 0) {
                   $candidateRoot = ($kids | ? { $_.PSIsContainer }).FullName
                 }
+
+                # Descomprimir si hay ZIP
                 $zip = Get-ChildItem -Path $candidateRoot -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
                 if ($zip) {
                   $unz = Join-Path $root "unzipped"
@@ -162,7 +169,7 @@ stages:
                   $candidateRoot = $unz
                 }
 
-                # Carpeta publicable
+                # Ubicar carpeta publicable
                 $marker = Get-ChildItem -Path $candidateRoot -Recurse -File -Include *.exe,*.dll,web.config | Select-Object -First 1
                 if (-not $marker) { throw "No se encontró contenido publicable bajo '$candidateRoot'." }
                 $src = $marker.DirectoryName
@@ -180,11 +187,7 @@ stages:
                 $rc = $LASTEXITCODE
                 Write-Host "Robocopy RC: $rc"
                 if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
-
-                # Normalizar RC 0–7 a éxito
-                $global:LASTEXITCODE = 0
-                $host.SetShouldExit(0); exit 0
-
+                $global:LASTEXITCODE = 0; $host.SetShouldExit(0); exit 0
 
           - task: PowerShell@2
             displayName: Create/Configure IIS Site and Binding
@@ -206,6 +209,36 @@ stages:
                 if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
 
           - task: PowerShell@2
+            displayName: Fix web.config (dedupe aspNetCore)
+            inputs:
+              targetType: inline
+              script: |
+                $dst = '$(physicalPath)'
+                $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
+                       Where-Object { $_.Name -ne 'app_offline.exe' } |
+                       Sort-Object Length -Descending | Select-Object -First 1
+                if (-not $exe) { throw "No .exe en $dst" }
+
+                $wc = @"
+                <?xml version="1.0" encoding="utf-8"?>
+                <configuration>
+                  <location path="." inheritInChildApplications="false">
+                    <system.webServer>
+                      <handlers>
+                        <clear/>
+                        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+                      </handlers>
+                      <aspNetCore processPath=".\$($exe.Name)" stdoutLogEnabled="false" hostingModel="InProcess" />
+                    </system.webServer>
+                  </location>
+                </configuration>
+                "@
+                $path = Join-Path $dst 'web.config'
+                $wc | Out-File -FilePath $path -Encoding utf8 -Force
+                Remove-Item (Join-Path $dst 'ProvexBackendAPI.zip') -ErrorAction SilentlyContinue
+                Write-Host "web.config reescrito con processPath=$($exe.Name)"
+
+          - task: PowerShell@2
             displayName: Open Windows Firewall port
             inputs:
               targetType: inline
@@ -216,7 +249,7 @@ stages:
                 }
 
           - task: PowerShell@2
-            displayName: 'Start App Pool and Site'
+            displayName: Start App Pool and Site
             inputs:
               targetType: inline
               script: |
