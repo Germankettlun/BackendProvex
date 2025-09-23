@@ -1,10 +1,11 @@
-﻿using AutoMapper;
+﻿
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto.Authentication;
+using ProvexBackendAPI.Helpers.Mapping;
 using ProvexBackendAPI.Services.IServices;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -22,10 +23,9 @@ namespace ProvexBackendAPI.Services
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
-        //private readonly IConfiguration _config;
-        private readonly IMapper _mapper;
+       
 
-        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IConfiguration config, IMapper mapper, IUserService userService
+        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IUserService userService
         )
         {
             _userManager = userManager;
@@ -33,8 +33,7 @@ namespace ProvexBackendAPI.Services
             _roleManager = roleManager;
             _userService = userService;
             _tokenService = tokenService;
-            //_config = config;
-            _mapper = mapper;
+          
         }
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
         {
@@ -91,7 +90,8 @@ namespace ProvexBackendAPI.Services
             );
 
             
-            var userDto = _mapper.Map<UserDataDto>(user);
+            //var userDto = _mapper.Map<UserDataDto>(user);
+            var userDto = user.ToUserDataDto();
 
             return new LoginResponseDto
             {
@@ -169,7 +169,9 @@ namespace ProvexBackendAPI.Services
             if (createdUser == null)
                 throw new ApplicationException("No se pudo recuperar el usuario recién creado.");
 
-            return _mapper.Map<UserDataDto>(createdUser);
+            //return _mapper.Map<UserDataDto>(createdUser);
+            return createdUser.ToUserDataDto();
+           
 
 
         }
