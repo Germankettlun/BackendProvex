@@ -212,9 +212,18 @@ stages:
                 Sort-Object Length -Descending | Select-Object -First 1
           if (-not $exe) { throw "No .exe en $dst" }
 
-          # Escapar la clave para XML
-          $jwtEsc = [System.Security.SecurityElement]::Escape("$(Jwt.Key)")
-          $envName = "$(Environment)"
+          # Valores
+          $envName   = "$(Environment)"
+          $jwt       = "$(Jwt.Key)"
+          $deployId  = "$(Build.BuildId)"
+          $sha       = "$(Build.SourceVersion)"
+          if ($sha.Length -ge 7) { $sha = $sha.Substring(0,7) }
+
+          # Escapar para XML
+          $envNameEsc = [System.Security.SecurityElement]::Escape($envName)
+          $jwtEsc     = [System.Security.SecurityElement]::Escape($jwt)
+          $deployEsc  = [System.Security.SecurityElement]::Escape($deployId)
+          $shaEsc     = [System.Security.SecurityElement]::Escape($sha)
 
           $wc = @"
           <?xml version="1.0" encoding="utf-8"?>
@@ -227,17 +236,18 @@ stages:
                 </handlers>
                 <aspNetCore processPath=".\$($exe.Name)" hostingModel="inprocess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
                   <environmentVariables>
-                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$envName" />
+                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$envNameEsc" />
                     <environmentVariable name="Jwt__Key" value="$jwtEsc" />
+                    <environmentVariable name="DEPLOY_VERSION" value="$deployEsc" />
+                    <environmentVariable name="GIT_SHA_SHORT"  value="$shaEsc" />
                   </environmentVariables>
                 </aspNetCore>
               </system.webServer>
             </location>
           </configuration>
           "@
-
           $wc | Out-File -FilePath (Join-Path $dst 'web.config') -Encoding utf8 -Force
-          Write-Host "web.config actualizado"
+          Write-Host "web.config actualizado con DEPLOY_VERSION y GIT_SHA_SHORT"
 
     - task: PowerShell@2
       displayName: 'Sanity: Jwt.Key bytes'
