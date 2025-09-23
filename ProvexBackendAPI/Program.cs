@@ -1,5 +1,4 @@
 ﻿using Asp.Versioning;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models.Users;
+using ProvexBackendAPI.Filters;
 using ProvexBackendAPI.Infrastructure.Auth;
+using ProvexBackendAPI.Middleware;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services;
@@ -26,12 +27,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
                            ProvexBackendAPI.Repository.UserRepository>();
 
+builder.Services.AddScoped(
+    typeof(ProvexBackendAPI.Repository.IRepository.IGenericRepository<>),
+    typeof(ProvexBackendAPI.Repository.GenericRepository<>));
+
+builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
+    ProvexBackendAPI.Repository.UnitOfWork>();
+
+
 // Service 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
                            ProvexBackendAPI.Services.UserService>();
 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
+
+builder.Services.AddScoped(
+    typeof(ProvexBackendAPI.Services.IServices.IGenericService<>),
+    typeof(ProvexBackendAPI.Services.GenericService<>));
+
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -42,15 +56,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Controllers 
-builder.Services.AddControllers();
-
-//AutoMapper
-
-
-builder.Services.AddAutoMapper(
-    cfg => { /* opcional: cfg.AddProfile<TuProfile>(); */ },
-    AppDomain.CurrentDomain.GetAssemblies()
+builder.Services.AddControllers(options =>
+{ 
+    //Filtro del middleware
+    options.Filters.Add<ApiResponseWrapperFilter>();
+}
 );
+
+
+
 
 
 //:NET Identity con GUID
@@ -199,6 +213,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();
