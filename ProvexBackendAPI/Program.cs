@@ -12,9 +12,13 @@ using ProvexBackendAPI.Filters;
 using ProvexBackendAPI.Infrastructure.Auth;
 using ProvexBackendAPI.Middleware;
 using ProvexBackendAPI.Repository;
+using ProvexBackendAPI.Repository.Estimaciones;
 using ProvexBackendAPI.Repository.IRepository;
+using ProvexBackendAPI.Repository.IRepository.Estimaciones;
 using ProvexBackendAPI.Services;
+using ProvexBackendAPI.Services.Estimaciones;
 using ProvexBackendAPI.Services.IServices;
+using ProvexBackendAPI.Services.IServices.Estimaciones;
 using System.Text;
 
 
@@ -34,6 +38,9 @@ builder.Services.AddScoped(
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
     ProvexBackendAPI.Repository.UnitOfWork>();
 
+builder.Services.AddScoped<IComboRepository, ComboRepository>();
+
+
 
 // Service 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
@@ -45,6 +52,8 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
 builder.Services.AddScoped(
     typeof(ProvexBackendAPI.Services.IServices.IGenericService<>),
     typeof(ProvexBackendAPI.Services.GenericService<>));
+
+builder.Services.AddScoped<IComboService, ComboService>();
 
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
