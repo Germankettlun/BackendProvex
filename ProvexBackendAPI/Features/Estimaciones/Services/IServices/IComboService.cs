@@ -7,5 +7,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
         Task<List<ComboItemDto>> GetComboGenericoAsync(
            string nombreCombo,
             string codigoEmpresa);
+
+        Task<List<ComboItemDto>> GetComboEnvaseProductorEspecieVariedadAsync(
+           string idProductor, string idEspecie, string idVariedad);
     }
 }

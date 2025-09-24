@@ -49,6 +49,41 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return list;
         }
 
+        public async Task<List<ComboItem>> LlenaComboEnvaseProductorEspecieVariedad(string idProductor, string idEspecie, string idVariedad)
+        {
+            var list = new List<ComboItem>();
+
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_ENVASE_COSECHA_ESTIMACION", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+
+            cmd.Parameters.Add(new SqlParameter("@ID_PRODUCTOR", SqlDbType.NVarChar, 50) { Value = idProductor });
+            cmd.Parameters.Add(new SqlParameter("@ID_ESPECIE", SqlDbType.VarChar, 50) { Value = idEspecie });
+            cmd.Parameters.Add(new SqlParameter("@ID_VARIEDAD", SqlDbType.VarChar, 50) { Value = idVariedad });
+
+            await using var rdr = await cmd.ExecuteReaderAsync();
+
+
+            while (await rdr.ReadAsync())
+            {
+                var value = ReadFirstExistingAsString(rdr, "Valor");
+                var label = ReadFirstExistingAsString(rdr, "Texto");
+
+                list.Add(new ComboItem
+                {
+                    Value = value,
+                    Label = label
+                });
+            }
+
+            return list;
+        }
         private static string ReadFirstExistingAsString(SqlDataReader rdr, params string[] candidates)
         {
             foreach (var name in candidates)
