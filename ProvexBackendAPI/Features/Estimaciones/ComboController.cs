@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services.IServices;
+using static ProvexBackendAPI.Dto.Users.UsersDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones
 {
@@ -13,7 +14,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
     // [ApiVersion("1.0")]
     // [ApiVersion("2.0")]
     [ApiVersionNeutral]
-    [AllowAnonymous]
+    [Authorize]
     public class ComboController : ControllerBase
     {
         private readonly IComboService _comboService;
@@ -25,7 +26,9 @@ namespace ProvexBackendAPI.Features.Estimaciones
         }
 
         [HttpGet("GetCombo")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<ComboItemDto>>> GetCombo(
             [FromQuery] string nombreCombo,
             [FromQuery] string codigoEmpresa)

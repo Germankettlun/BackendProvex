@@ -28,6 +28,7 @@ namespace ProvexBackendAPI.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
 
