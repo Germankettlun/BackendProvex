@@ -1,6 +1,6 @@
-﻿using ProvexBackendAPI.Dto.Estimaciones.Combos;
+﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
 
-namespace ProvexBackendAPI.Services.IServices.Estimaciones
+namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 {
     public interface IComboService
     {

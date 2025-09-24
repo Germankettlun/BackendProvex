@@ -1,4 +1,4 @@
-﻿namespace ProvexBackendAPI.Dto.Estimaciones.Combos
+﻿namespace ProvexBackendAPI.Features.Estimaciones.Dto.Combos
 {
     public class ComboItemDto
     {

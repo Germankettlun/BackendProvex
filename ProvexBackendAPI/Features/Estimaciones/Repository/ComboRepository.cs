@@ -1,9 +1,9 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Data.Sql.Estimaciones;
-using ProvexBackendAPI.Repository.IRepository.Estimaciones;
+using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using System.Data;
 
-namespace ProvexBackendAPI.Repository.Estimaciones
+namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
     public class ComboRepository : IComboRepository
     {

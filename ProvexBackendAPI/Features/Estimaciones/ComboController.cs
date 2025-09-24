@@ -2,11 +2,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ProvexBackendAPI.Dto.Estimaciones.Combos;
+using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
+using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services.IServices;
-using ProvexBackendAPI.Services.IServices.Estimaciones;
 
-namespace ProvexBackendAPI.Controllers
+namespace ProvexBackendAPI.Features.Estimaciones
 {
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]

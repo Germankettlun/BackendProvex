@@ -1,6 +1,6 @@
 ﻿using ProvexBackendAPI.Data.Sql.Estimaciones;
 
-namespace ProvexBackendAPI.Repository.IRepository.Estimaciones
+namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 {
     public interface IComboRepository
     {
