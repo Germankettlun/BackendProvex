@@ -22,7 +22,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<List<SemanaDto>> GetSemanasTemporadaAsync(string codTem, string codEmp, int? vigente)
+        public async Task<List<SemanaDto>> GetSemanasTemporadaAsync(string codTem, string codEmp, int? vigente, string? semana = null, int? ano = null)
         {
             var list = new List<SemanaDto>();
 
@@ -39,6 +39,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             cmd.Parameters.Add(new SqlParameter("@COD_TEM", SqlDbType.NVarChar, 50) { Value = codTem });
             cmd.Parameters.Add(new SqlParameter("@COD_EMP", SqlDbType.NVarChar, 50) { Value = codEmp });
             cmd.Parameters.Add(new SqlParameter("@VIGENTE", SqlDbType.Int) { Value = (object?)vigente ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.NVarChar, 50) { Value = (object?)semana ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@ANO", SqlDbType.Int) { Value = (object?)ano ?? DBNull.Value });
 
             await using var rd = await cmd.ExecuteReaderAsync();
 

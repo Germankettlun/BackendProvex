@@ -13,8 +13,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             throw new NotImplementedException();
         }
 
-        public Task<List<SemanaDto>> GetSemanasTemporadaAsync(string codTem, string codEmp, int? vigente)
-            => _repo.GetSemanasTemporadaAsync(codTem, codEmp, vigente);
+        public Task<List<SemanaDto>> GetSemanasTemporadaAsync(string codTem, string codEmp, int? vigente, string? semana = null, int? ano = null)
+            => _repo.GetSemanasTemporadaAsync(codTem, codEmp, vigente, semana, ano);
 
         public Task<List<TemporadaDto>> ListAsync(string codEmp, int? vigente)
         {

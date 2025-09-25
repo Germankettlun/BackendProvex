@@ -24,12 +24,12 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetSemanas(string codTem, [FromQuery] string codEmp, [FromQuery] int? vigente = null)
+        public async Task<IActionResult> GetSemanas(string codTem, [FromQuery] string codEmp, [FromQuery] int? vigente = null, [FromQuery] string? semana = null, [FromQuery] int? ano = null)
         {
             if (string.IsNullOrWhiteSpace(codTem) || string.IsNullOrWhiteSpace(codEmp))
                 return BadRequest("codTem y codEmp son requeridos.");
 
-            var data = await _temporadasService.GetSemanasTemporadaAsync(codTem, codEmp, vigente);
+            var data = await _temporadasService.GetSemanasTemporadaAsync(codTem, codEmp, vigente, semana, ano);
             return Ok(data);
         }
     }
