@@ -2,6 +2,7 @@
 using ProvexBackendAPI.Data.Sql.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using System.Data;
+using ProvexBackendAPI.Helpers.Shared.Extensions;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
@@ -36,8 +37,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             
             while (await rdr.ReadAsync())
             {
-                var value = ReadFirstExistingAsString(rdr, "Valor");
-                var label = ReadFirstExistingAsString(rdr, "Texto");
+                var value = rdr.FirstExistingAsString("Valor", "Value", "VALOR", "ID");
+                var label = rdr.FirstExistingAsString("Texto", "Label", "NOMBRE", "DESCRIPCION");
 
                 list.Add(new ComboItem
                 {
@@ -49,24 +50,41 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return list;
         }
 
-        private static string ReadFirstExistingAsString(SqlDataReader rdr, params string[] candidates)
+        public async Task<List<ComboItem>> LlenaComboEnvaseProductorEspecieVariedad(string idProductor, string idEspecie, string idVariedad)
         {
-            foreach (var name in candidates)
-            {
-                var ordinal = SafeOrdinal(rdr, name);
-                if (ordinal >= 0 && !rdr.IsDBNull(ordinal))
-                {
-                    // Devuelve como string independiente del tipo subyacente
-                    return Convert.ToString(rdr.GetValue(ordinal)) ?? string.Empty;
-                }
-            }
-            return string.Empty;
-        }
+            var list = new List<ComboItem>();
 
-        private static int SafeOrdinal(SqlDataReader rdr, string column)
-        {
-            try { return rdr.GetOrdinal(column); }
-            catch (IndexOutOfRangeException) { return -1; }
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_ENVASE_COSECHA_ESTIMACION", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+
+            cmd.Parameters.Add(new SqlParameter("@ID_PRODUCTOR", SqlDbType.NVarChar, 50) { Value = idProductor });
+            cmd.Parameters.Add(new SqlParameter("@ID_ESPECIE", SqlDbType.VarChar, 50) { Value = idEspecie });
+            cmd.Parameters.Add(new SqlParameter("@ID_VARIEDAD", SqlDbType.VarChar, 50) { Value = idVariedad });
+
+            await using var rdr = await cmd.ExecuteReaderAsync();
+
+
+            while (await rdr.ReadAsync())
+            {
+                var value = rdr.FirstExistingAsString("Valor", "Value", "VALOR", "ID");
+                var label = rdr.FirstExistingAsString("Texto", "Label", "NOMBRE", "DESCRIPCION");
+
+                list.Add(new ComboItem
+                {
+                    Value = value,
+                    Label = label
+                });
+            }
+
+            return list;
         }
+        
     }
 }

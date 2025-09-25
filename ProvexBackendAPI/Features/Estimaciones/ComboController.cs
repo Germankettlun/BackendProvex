@@ -28,12 +28,25 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [HttpGet("GetCombo")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ComboItemDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<List<ComboItemDto>>> GetCombo(
             [FromQuery] string nombreCombo,
             [FromQuery] string codigoEmpresa)
         {
             var data = await _comboService.GetComboGenericoAsync(nombreCombo, codigoEmpresa);
+            return Ok(data);
+        }
+
+        [HttpGet("GetComboEnvase")]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(List<ComboItemDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<List<ComboItemDto>>> GetComboEnvase(
+            [FromQuery] string codigoProductor,
+            [FromQuery] string codigoEspecie,
+            [FromQuery] string codigoVariedad)
+        {
+            var data = await _comboService.GetComboEnvaseProductorEspecieVariedadAsync(codigoProductor, codigoEspecie, codigoVariedad);
             return Ok(data);
         }
     }
