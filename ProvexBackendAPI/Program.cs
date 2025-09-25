@@ -40,6 +40,9 @@ builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
 
 builder.Services.AddScoped<IComboRepository, ComboRepository>();
 
+builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
+
+
 
 
 // Service 
@@ -54,6 +57,7 @@ builder.Services.AddScoped(
     typeof(ProvexBackendAPI.Services.GenericService<>));
 
 builder.Services.AddScoped<IComboService, ComboService>();
+builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

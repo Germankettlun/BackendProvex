@@ -37,16 +37,16 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return Ok(data);
         }
 
-        [HttpGet("GetComboEnvaseProductorEspecieVariedad")]
+        [HttpGet("GetComboEnvase")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(List<ComboItemDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<List<ComboItemDto>>> GetComboEnvaseProductorEspecieVariedad(
-            [FromQuery] string idProductor,
-            [FromQuery] string idEspecie,
-            [FromQuery] string idVariedad)
+        public async Task<ActionResult<List<ComboItemDto>>> GetComboEnvase(
+            [FromQuery] string codigoProductor,
+            [FromQuery] string codigoEspecie,
+            [FromQuery] string codigoVariedad)
         {
-            var data = await _comboService.GetComboEnvaseProductorEspecieVariedadAsync(idProductor,idEspecie,idVariedad);
+            var data = await _comboService.GetComboEnvaseProductorEspecieVariedadAsync(codigoProductor, codigoEspecie, codigoVariedad);
             return Ok(data);
         }
     }

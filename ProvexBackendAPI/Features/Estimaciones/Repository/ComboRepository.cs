@@ -2,6 +2,7 @@
 using ProvexBackendAPI.Data.Sql.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using System.Data;
+using ProvexBackendAPI.Helpers.Shared.Extensions;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
@@ -36,8 +37,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             
             while (await rdr.ReadAsync())
             {
-                var value = ReadFirstExistingAsString(rdr, "Valor");
-                var label = ReadFirstExistingAsString(rdr, "Texto");
+                var value = rdr.FirstExistingAsString("Valor", "Value", "VALOR", "ID");
+                var label = rdr.FirstExistingAsString("Texto", "Label", "NOMBRE", "DESCRIPCION");
 
                 list.Add(new ComboItem
                 {
@@ -72,8 +73,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             while (await rdr.ReadAsync())
             {
-                var value = ReadFirstExistingAsString(rdr, "Valor");
-                var label = ReadFirstExistingAsString(rdr, "Texto");
+                var value = rdr.FirstExistingAsString("Valor", "Value", "VALOR", "ID");
+                var label = rdr.FirstExistingAsString("Texto", "Label", "NOMBRE", "DESCRIPCION");
 
                 list.Add(new ComboItem
                 {
@@ -84,24 +85,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             return list;
         }
-        private static string ReadFirstExistingAsString(SqlDataReader rdr, params string[] candidates)
-        {
-            foreach (var name in candidates)
-            {
-                var ordinal = SafeOrdinal(rdr, name);
-                if (ordinal >= 0 && !rdr.IsDBNull(ordinal))
-                {
-                    // Devuelve como string independiente del tipo subyacente
-                    return Convert.ToString(rdr.GetValue(ordinal)) ?? string.Empty;
-                }
-            }
-            return string.Empty;
-        }
-
-        private static int SafeOrdinal(SqlDataReader rdr, string column)
-        {
-            try { return rdr.GetOrdinal(column); }
-            catch (IndexOutOfRangeException) { return -1; }
-        }
+        
     }
 }
