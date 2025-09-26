@@ -13,7 +13,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<List<DistribucionCategoriaEspecieRow>> GetRowsAsync(string codigoEmpresa, string codigoEspecie, string codigoTemporada, string? idCategoria)
+        public async Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(string codigoEmpresa, string codigoEspecie, string codigoTemporada, string? idCategoria)
         {
             var list = new List<DistribucionCategoriaEspecieRow>();
 
@@ -44,6 +44,43 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
                     PorcentajeSemana = rdr.Get<int?>("PORCENTAJEPORSEMANA"),
                     EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false   
+                });
+            }
+
+            return list;
+        }
+
+        public async Task<List<DistribucionCalibreEspecieRow>> GetRowsDistribucionCalibreAsync(string codigoEmpresa, string codigoEspecie, string codigoTemporada, string? idCalibre)
+        {
+            var list = new List<DistribucionCalibreEspecieRow>();
+
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_CALIBRE_ESPECIE", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = codigoEmpresa });
+            cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = codigoEspecie });
+            cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = codigoTemporada });
+            cmd.Parameters.Add(new SqlParameter("@ID_CALIBRE", SqlDbType.VarChar, 10) { Value = (object?)idCalibre ?? DBNull.Value });
+
+            await using var rdr = await cmd.ExecuteReaderAsync();
+
+            while (await rdr.ReadAsync())
+            {
+                list.Add(new DistribucionCalibreEspecieRow
+                {
+                    IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
+                    IdCalibre = rdr.Get<string?>("IDCALIBRE") ?? "",
+                    CalibreNombre = rdr.FirstExistingAsString("CALIBRE"), // fallback a "" si no existe o es null
+                    PorcDefectoCalibre = rdr.Get<int?>("PORCENTAJEPORDEFECTOCALIBRE"),
+                    SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
+                    SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
+                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJEPORSEMANA"),
+                    EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false
                 });
             }
 
