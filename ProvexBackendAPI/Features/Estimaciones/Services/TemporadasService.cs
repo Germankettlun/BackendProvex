@@ -1,6 +1,7 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services
 {
@@ -16,9 +17,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
         public Task<List<SemanaDto>> GetSemanasTemporadaAsync(string codTem, string codEmp, int? vigente, string? semana = null, int? ano = null)
             => _repo.GetSemanasTemporadaAsync(codTem, codEmp, vigente, semana, ano);
 
-        public Task<List<TemporadaDto>> ListAsync(string codEmp, int? vigente)
-        {
-            throw new NotImplementedException();
-        }
+        public Task<List<TemporadaDto>> ListAsync(string? codTem, string codEmp, int? vigente)
+            => _repo.ListAsync(codTem, codEmp, vigente);
+       
     }
 }
