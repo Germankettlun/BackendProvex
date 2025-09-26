@@ -5,11 +5,11 @@ using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEsp
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services
 {
-    public class DistribucionCategoriaEspecieService : IDistribucionCategoriaEspecieService
+    public class DistribucionService : IDistribucionService
     {
-        private readonly IDistribucionCategoriaEspecieRepository _repo;
+        private readonly IDistribucionRepository _repo;
 
-        public DistribucionCategoriaEspecieService(IDistribucionCategoriaEspecieRepository repo)
+        public DistribucionService(IDistribucionRepository repo)
         {
             _repo = repo;
         }

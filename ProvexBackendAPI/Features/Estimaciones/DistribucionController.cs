@@ -7,15 +7,15 @@ using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEsp
 
 namespace ProvexBackendAPI.Features.Estimaciones
 {
-    [Route("api/v{version:apiVersion}/estimaciones/distribucion-categoria-especie")]
+    [Route("api/v{version:apiVersion}/distribucion/distribucion-categoria-especie")]
     [ApiController]
     [ApiVersionNeutral]
     [Authorize]
-    public class DistribucionCategoriaEspecieController : ControllerBase
+    public class DistribucionController : ControllerBase
     {
-        private readonly IDistribucionCategoriaEspecieService _service;
+        private readonly IDistribucionService _service;
 
-        public DistribucionCategoriaEspecieController(IDistribucionCategoriaEspecieService service)
+        public DistribucionController(IDistribucionService service)
         {
             _service = service;
         }

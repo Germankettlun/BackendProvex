@@ -6,10 +6,10 @@ using ProvexBackendAPI.Helpers.Shared.Extensions;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
-    public class DistribucionCategoriaEspecieRepository : IDistribucionCategoriaEspecieRepository
+    public class DistribucionRepository : IDistribucionRepository
     {
         private readonly string _connString;
-        public DistribucionCategoriaEspecieRepository(IConfiguration cfg)
+        public DistribucionRepository(IConfiguration cfg)
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
