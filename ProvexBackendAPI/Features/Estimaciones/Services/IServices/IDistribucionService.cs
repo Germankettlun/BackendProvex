@@ -3,7 +3,7 @@ using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEsp
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 {
-    public interface IDistribucionCategoriaEspecieService
+    public interface IDistribucionService
     {
         Task<List<DistribucionCategoriaEspecieResponseDto>> GetAsync(DistribucionCategoriaEspecieRequestDto req);
     }

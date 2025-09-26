@@ -5,6 +5,7 @@ using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
 using System.Data;
 using System.Runtime.Intrinsics.Arm;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
@@ -65,9 +66,40 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
         }
 
-        public Task<List<TemporadaDto>> ListAsync(string codEmp, int? vigente)
+        public async Task<List<TemporadaDto>> ListAsync(string? codTem,string codEmp, int? vigente)
         {
-            throw new NotImplementedException();
+            var list = new List<TemporadaDto>();
+
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+
+            await using var cmd = new SqlCommand("USP_UI_TEMPORADAS", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+
+            cmd.Parameters.Add(new SqlParameter("@COD_TEM", SqlDbType.NVarChar, 50) { Value = (object?)codTem ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@COD_EMP", SqlDbType.NVarChar, 50) { Value = codEmp });
+            cmd.Parameters.Add(new SqlParameter("@VIGENTE", SqlDbType.Int) { Value = (object?)vigente ?? DBNull.Value });
+
+
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+
+            while (await rd.ReadAsync())
+            {
+                list.Add(new TemporadaDto
+                {
+                    CodTem = rd.Get<string>("COD_TEM")!,
+                    Descripcion = rd.Get<string>("TEMPORADADESC")!,
+                    FechaIni = rd.Get<DateTime>("TEMPINICIO"),
+                    Orden = rd.Get<int>("TEMPORDEN"),
+                    Vigente = rd.Get<int>("TEMPVIGENTE"),
+                });
+            }
+            return list;
         }
     }
 }

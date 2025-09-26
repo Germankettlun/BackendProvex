@@ -2,7 +2,7 @@
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 {
-    public interface IDistribucionCategoriaEspecieRepository
+    public interface IDistribucionRepository
     {
         Task<List<DistribucionCategoriaEspecieRow>> GetRowsAsync(
        string codigoEmpresa,

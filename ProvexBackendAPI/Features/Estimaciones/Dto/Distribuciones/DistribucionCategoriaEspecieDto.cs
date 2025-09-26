@@ -55,7 +55,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("porcentaje")]
         public int? Porcentaje { get; set; }
 
-        [JsonPropertyName("essemanaactual")]
+        [JsonPropertyName("actual")]
         public bool EsSemanaActual { get; set; }
     }
 }
