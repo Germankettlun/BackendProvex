@@ -3,11 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCategoriaEspecieDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones
 {
-    [Route("api/v{version:apiVersion}/distribucion/distribucion-categoria-especie")]
+    [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]
     [ApiVersionNeutral]
     [Authorize]
@@ -20,11 +21,12 @@ namespace ProvexBackendAPI.Features.Estimaciones
             _service = service;
         }
 
-        [HttpGet]
+        // GET api/v{version}/distribucion/categoria
+        [HttpGet("categoria", Name = "GetDistribucionCategoria")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Get(
+        public async Task<IActionResult> GetCategoria(
         [FromQuery] string codEmpresa,
         [FromQuery] string codEspecie,
         [FromQuery] string codTemporada,
@@ -46,7 +48,38 @@ namespace ProvexBackendAPI.Features.Estimaciones
                 IdCategoria = categoriaId
             };
 
-            var data = await _service.GetAsync(req);
+            var data = await _service.GetDistribucionCategoriaAsync(req);
+            return Ok(data);
+        }
+
+        // GET api/v{version}/distribucion/calibre
+        [HttpGet("calibre", Name = "GetDistribucionCalibre")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetCalibre(
+        [FromQuery] string codEmpresa,
+        [FromQuery] string codEspecie,
+        [FromQuery] string codTemporada,
+        [FromQuery] string? calibreId
+    )
+        {
+            if (string.IsNullOrWhiteSpace(codEmpresa) ||
+                string.IsNullOrWhiteSpace(codEspecie) ||
+                string.IsNullOrWhiteSpace(codTemporada))
+            {
+                return BadRequest("el código de empresa, código de especie y código de temporada son requeridos.");
+            }
+
+            var req = new DistribucionCalibreEspecieRequestDto
+            {
+                CodigoEmpresa = codEmpresa,
+                CodigoEspecie = codEspecie,
+                CodigoTemporada = codTemporada,
+                IdCalibre = calibreId
+            };
+
+            var data = await _service.GetDistribucionCalibreAsync(req);
             return Ok(data);
         }
     }
