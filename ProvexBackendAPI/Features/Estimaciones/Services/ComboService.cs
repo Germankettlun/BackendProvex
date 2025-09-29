@@ -18,7 +18,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             if (req is null) throw new ArgumentNullException(nameof(req));
 
             req.CodigoEmpresa = Guard.RequireAndUpper(req.CodigoEmpresa, nameof(req.CodigoEmpresa));
-            req.CodigoEspecie = Guard.RequireAndUpper(req.CodigoEspecie, nameof(req.CodigoEspecie));
+            req.NombreCombo = Guard.RequireAndUpper(req.NombreCombo, nameof(req.NombreCombo));
            
 
             var rows = await _comboRepository.LlenaComboGenericoAsync(req);

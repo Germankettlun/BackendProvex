@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie
 {
-    public class DistribucionCategoriaEspecieDto
+    public class DistribucionesDto
     {
 
         public class DistribucionCategoriaEspecieRequestDto
@@ -133,10 +133,25 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public int Anio { get; set; }                                       // BISEMANALANIO
         public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
         public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
-        public string IdDistribucionPacking { get; set; } = string.Empty;   // IDDISTRUBUCIONPACKING (typo) / IDDISTRIBUCIONPACKING
+        public string IdDistribucionPacking { get; set; } = string.Empty;   // IDDISTRIBUCIONPACKING
         public string IdPacking { get; set; } = string.Empty;               // IDPACKING
         public int Porcentaje { get; set; }                             // PORCENTAJE
         public string PackingNombre { get; set; } = string.Empty;           // PACKING
+        public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
+    }
+
+    public class DistribucionFrigorificoDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;            // IDESTIMACION
+        public string IdEspecie { get; set; } = string.Empty;               // IDESPECIE
+        public string IdEstimacionBisemanal { get; set; } = string.Empty;   // IDESTIMACIONBISEMANAL
+        public int Anio { get; set; }                                       // BISEMANALANIO
+        public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
+        public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
+        public string IdDistribucionFrigorifico { get; set; } = string.Empty;   // IDDISTRUBUCIONFRIGORIFICO
+        public string IdFrigorifico { get; set; } = string.Empty;               // IDFRIGORIFICO
+        public int Porcentaje { get; set; }                             // PORCENTAJE
+        public string FrigorificoNombre { get; set; } = string.Empty;           // FRIGORIFICO
         public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
     }
 
