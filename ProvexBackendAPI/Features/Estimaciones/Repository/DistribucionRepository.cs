@@ -86,5 +86,47 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             return list;
         }
+
+        public async Task<List<DistribucionPackingDto>> GetRowsDistribucionPackingAsync(DistribucionPackingQueryDto q)
+        {
+            var list = new List<DistribucionPackingDto>();
+
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_BISEMANAL_PACKING_SEMANAANO", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa });
+            cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie });
+            cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada });
+            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = q.Anio});
+            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar,10) { Value = q.Semana });
+
+            await using var rdr = await cmd.ExecuteReaderAsync();
+
+            while (await rdr.ReadAsync())
+            {
+                list.Add(new DistribucionPackingDto
+                {
+                    IdEstimacion = rdr.Get<string?>("IDESTIMACION") ?? "",
+                    IdEspecie = rdr.Get<string?>("IDESPECIE") ?? "",
+                    IdEstimacionBisemanal = rdr.Get<string?>("IDESTIMACIONBISEMANAL") ?? "",
+                    Anio = rdr.Get<int?>("BISEMANALANIO") ?? 0,
+                    Semana = rdr.Get<string?>("BISEMANALSEMANA") ?? "",
+                    TotalCajasBisemanal = rdr.Get<int?>("TOTALCAJASBISEMANAL") ?? 0,
+                    // tolerante al typo
+                    IdDistribucionPacking = rdr.FirstExistingAsString("IDDISTRUBUCIONPACKING", "IDDISTRIBUCIONPACKING"),
+                    IdPacking = rdr.Get<string?>("IDPACKING") ?? "",
+                    Porcentaje = rdr.Get<int?>("PORCENTAJE") ?? 0,
+                    PackingNombre = rdr.FirstExistingAsString("PACKING"),
+                    SumaPorcentajeEs100 = rdr.Get<bool?>("SumaPorcentajeEs100") ?? false
+                });
+            }
+
+            return list;
+        }
     }
 }

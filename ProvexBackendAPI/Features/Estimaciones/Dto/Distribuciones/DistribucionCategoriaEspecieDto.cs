@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Serialization;
+﻿using ProvexBackendAPI.Helpers.Validation;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie
 {
@@ -101,6 +103,41 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
         [JsonPropertyName("actual")]
         public bool EsSemanaActual { get; set; }
+    }
+
+    public class DistribucionPackingQueryDto
+    {
+        [Required]
+        public string CodigoEmpresa { get; set; } = default!;     // @CODIGOEMPRESA
+
+        [Required]
+        public string CodigoEspecie { get; set; } = default!;     // @CODIGOESPECIE
+
+        [Required]
+        public string CodigoTemporada { get; set; } = default!;   // @CODIGOTEMPORADA
+
+        [Range(2000, 2100)]
+        public int Anio { get; set; }                              // @ANIO
+
+        [Required]
+        [WeekIsoString(ErrorMessage = "Semana inválida. Usa '01' a '53'.")]
+        public string Semana { get; set; } = default!;          // @SEMANA (varchar en BD)
+
+    }
+
+    public class DistribucionPackingDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;            // IDESTIMACION
+        public string IdEspecie { get; set; } = string.Empty;               // IDESPECIE
+        public string IdEstimacionBisemanal { get; set; } = string.Empty;   // IDESTIMACIONBISEMANAL
+        public int Anio { get; set; }                                       // BISEMANALANIO
+        public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
+        public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
+        public string IdDistribucionPacking { get; set; } = string.Empty;   // IDDISTRUBUCIONPACKING (typo) / IDDISTRIBUCIONPACKING
+        public string IdPacking { get; set; } = string.Empty;               // IDPACKING
+        public int Porcentaje { get; set; }                             // PORCENTAJE
+        public string PackingNombre { get; set; } = string.Empty;           // PACKING
+        public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
     }
 
 }

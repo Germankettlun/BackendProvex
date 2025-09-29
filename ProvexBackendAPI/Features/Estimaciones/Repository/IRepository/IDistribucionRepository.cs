@@ -16,5 +16,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
       string codigoEspecie,
       string codigoTemporada,
       string? idCalibre);
+
+     Task<List<DistribucionPackingDto>> GetRowsDistribucionPackingAsync(DistribucionPackingQueryDto q);
     }
 }
