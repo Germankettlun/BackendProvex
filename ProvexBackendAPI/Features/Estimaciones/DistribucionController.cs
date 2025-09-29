@@ -12,7 +12,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
     [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]
     [ApiVersionNeutral]
-    [Authorize]
+    //[Authorize]
     public class DistribucionController : ControllerBase
     {
         private readonly IDistribucionService _service;

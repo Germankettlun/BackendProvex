@@ -15,7 +15,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
     // [ApiVersion("1.0")]
     // [ApiVersion("2.0")]
     [ApiVersionNeutral]
-    [Authorize]
+    //[Authorize]
     public class ComboController : ControllerBase
     {
         private readonly IComboService _comboService;
