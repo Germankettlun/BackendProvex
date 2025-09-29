@@ -18,5 +18,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
       string? idCalibre);
 
      Task<List<DistribucionPackingDto>> GetRowsDistribucionPackingAsync(DistribucionPackingQueryDto q);
+
+     Task<List<DistribucionFrigorificoDto>> GetRowsDistribucionFrigorificoAsync(DistribucionPackingQueryDto q);
     }
 }

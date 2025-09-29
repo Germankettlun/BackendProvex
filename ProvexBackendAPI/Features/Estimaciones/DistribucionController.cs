@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCategoriaEspecieDto;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones
 {
@@ -95,6 +95,20 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
            
             var data = await _service.GetDistribucionPackingAsync(q);
+            return Ok(data);
+        }
+
+        // GET api/v{version}/distribucion/frigorifico
+        [HttpGet("frigorifico", Name = "GetDistribucionFrigorifico")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetFrigorifico(
+            [FromQuery] DistribucionPackingQueryDto q
+    )
+        {
+
+            var data = await _service.GetDistribucionFrigorificoAsync(q);
             return Ok(data);
         }
     }
