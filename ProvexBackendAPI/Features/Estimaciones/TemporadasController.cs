@@ -12,7 +12,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
     [ApiController]
     [Route("api/v{version:apiVersion}/temporadas")]
     [ApiVersionNeutral]
-    [Authorize]
+    //[Authorize]
 
     public class TemporadasController : ControllerBase
     {

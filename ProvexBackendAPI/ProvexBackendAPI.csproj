@@ -31,7 +31,6 @@
 
   <ItemGroup>
     <Folder Include="Models\Dto\" />
-    <Folder Include="Services\Estimaciones\" />
   </ItemGroup>
 
 </Project>
