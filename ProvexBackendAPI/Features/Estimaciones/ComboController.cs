@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
+using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
@@ -29,11 +30,9 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(typeof(List<ComboItemDto>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<List<ComboItemDto>>> GetCombo(
-            [FromQuery] string nombreCombo,
-            [FromQuery] string codigoEmpresa)
+        public async Task<ActionResult<List<ComboItemDto>>> GetCombo([FromQuery] ComboRequest q)
         {
-            var data = await _comboService.GetComboGenericoAsync(nombreCombo, codigoEmpresa);
+            var data = await _comboService.GetComboGenericoAsync(q);
             return Ok(data);
         }
 

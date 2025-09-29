@@ -1,6 +1,8 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Helpers.Validation;
+using System.ComponentModel.DataAnnotations;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCategoriaEspecieDto;
 
@@ -88,6 +90,30 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
                 .ToList();
 
             return grouped;
+        }
+
+        public async Task<List<DistribucionPackingDto>> GetDistribucionPackingAsync(
+         DistribucionPackingQueryDto req)
+        {
+            if (req is null) throw new ArgumentNullException(nameof(req));
+
+           req.CodigoEmpresa = Guard.RequireAndUpper(req.CodigoEmpresa, nameof(req.CodigoEmpresa));
+            req.CodigoEspecie = Guard.RequireAndUpper(req.CodigoEspecie, nameof(req.CodigoEspecie));
+            req.CodigoTemporada = Guard.RequireAndUpper(req.CodigoTemporada, nameof(req.CodigoTemporada));
+
+            if (req.Anio < 2000 || req.Anio > 2100)
+                throw new ValidationException("Año fuera de rango");
+
+           
+            req.Semana = (req.Semana ?? string.Empty).Trim(); 
+            var weekAttr = new WeekIsoStringAttribute();
+            var result = weekAttr.GetValidationResult(
+                req.Semana,
+                new ValidationContext(req) { MemberName = nameof(req.Semana) }
+            );
+            if (result != ValidationResult.Success)
+                throw new ValidationException(result!.ErrorMessage!);
+            return await _repo.GetRowsDistribucionPackingAsync(req);
         }
     }
 }

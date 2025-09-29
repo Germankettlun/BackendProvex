@@ -1,6 +1,7 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Helpers.Validation;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services
 {
@@ -12,14 +13,15 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
         {
             _comboRepository = comboRepository;
         }
-        public async Task<List<ComboItemDto>> GetComboGenericoAsync(string nombreCombo, string codigoEmpresa)
+        public async Task<List<ComboItemDto>> GetComboGenericoAsync(ComboRequest req)
         {
-            if (string.IsNullOrWhiteSpace(nombreCombo))
-                throw new ArgumentException("El nombre del combo es requerido.", nameof(nombreCombo));
-            if (string.IsNullOrWhiteSpace(codigoEmpresa))
-                throw new ArgumentException("El codigo de empresa es requerido.", nameof(codigoEmpresa));
+            if (req is null) throw new ArgumentNullException(nameof(req));
 
-            var rows = await _comboRepository.LlenaComboGenericoAsync(nombreCombo,codigoEmpresa);
+            req.CodigoEmpresa = Guard.RequireAndUpper(req.CodigoEmpresa, nameof(req.CodigoEmpresa));
+            req.CodigoEspecie = Guard.RequireAndUpper(req.CodigoEspecie, nameof(req.CodigoEspecie));
+           
+
+            var rows = await _comboRepository.LlenaComboGenericoAsync(req);
 
             var list = new List<ComboItemDto>(rows.Count);
             foreach (var r in rows)

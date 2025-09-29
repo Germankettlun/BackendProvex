@@ -1,8 +1,9 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Data.Sql.Estimaciones;
+using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
-using System.Data;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
+using System.Data;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
@@ -14,7 +15,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = config.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<List<ComboItem>> LlenaComboGenericoAsync(string nombreCombo, string codigoEmpresa)
+        public async Task<List<ComboItem>> LlenaComboGenericoAsync(ComboRequest req)
         {
             var list = new List<ComboItem>();
 
@@ -28,9 +29,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             };
 
             
-            cmd.Parameters.Add(new SqlParameter("@NombreCombo", SqlDbType.NVarChar, 50) { Value = nombreCombo });
-            cmd.Parameters.Add(new SqlParameter("@CodigoEmpresa ", SqlDbType.VarChar, 50) { Value = codigoEmpresa });
-            
+            cmd.Parameters.Add(new SqlParameter("@NombreCombo", SqlDbType.NVarChar, 50) { Value = req.NombreCombo });
+            cmd.Parameters.Add(new SqlParameter("@CodigoEmpresa ", SqlDbType.VarChar, 50) { Value = req.CodigoEmpresa });
+            cmd.Parameters.Add(new SqlParameter("@CodigoEspecie", SqlDbType.NVarChar, 50) { Value = (object?)req.CodigoEspecie ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@CodigoGrupoProductor ", SqlDbType.VarChar, 50) { Value = (object?)req.CodigoGrupoProductor ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@CodigoProductor", SqlDbType.NVarChar, 50) { Value = (object?)req.CodigoProductor ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@CodigoVariedad ", SqlDbType.VarChar, 50) { Value = (object?)req.CodigoVariedad ?? DBNull.Value });
+
 
             await using var rdr = await cmd.ExecuteReaderAsync();
 

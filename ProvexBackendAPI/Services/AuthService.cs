@@ -7,7 +7,9 @@ using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto.Authentication;
 using ProvexBackendAPI.Helpers.Mapping;
 using ProvexBackendAPI.Services.IServices;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Authentication;
 using System.Security.Claims;
 using System.Text;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
@@ -37,52 +39,34 @@ namespace ProvexBackendAPI.Services
         }
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
         {
+
+            if (loginDto is null) throw new ArgumentNullException(nameof(loginDto));
+
             if (string.IsNullOrWhiteSpace(loginDto.Username))
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null
-                };
-            }
+                throw new ValidationException("El username es requerido.");
 
             if (string.IsNullOrWhiteSpace(loginDto.Password))
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null
-                };
-            }
+                throw new ValidationException("El password es requerido.");
 
             var input = loginDto.Username.Trim();
             ApplicationUser? user = input.Contains('@')
                 ? await _userManager.FindByEmailAsync(input)
                 : await _userManager.FindByNameAsync(input);
 
-            if (user == null)
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null
-                };
-            }
+            if(user is null)
+            throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
             // Verificar contraseña ( Identity )
-            var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: false);
+            var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
+
+            if (check.IsLockedOut)
+                throw new UnauthorizedAccessException("locked_out");
+            if (check.IsNotAllowed)
+                throw new UnauthorizedAccessException("not_allowed");
+            if (check.RequiresTwoFactor)
+                throw new UnauthorizedAccessException("requires_2fa");
             if (!check.Succeeded)
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null
-                };
-            }
+                throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
             var token = await _tokenService.GenerateAsync(
             user,
