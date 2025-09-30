@@ -43,6 +43,7 @@ builder.Services.AddScoped<IComboRepository, ComboRepository>();
 builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
 
 builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
+builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>();
 
 
 
@@ -62,6 +63,7 @@ builder.Services.AddScoped(
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
+builder.Services.AddScoped<IEstimacionesService, EstimacionesService>();
 
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
