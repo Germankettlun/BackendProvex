@@ -14,7 +14,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
         {
             _EstimacionesRepository = EstimacionesRepository;
         }
-        public async Task<EstimacionesDto.EstimacionDistribucionDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
+        public async Task<EstimacionDistribucionPorProductorDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
         {
             if (req is null) throw new ArgumentNullException(nameof(req));
 

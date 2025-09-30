@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using static ProvexBackendAPI.Dto.Users.UsersDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones
 {
@@ -20,7 +21,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         //    // GET api/v{version}/estimacion/GetEstimacionBisemanal
         [HttpGet("GetEstimacionBisemanal", Name = "GetEstimacionBisemanal")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<EstimacionDistribucionPorProductorDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetEstimacionBisemanal(

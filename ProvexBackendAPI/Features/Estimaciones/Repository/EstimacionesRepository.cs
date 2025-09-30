@@ -16,7 +16,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<EstimacionesDto.EstimacionDistribucionDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
+        public async Task<EstimacionDistribucionPorProductorDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
         {
             
             var flat = new List<RowFlat>();
@@ -90,67 +90,71 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 });
             }
 
-            // Sin filas → objeto vacío (como sueles hacer)
+
             if (flat.Count == 0)
-                return new EstimacionDistribucionDto { IdEstimacion = "", Semanas = new() };
+                return new EstimacionDistribucionPorProductorDto { IdEstimacion = "", Productores = new() };
 
             var idEstimacion = flat.FirstOrDefault(x => !string.IsNullOrEmpty(x.IdEstimacion))?.IdEstimacion ?? "";
 
-            // Construir el objeto final (agrupado: semana → productor → (especie,variedad))
-            var result = new EstimacionDistribucionDto
+            var result = new EstimacionDistribucionPorProductorDto
             {
                 IdEstimacion = idEstimacion,
-                Semanas = new()
+                Predeterminado = null,
+                Productores = new()
             };
 
-            var semanasGroup = flat
-                .GroupBy(x => new { x.IdEstimacionBisemanal, x.Anio, x.SemanaNro })
-                .OrderBy(g => g.Key.Anio).ThenBy(g => g.Key.SemanaNro);
+            var productoresGroup = flat.GroupBy(x => x.IdProductor);
 
-            foreach (var g in semanasGroup)
+            foreach (var pg in productoresGroup)
             {
-                var semanaKey = $"{g.Key.IdEstimacionBisemanal}-{g.Key.Anio}-{g.Key.SemanaNro}";
-
-                var semanaDto = new SemanaDto
+                var productorDto = new ProductorSemanasDto
                 {
-                    Indice = new IndiceDto
-                    {
-                        IdEstimacionBisemanal = g.Key.IdEstimacionBisemanal,
-                        Anio = g.Key.Anio,
-                        Semana = g.Key.SemanaNro
-                    },
-                    TotalesSemana = new TotalesSemanaDto
-                    {
-                        CajasEstimadasSinPorc = g.Sum(i => i.CajasEstimadasSinPorc),
-                        CajasEstimadasConPorc = g.Sum(i => i.CajasEstimadasConPorc),
-                        CajasDistribSinPorc = g.Sum(i => i.CajasDistribSinPorc),
-                        CajasDistribConPorc = g.Sum(i => i.CajasDistribConPorc),
-                        CajasP = g.Sum(i => i.CajasP)
-                    },
-                    // Historial repetido → a nivel semana (primer no nulo por campo)
-                    Historial = new HistorialDto
-                    {
-                        CajasPAnterior = FirstNN(g.Select(x => x.CajasPAnterior)),
-                        CajasEAnteriorSinPorc = FirstNN(g.Select(x => x.CajasEAnteriorSinPorc)),
-                        CajasEAnteriorConPorc = FirstNN(g.Select(x => x.CajasEAnteriorConPorc)),
-                        CajasPSiguienteSinPorc = FirstNN(g.Select(x => x.CajasPSiguienteSinPorc)),
-                        CajasESiguienteSinPorc = FirstNN(g.Select(x => x.CajasESiguienteSinPorc)),
-                        CajasESiguienteConPorc = FirstNN(g.Select(x => x.CajasESiguienteConPorc))
-                    },
-                    Productores = new()
+                    Nombre = pg.First().NomProd,
+                    Semanas = new Dictionary<string, SemanaPorProductorDto>()
                 };
 
-                foreach (var pg in g.GroupBy(x => x.IdProductor))
+                // semanas de ESTE productor
+                var semanasGroup = pg.GroupBy(x => new { x.IdEstimacionBisemanal, x.Anio, x.SemanaNro })
+                                     .OrderBy(g => g.Key.Anio).ThenBy(g => g.Key.SemanaNro);
+
+                foreach (var wg in semanasGroup)
                 {
-                    var productorDto = new ProductorDto
+                    var semanaKey = $"{wg.Key.IdEstimacionBisemanal}-{wg.Key.Anio}-{wg.Key.SemanaNro}";
+
+                    var semanaDto = new SemanaPorProductorDto
                     {
-                        Nombre = pg.First().NomProd,
+                        Indice = new IndiceDto
+                        {
+                            IdEstimacionBisemanal = wg.Key.IdEstimacionBisemanal,
+                            Anio = wg.Key.Anio,
+                            Semana = wg.Key.SemanaNro
+                        },
+                        // Totales de la semana PARA ESTE PRODUCTOR
+                        TotalesSemana = new TotalesSemanaDto
+                        {
+                            CajasEstimadasSinPorc = wg.Sum(i => i.CajasEstimadasSinPorc),
+                            CajasEstimadasConPorc = wg.Sum(i => i.CajasEstimadasConPorc),
+                            CajasDistribSinPorc = wg.Sum(i => i.CajasDistribSinPorc),
+                            CajasDistribConPorc = wg.Sum(i => i.CajasDistribConPorc),
+                            CajasP = wg.Sum(i => i.CajasP)
+                        },
+                        // Historial a nivel semana (para este productor; si es global, igual se repetirá)
+                        Historial = new HistorialDto
+                        {
+                            CajasPAnterior = FirstNN(wg.Select(x => x.CajasPAnterior)),
+                            CajasEAnteriorSinPorc = FirstNN(wg.Select(x => x.CajasEAnteriorSinPorc)),
+                            CajasEAnteriorConPorc = FirstNN(wg.Select(x => x.CajasEAnteriorConPorc)),
+                            CajasPSiguienteSinPorc = FirstNN(wg.Select(x => x.CajasPSiguienteSinPorc)),
+                            CajasESiguienteSinPorc = FirstNN(wg.Select(x => x.CajasESiguienteSinPorc)),
+                            CajasESiguienteConPorc = FirstNN(wg.Select(x => x.CajasESiguienteConPorc))
+                        },
                         Items = new List<ItemDto>()
                     };
 
-                    foreach (var ig in pg.GroupBy(v => new { v.NomEsp, v.NomVar }))
+                    // items: (especie, variedad) dentro de la semana del productor
+                    foreach (var ig in wg.GroupBy(v => new { v.NomEsp, v.NomVar }))
                     {
-                        productorDto.Items.Add(new ItemDto
+                        semanaDto.Items.Add(new ItemDto
                         {
                             Especie = ig.Key.NomEsp,
                             Variedad = ig.Key.NomVar,
@@ -172,10 +176,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                         });
                     }
 
-                    semanaDto.Productores[pg.Key] = productorDto;
+                    productorDto.Semanas[semanaKey] = semanaDto;
                 }
 
-                result.Semanas[semanaKey] = semanaDto;
+                result.Productores[pg.Key] = productorDto;
             }
 
             return result;

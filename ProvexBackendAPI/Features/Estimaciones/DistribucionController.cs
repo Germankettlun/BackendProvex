@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
+using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
@@ -24,7 +25,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/categoria
         [HttpGet("categoria", Name = "GetDistribucionCategoria")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<DistribucionCategoriaEspecieResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetCategoria(
@@ -55,7 +56,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/calibre
         [HttpGet("calibre", Name = "GetDistribucionCalibre")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<DistribucionCalibreEspecieResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetCalibre(
@@ -86,7 +87,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/packing
         [HttpGet("packing", Name = "GetDistribucionPacking")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<DistribucionPackingDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetPacking(
@@ -100,7 +101,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/frigorifico
         [HttpGet("frigorifico", Name = "GetDistribucionFrigorifico")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<DistribucionFrigorificoDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetFrigorifico(
