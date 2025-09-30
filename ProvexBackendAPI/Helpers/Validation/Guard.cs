@@ -12,11 +12,21 @@ namespace ProvexBackendAPI.Helpers.Validation
             return v.ToUpperInvariant();
         }
 
-        public static string Require(string paramName, string? value)
+        public static T Require<T>(string paramName, T? value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException($"El {paramName} es requerido.", paramName);
-            return value.Trim();
+            if (value is null)
+                throw new ArgumentNullException(paramName, $"{paramName} es requerido.");
+
+            if (value is string s)
+            {
+                var trimmed = s.Trim();
+                if (trimmed.Length == 0)
+                    throw new ArgumentException($"{paramName} es requerido.", paramName);
+                // devolvemos el string ya normalizado
+                return (T)(object)trimmed;
+            }
+
+            return value;
         }
 
         public static string? TrimToNull(string? value)
