@@ -1,5 +1,6 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
 using System.Text.Json.Serialization;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
 {
@@ -131,5 +132,26 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public int? CajasESiguienteConPorc { get; set; }
         }
     }
+
+    public sealed class EstimacionDistribucionPorProductorDto
+    {
+        public string IdEstimacion { get; set; } = "";
+        public int? Predeterminado { get; set; }
+        public Dictionary<string, ProductorSemanasDto> Productores { get; set; } = new();
     }
+
+    public sealed class ProductorSemanasDto
+    {
+        public string Nombre { get; set; } = "";
+        public Dictionary<string, SemanaPorProductorDto> Semanas { get; set; } = new();
+    }
+
+    public sealed class SemanaPorProductorDto
+    {
+        public IndiceDto Indice { get; set; } = new();
+        public TotalesSemanaDto TotalesSemana { get; set; } = new();
+        public HistorialDto? Historial { get; set; }
+        public List<ItemDto> Items { get; set; } = new();
+    }
+}
 
