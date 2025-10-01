@@ -153,5 +153,34 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
         public HistorialDto? Historial { get; set; }
         public List<ItemDto> Items { get; set; } = new();
     }
+
+    public class EstimacionSemanalDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public int? Contratado { get; set; }
+        public string? IdEnvaseCosecha { get; set; }
+
+        public TotalesEstimacionDto Totales { get; set; } = new();
+        public List<SemanaEstimacionDto> Semanas { get; set; } = new();
+    }
+
+    public class TotalesEstimacionDto
+    {
+        public int? EstimadoSinPorcentaje { get; set; }   // TOTAL_E_SIN_PORC
+        public int? EstimadoConPorcentaje { get; set; }   // TOTAL_E_CON_PORC
+        public int? Proyectado { get; set; }              // TOTAL_P
+        public int? DiferenciaEstimadoConProyectado { get; set; } // DIF_E_CON_P
+    }
+
+    public class SemanaEstimacionDto
+    {
+        public int? Pos { get; set; }                    // POS
+
+        public int Anio { get; set; }
+        public string? SemanaNumero { get; set; }        // SEMANA_NRO
+        public int? EstimadoSinPorcentaje { get; set; } // E_SIN_PORC
+        public int? EstimadoConPorcentaje { get; set; } // E_CON_PORC
+        public int? PorcentajeSemana { get; set; }      // P_SEMANA
+    }
 }
 

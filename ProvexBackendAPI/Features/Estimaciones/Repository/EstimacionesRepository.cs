@@ -188,6 +188,85 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         //Helpers
         private static int? FirstNN(IEnumerable<int?> seq) => seq.FirstOrDefault(v => v.HasValue);
 
+        public async Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion)
+        {
+            var dict = new Dictionary<string, EstimacionSemanalDto>(StringComparer.OrdinalIgnoreCase);
+
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("Estimaciones.usp_UI_Estimacion_ResumenSemanal", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+           
+            cmd.Parameters.Add(new SqlParameter("@COD_EMPRESA", SqlDbType.NVarChar, 20) { Value = codigoEmpresa.Trim().ToUpperInvariant() });
+            cmd.Parameters.Add(new SqlParameter("@ID_TEMPORADA", SqlDbType.NVarChar, 20) { Value = idTemporada.Trim().ToUpperInvariant() });
+            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
+
+            try
+            {
+                await using var rdr = await cmd.ExecuteReaderAsync();
+
+                while (await rdr.ReadAsync())
+                {
+                    // ----- NIVEL ESTIMACIÓN (se repite por fila) -----
+                    var idEstim = rdr.Get<string?>("ID_ESTIMACION") ?? string.Empty;
+
+                    if (!dict.TryGetValue(idEstim, out var estim))
+                    {
+                        estim = new EstimacionSemanalDto
+                        {
+                            IdEstimacion = idEstim,                           
+                            Contratado = rdr.Get<int?>("CONTRATADO") ?? 0,
+                            IdEnvaseCosecha = rdr.Get<string?>("ID_ENVASE_COSECHA"),
+
+                            Totales = new TotalesEstimacionDto
+                            {
+                                EstimadoSinPorcentaje = rdr.Get<int?>("TOTAL_E_SIN_PORC"),
+                                EstimadoConPorcentaje = rdr.Get<int?>("TOTAL_E_CON_PORC"),
+                                Proyectado = rdr.Get<int?>("TOTAL_P"),
+                                DiferenciaEstimadoConProyectado = rdr.Get<int?>("DIF_E_CON_P")
+                            },
+
+                            Semanas = new List<SemanaEstimacionDto>()
+                        };
+
+                        dict[idEstim] = estim;
+                    }
+
+                    // ----- NIVEL SEMANA (varía por fila) -----
+                    var semana = new SemanaEstimacionDto
+                    {
+                        Pos = rdr.Get<int?>("POS"),
+                        Anio = rdr.Get<int?>("ANIO") ?? 0,
+                        SemanaNumero = rdr.Get<string?>("SEMANA_NRO"),
+                        EstimadoSinPorcentaje = rdr.Get<int?>("E_SIN_PORC"),
+                        EstimadoConPorcentaje = rdr.Get<int?>("E_CON_PORC"),
+                        PorcentajeSemana = rdr.Get<int?>("P_SEMANA")
+                    };
+
+                    estim.Semanas.Add(semana);
+                }
+            }
+            catch (Exception ex)
+            {
+               
+            }
+
+            // Orden opcional de semanas
+            foreach (var e in dict.Values)
+            {
+                e.Semanas = e.Semanas
+                    .OrderBy(s => s.Pos ?? int.MaxValue)
+                    .ThenBy(s => s.SemanaNumero)
+                    .ToList();
+            }
+
+            return dict.Values.ToList();
+        }
+
         private sealed class RowFlat
         {
             public string IdEstimacion { get; set; } = "";
