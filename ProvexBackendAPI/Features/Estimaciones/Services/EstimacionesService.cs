@@ -1,8 +1,10 @@
-﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
+﻿using Microsoft.Data.SqlClient;
+using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Helpers.Validation;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services
 {
@@ -43,6 +45,20 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
             
             return result;
+        }
+
+        public async Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion)
+        {
+            codigoEmpresa = Guard.RequireAndUpper(codigoEmpresa, nameof(codigoEmpresa));
+            idTemporada = Guard.RequireAndUpper(idTemporada, nameof(idTemporada));
+            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
+
+            if (idEstimacion <= 0)
+                throw new ArgumentException("El id de estimación debe ser mayor a 0", nameof(idEstimacion));
+
+            return await _EstimacionesRepository.GetResumenSemanalAsync(codigoEmpresa, idTemporada, idEstimacion);
+
+
         }
     }
 }
