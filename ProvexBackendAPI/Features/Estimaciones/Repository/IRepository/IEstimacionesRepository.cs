@@ -5,8 +5,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 {
     public interface IEstimacionesRepository
     {
-        Task<EstimacionDistribucionPorProductorDto> GetEstimacionBisemanalAsync(
-            EstimacionBisemanalQueryDto req);
+        Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(EstimacionBisemanalQueryDto q);
 
         Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion);
     }
