@@ -16,10 +16,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<EstimacionDistribucionPorProductorDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
+        public async Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(EstimacionBisemanalQueryDto req)
         {
-            
-            var flat = new List<RowFlat>();
+
+            var rows = new List<RowFlat>();
 
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
@@ -42,151 +42,57 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             cmd.Parameters.Add(new SqlParameter("@WEEKS_PER_PAGE", SqlDbType.Int) { Value = req.WeeksPerPage });
 
             await using var rdr = await cmd.ExecuteReaderAsync();
-
             while (await rdr.ReadAsync())
             {
-                // Fallback por si el SP a veces devuelve coma decimal como string
-                decimal SafeDec(string col)
+               
+                rows.Add(new RowFlat
                 {
-                    var d = rdr.Get<decimal?>(col);
-                    if (d.HasValue) return d.Value;
-                    var s = rdr.Get<string?>(col);
-                    if (!string.IsNullOrWhiteSpace(s) &&
-                        decimal.TryParse(s.Replace(',', '.'),
-                            NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
-                        return parsed;
-                    return 0m;
-                }
+                    // Raíz
+                    PesoBaseEspecie = rdr.Get<double?>("PESO_BASE_ESPECIE") ?? 0.0, //Falta
+                    Especie = rdr.FirstExistingAsString("NOM_ESP"),
 
-                flat.Add(new RowFlat
-                {
-                    IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
-                    IdEstimacionBisemanal = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL") ?? 0,
-                    Anio = rdr.Get<int?>("ANIO") ?? 0,
-                    SemanaNro = rdr.Get<int?>("SEMANA_NRO") ?? 0,
+                    // Item
+                    IdProductor = rdr.FirstExistingAsString("ID_PRODUCTOR"),
+                    Productor = rdr.FirstExistingAsString("NOM_PROD"),
+                    Variedad = rdr.FirstExistingAsString("NOM_VAR"),
+                    Agronomo = rdr.FirstExistingAsString("AGRONOMO") ?? "", //Falta
+                    DistribucionCalibre = rdr.Get<bool?>("DIST_CAL"),
+                    DistribucionCategoria = rdr.Get<bool?>("DIST_CAT"),
 
-                    IdProductor = rdr.Get<string?>("ID_PRODUCTOR") ?? "",
-                    NomProd = rdr.Get<string?>("NOM_PROD") ?? "",
-                    NomEsp = rdr.Get<string?>("NOM_ESP") ?? "",
-                    NomVar = rdr.Get<string?>("NOM_VAR") ?? "",
+                    // Envase
+                    EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "", //Falta
+                    EnvaseNombre = rdr.FirstExistingAsString("ENVASE_NOMBRE") ?? "", //Falta
+                    EnvaseKilo = rdr.Get<int?>("ENVASE_KILO") ?? 0, //Falta
 
-                    CajasEstimadasSinPorc = rdr.Get<int?>("CAJAS_ESTIMADAS_SIN_PORC") ?? 0,
-                    CajasEstimadasConPorc = rdr.Get<int?>("CAJAS_ESTIMADAS_CON_PORC") ?? 0,
-                    CajasDistribSinPorc = rdr.Get<int?>("CAJAS_E_DISTRIB_SIN_PORC") ?? 0,
-                    CajasDistribConPorc = SafeDec("CAJAS_E_DISTRIB_CON_PORC"),
-                    CajasP = rdr.Get<int?>("CAJAS_P") ?? 0,
+                    // Estimación + semanas
+                    Est_ID = rdr.Get<int?>("ID_ESTIMACION"),
+                    Est_Contratado = rdr.Get<int?>("EST_CONTRATADO") ?? 0, //Falta
+                    Est_FCosecha = rdr.FirstExistingAsString("SEMANA_INICIO_COSECHA") ?? "", //Falta Fecha Inicio Cosecha
 
-                    DistCat = (rdr.Get<int?>("DIST_CAT") ?? 0) == 1,
-                    DistCal = (rdr.Get<int?>("DIST_CAL") ?? 0) == 1,
-                    DistPack = (rdr.Get<int?>("DIST_PACK") ?? 0) == 1,
-                    DistFri = (rdr.Get<int?>("DIST_FRI") ?? 0) == 1,
+                    Ant_Estimado = rdr.Get<int?>("CAJAS_E_ANTERIOR_SIN_PORC"),
+                    Ant_Producido = rdr.Get<int?>("CAJAS_P_ANTERIOR"),
+                    Sig_Estimado = rdr.Get<int?>("CAJAS_E_SIGUIENTE_SIN_PORC"),
+                    Sig_Producido = rdr.Get<int?>("CAJAS_P_SIGUIENTE_SIN_PORC"),
 
-                    CajasPAnterior = rdr.Get<int?>("CAJAS_P_ANTERIOR"),
-                    CajasEAnteriorSinPorc = rdr.Get<int?>("CAJAS_E_ANTERIOR_SIN_PORC"),
-                    CajasEAnteriorConPorc = rdr.Get<int?>("CAJAS_E_ANTERIOR_CON_PORC"),
-                    CajasPSiguienteSinPorc = rdr.Get<int?>("CAJAS_P_SIGUIENTE_SIN_PORC"),
-                    CajasESiguienteSinPorc = rdr.Get<int?>("CAJAS_E_SIGUIENTE_SIN_PORC"),
-                    CajasESiguienteConPorc = rdr.Get<int?>("CAJAS_E_SIGUIENTE_CON_PORC")
+                    // Bisemanal
+                    Bis_ID = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL"),
+                    Bis_AnioBase = rdr.Get<int?>("ANIO"),
+                    Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),
+                    Bis_DistFrio = rdr.Get<int?>("DIST_FRI"),
+                    Bis_DistPacking = rdr.Get<int?>("DIST_PACK"),
+                    Bis_PorcExport = rdr.Get<int?>("BIS_PORC_EXPORT") ?? 0, //FALTA
+
+                    // Días
+                    Dia_Nombre = rdr.FirstExistingAsString("NOMBRE_DIA"),
+                    Dia_Fecha = rdr.Get<DateTime?>("DIA"),
+                    Dia_Estimado = rdr.Get<decimal?>("CAJAS_ESTIMADAS_SIN_PORC"),
+                    Dia_Producido = rdr.Get<decimal?>("CAJAS_P")
                 });
             }
 
-
-            if (flat.Count == 0)
-                return new EstimacionDistribucionPorProductorDto { IdEstimacion = "", Productores = new() };
-
-            var idEstimacion = flat.FirstOrDefault(x => !string.IsNullOrEmpty(x.IdEstimacion))?.IdEstimacion ?? "";
-
-            var result = new EstimacionDistribucionPorProductorDto
-            {
-                IdEstimacion = idEstimacion,
-                Predeterminado = null,
-                Productores = new()
-            };
-
-            var productoresGroup = flat.GroupBy(x => x.IdProductor);
-
-            foreach (var pg in productoresGroup)
-            {
-                var productorDto = new ProductorSemanasDto
-                {
-                    Nombre = pg.First().NomProd,
-                    Semanas = new Dictionary<string, SemanaPorProductorDto>()
-                };
-
-                // semanas de ESTE productor
-                var semanasGroup = pg.GroupBy(x => new { x.IdEstimacionBisemanal, x.Anio, x.SemanaNro })
-                                     .OrderBy(g => g.Key.Anio).ThenBy(g => g.Key.SemanaNro);
-
-                foreach (var wg in semanasGroup)
-                {
-                    var semanaKey = $"{wg.Key.IdEstimacionBisemanal}-{wg.Key.Anio}-{wg.Key.SemanaNro}";
-
-                    var semanaDto = new SemanaPorProductorDto
-                    {
-                        Indice = new IndiceDto
-                        {
-                            IdEstimacionBisemanal = wg.Key.IdEstimacionBisemanal,
-                            Anio = wg.Key.Anio,
-                            Semana = wg.Key.SemanaNro
-                        },
-                        // Totales de la semana PARA ESTE PRODUCTOR
-                        TotalesSemana = new TotalesSemanaDto
-                        {
-                            CajasEstimadasSinPorc = wg.Sum(i => i.CajasEstimadasSinPorc),
-                            CajasEstimadasConPorc = wg.Sum(i => i.CajasEstimadasConPorc),
-                            CajasDistribSinPorc = wg.Sum(i => i.CajasDistribSinPorc),
-                            CajasDistribConPorc = wg.Sum(i => i.CajasDistribConPorc),
-                            CajasP = wg.Sum(i => i.CajasP)
-                        },
-                        // Historial a nivel semana (para este productor; si es global, igual se repetirá)
-                        Historial = new HistorialDto
-                        {
-                            CajasPAnterior = FirstNN(wg.Select(x => x.CajasPAnterior)),
-                            CajasEAnteriorSinPorc = FirstNN(wg.Select(x => x.CajasEAnteriorSinPorc)),
-                            CajasEAnteriorConPorc = FirstNN(wg.Select(x => x.CajasEAnteriorConPorc)),
-                            CajasPSiguienteSinPorc = FirstNN(wg.Select(x => x.CajasPSiguienteSinPorc)),
-                            CajasESiguienteSinPorc = FirstNN(wg.Select(x => x.CajasESiguienteSinPorc)),
-                            CajasESiguienteConPorc = FirstNN(wg.Select(x => x.CajasESiguienteConPorc))
-                        },
-                        Items = new List<ItemDto>()
-                    };
-
-                    // items: (especie, variedad) dentro de la semana del productor
-                    foreach (var ig in wg.GroupBy(v => new { v.NomEsp, v.NomVar }))
-                    {
-                        semanaDto.Items.Add(new ItemDto
-                        {
-                            Especie = ig.Key.NomEsp,
-                            Variedad = ig.Key.NomVar,
-                            Cajas = new CajasDto
-                            {
-                                CajasEstimadasSinPorc = ig.Sum(x => x.CajasEstimadasSinPorc),
-                                CajasEstimadasConPorc = ig.Sum(x => x.CajasEstimadasConPorc),
-                                CajasDistribSinPorc = ig.Sum(x => x.CajasDistribSinPorc),
-                                CajasDistribConPorc = ig.Sum(x => x.CajasDistribConPorc),
-                                P = ig.Sum(x => x.CajasP)
-                            },
-                            Dist = new DistDto
-                            {
-                                Categoria = ig.Any(x => x.DistCat),
-                                Calibre = ig.Any(x => x.DistCal),
-                                Packing = ig.Any(x => x.DistPack),
-                                Frigorifico = ig.Any(x => x.DistFri)
-                            }
-                        });
-                    }
-
-                    productorDto.Semanas[semanaKey] = semanaDto;
-                }
-
-                result.Productores[pg.Key] = productorDto;
-            }
-
-            return result;
+            return BuildTree(rows);
         }
 
-        //Helpers
-        private static int? FirstNN(IEnumerable<int?> seq) => seq.FirstOrDefault(v => v.HasValue);
 
         public async Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion)
         {
@@ -200,7 +106,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 CommandType = CommandType.StoredProcedure
             };
 
-           
+
             cmd.Parameters.Add(new SqlParameter("@COD_EMPRESA", SqlDbType.NVarChar, 20) { Value = codigoEmpresa.Trim().ToUpperInvariant() });
             cmd.Parameters.Add(new SqlParameter("@ID_TEMPORADA", SqlDbType.NVarChar, 20) { Value = idTemporada.Trim().ToUpperInvariant() });
             cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
@@ -218,7 +124,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     {
                         estim = new EstimacionSemanalDto
                         {
-                            IdEstimacion = idEstim,                           
+                            IdEstimacion = idEstim,
                             Contratado = rdr.Get<int?>("CONTRATADO") ?? 0,
                             IdEnvaseCosecha = rdr.Get<string?>("ID_ENVASE_COSECHA"),
 
@@ -252,7 +158,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             }
             catch (Exception ex)
             {
-               
+
             }
 
             // Orden opcional de semanas
@@ -267,35 +173,132 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return dict.Values.ToList();
         }
 
-        private sealed class RowFlat
+        private static EstructuraDistribucionDto BuildTree(List<RowFlat> rows)
         {
-            public string IdEstimacion { get; set; } = "";
-            public int IdEstimacionBisemanal { get; set; }
-            public int Anio { get; set; }
-            public int SemanaNro { get; set; }
+            var root = new EstructuraDistribucionDto
+            {
+                PesoBaseEspecie = rows.FirstOrDefault()?.PesoBaseEspecie,
+                Especie = rows.FirstOrDefault()?.Especie,
+                Items = new List<ItemNode>()
+            };
 
-            public string IdProductor { get; set; } = "";
-            public string NomProd { get; set; } = "";
-            public string NomEsp { get; set; } = "";
-            public string NomVar { get; set; } = "";
+            var itemGroups = rows.GroupBy(r => new
+            {
+                r.IdProductor,
+                r.Productor,
+                r.Variedad,
+                r.Agronomo,
+                r.EnvaseId,
+                r.EnvaseNombre,
+                r.EnvaseKilo
+            });
 
-            public int CajasEstimadasSinPorc { get; set; }
-            public int CajasEstimadasConPorc { get; set; }
-            public int CajasDistribSinPorc { get; set; }
-            public decimal CajasDistribConPorc { get; set; }
-            public int CajasP { get; set; }
+            foreach (var g in itemGroups)
+            {
+                var any = g.First();
 
-            public bool DistCat { get; set; }
-            public bool DistCal { get; set; }
-            public bool DistPack { get; set; }
-            public bool DistFri { get; set; }
+                var item = new ItemNode
+                {
+                    Id_Productor = g.Key.IdProductor,
+                    Productor = g.Key.Productor,
+                    Variedad = g.Key.Variedad,
+                    Agronomo = g.Key.Agronomo,
+                    DistribucionCalibre = any.DistribucionCalibre,
+                    DistribucionCategoria = any.DistribucionCategoria,
+                    EnvaseCosechero = new EnvaseCosecheroNode
+                    {
+                        Id = g.Key.EnvaseId,
+                        Nombre = g.Key.EnvaseNombre,
+                        Kilo = g.Key.EnvaseKilo
+                    }
+                };
 
-            public int? CajasPAnterior { get; set; }
-            public int? CajasEAnteriorSinPorc { get; set; }
-            public int? CajasEAnteriorConPorc { get; set; }
-            public int? CajasPSiguienteSinPorc { get; set; }
-            public int? CajasESiguienteSinPorc { get; set; }
-            public int? CajasESiguienteConPorc { get; set; }
+               
+                EstimacionNode? estObj = null;
+
+                if (any.Est_ID.HasValue && any.Est_ID.Value >= 0)
+                {
+                    estObj = new EstimacionNode
+                    {
+                        ID = any.Est_ID,
+                        Contratado = any.Est_Contratado,
+                        FCosecha = any.Est_FCosecha,
+                        Semanas = new SemanasNode
+                        {
+                            Anterior = new SemanaValorNode
+                            {
+                                Estimado = any.Ant_Estimado,
+                                Producido = any.Ant_Producido
+                            },
+                            Siguiente = new SemanaValorNode
+                            {
+                                Estimado = any.Sig_Estimado,
+                                Producido = any.Sig_Producido
+                            },
+                            Bisemanal = new List<BisemanalNode>()
+                        }
+                    };
+
+                   
+                    var bisGroups = g.Where(r => r.Bis_ID.HasValue)
+                                     .GroupBy(r => new
+                                     {
+                                         r.Bis_ID,
+                                         r.Bis_AnioBase,
+                                         r.Bis_SemanaBase,
+                                         r.Bis_DistFrio,
+                                         r.Bis_DistPacking,
+                                         r.Bis_PorcExport
+                                     });
+
+                    foreach (var bg in bisGroups)
+                    {
+                        var bis = new BisemanalNode
+                        {
+                            ID = bg.Key.Bis_ID,
+                            AnioBase = bg.Key.Bis_AnioBase,
+                            SemanaBase = bg.Key.Bis_SemanaBase,
+                            DistribucionFrio = bg.Key.Bis_DistFrio,
+                            DistribucionPacking = bg.Key.Bis_DistPacking,
+                            PorcentajeExportacion = bg.Key.Bis_PorcExport,
+                            Dias = new List<DiaNode>()
+                        };
+
+                        foreach (var d in bg)
+                        {
+                            var tieneDia = d.Dia_Nombre is not null
+                                        || d.Dia_Fecha is not null
+                                        || d.Dia_Estimado.HasValue
+                                        || d.Dia_Producido.HasValue;
+
+                            if (!tieneDia) continue;
+
+                            bis.Dias!.Add(new DiaNode
+                            {
+                                NombreDia = d.Dia_Nombre,
+                                FechaDia = d.Dia_Fecha,
+                                Estimado = d.Dia_Estimado,
+                                Producido = d.Dia_Producido
+                            });
+                        }
+
+                        estObj!.Semanas!.Bisemanal!.Add(bis);
+                    }
+
+                    // Asignamos como objeto
+                    item.Estimacion = estObj;
+                }
+                else
+                {
+                   
+                    item.Estimacion = new List<EstimacionNode>();
+                }
+
+                root.Items!.Add(item);
+            }
+
+            return root;
         }
     }
+
 }

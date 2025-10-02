@@ -5,6 +5,7 @@ using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Helpers.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services
 {
@@ -16,7 +17,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
         {
             _EstimacionesRepository = EstimacionesRepository;
         }
-        public async Task<EstimacionDistribucionPorProductorDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
+        public async Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(EstimacionesDto.EstimacionBisemanalQueryDto req)
         {
             if (req is null) throw new ArgumentNullException(nameof(req));
 
