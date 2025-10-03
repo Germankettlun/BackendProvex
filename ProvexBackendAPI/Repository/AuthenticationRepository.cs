@@ -6,7 +6,7 @@ using System.Security.Claims;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
 
-namespace ProvexBackendAPI.Repository.IRepository
+namespace ProvexBackendAPI.Repository
 {
     public class AuthenticationRepository
     {

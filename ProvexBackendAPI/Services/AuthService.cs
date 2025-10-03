@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto.Authentication;
+using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Mapping;
 using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
@@ -25,17 +26,18 @@ namespace ProvexBackendAPI.Services
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
-       
+        private readonly ISemanaVigenteProvider _semanaProvider;
 
-        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IUserService userService
-        )
+
+        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IUserService userService,ISemanaVigenteProvider semanaProvider)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _userService = userService;
             _tokenService = tokenService;
-          
+            _semanaProvider = semanaProvider;
+
         }
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
         {
@@ -52,8 +54,10 @@ namespace ProvexBackendAPI.Services
             ApplicationUser? user = input.Contains('@')
                 ? await _userManager.FindByEmailAsync(input)
                 : await _userManager.FindByNameAsync(input);
+            
+            var semana = await _semanaProvider.GetAsync(codigoEmpresa: "PRX", codigoTemporada: null, soloVigente: true);
 
-            if(user is null)
+            if (user is null)
             throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
             // Verificar contraseña ( Identity )
@@ -82,7 +86,10 @@ namespace ProvexBackendAPI.Services
                 //Token = handler.WriteToken(token),
                 Token = token.Token,
                 User = userDto,
-                ExpiresAt = token.ExpiresAtUtc
+                ExpiresAt = token.ExpiresAtUtc,
+                AnoBaseSemanaVigente = semana?.AnioBase,
+                SemanaBaseSemanaVigente = semana is null ? null : semana.SemanaBase
+               
             };
 
 
