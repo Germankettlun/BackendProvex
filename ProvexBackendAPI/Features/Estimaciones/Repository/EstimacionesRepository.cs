@@ -61,7 +61,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
                     // Envase
                     EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "", //Falta
-                    EnvaseNombre = rdr.FirstExistingAsString("ENVASE_NOMBRE") ?? "", //Falta
+                    EnvaseNombre = rdr.FirstExistingAsString("NOM_ENVASE_COSECHA") ?? "", 
                     EnvaseKilo = rdr.Get<int?>("KG_DIA_ENVASE") ?? 0, 
 
                     // Estimación + semanas
