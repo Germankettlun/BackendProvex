@@ -48,26 +48,26 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 rows.Add(new RowFlat
                 {
                     // Raíz
-                    PesoBaseEspecie = rdr.Get<double?>("PESO_BASE_ESPECIE") ?? 0.0, //Falta
+                    PesoBaseEspecie = rdr.Get<double?>("ESPECIE_KILO_BASE") ?? 0.0, 
                     Especie = rdr.FirstExistingAsString("NOM_ESP"),
 
                     // Item
                     IdProductor = rdr.FirstExistingAsString("ID_PRODUCTOR"),
                     Productor = rdr.FirstExistingAsString("NOM_PROD"),
                     Variedad = rdr.FirstExistingAsString("NOM_VAR"),
-                    Agronomo = rdr.FirstExistingAsString("AGRONOMO") ?? "", //Falta
+                    Agronomo = rdr.FirstExistingAsString("NOM_USUARIO_AGRONOMO") ?? "", 
                     DistribucionCalibre = rdr.Get<bool?>("DIST_CAL"),
                     DistribucionCategoria = rdr.Get<bool?>("DIST_CAT"),
 
                     // Envase
                     EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "", //Falta
                     EnvaseNombre = rdr.FirstExistingAsString("ENVASE_NOMBRE") ?? "", //Falta
-                    EnvaseKilo = rdr.Get<int?>("ENVASE_KILO") ?? 0, //Falta
+                    EnvaseKilo = rdr.Get<int?>("KG_DIA_ENVASE") ?? 0, 
 
                     // Estimación + semanas
                     Est_ID = rdr.Get<int?>("ID_ESTIMACION"),
-                    Est_Contratado = rdr.Get<int?>("EST_CONTRATADO") ?? 0, //Falta
-                    Est_FCosecha = rdr.FirstExistingAsString("SEMANA_INICIO_COSECHA") ?? "", //Falta Fecha Inicio Cosecha
+                    Est_Contratado = rdr.Get<int?>("CAJAS_CONTRATADAS") ?? 0, 
+                    Est_FCosecha = rdr.FirstExistingAsString("FECHA_INICIO_COSECHA_YM") ?? "", 
 
                     Ant_Estimado = rdr.Get<int?>("CAJAS_E_ANTERIOR_SIN_PORC"),
                     Ant_Producido = rdr.Get<int?>("CAJAS_P_ANTERIOR"),
@@ -80,7 +80,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),
                     Bis_DistFrio = rdr.Get<int?>("DIST_FRI"),
                     Bis_DistPacking = rdr.Get<int?>("DIST_PACK"),
-                    Bis_PorcExport = rdr.Get<int?>("BIS_PORC_EXPORT") ?? 0, //FALTA
+                    Bis_PorcExport = rdr.Get<int?>("PCT_EXP_PORC") ?? 0, 
 
                     // Días
                     Dia_Nombre = rdr.FirstExistingAsString("NOMBRE_DIA"),
