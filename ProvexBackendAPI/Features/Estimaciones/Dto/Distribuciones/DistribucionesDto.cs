@@ -117,11 +117,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public string CodigoTemporada { get; set; } = default!;   // @CODIGOTEMPORADA
 
         [Range(2000, 2100)]
-        public int Anio { get; set; }                              // @ANIO
+        public int? Anio { get; set; }                              // @ANIO
 
-        [Required]
+        
         [WeekIsoString(ErrorMessage = "Semana inválida. Usa '01' a '53'.")]
-        public string Semana { get; set; } = default!;          // @SEMANA (varchar en BD)
+        public string? Semana { get; set; } = default!;          // @SEMANA (varchar en BD)
+
+        public DateTime? FechaDia { get; set; }
 
     }
 
@@ -147,6 +149,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public string IdEstimacionBisemanal { get; set; } = string.Empty;   // IDESTIMACIONBISEMANAL
         public int Anio { get; set; }                                       // BISEMANALANIO
         public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
+        public DateTime? FechaDia { get; set; }
+        public String? DiaNombre { get; set; }
         public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
         public string IdDistribucionFrigorifico { get; set; } = string.Empty;   // IDDISTRUBUCIONFRIGORIFICO
         public string IdFrigorifico { get; set; } = string.Empty;               // IDFRIGORIFICO
