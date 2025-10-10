@@ -102,8 +102,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa });
             cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie });
             cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada });
-            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = q.Anio});
-            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar,10) { Value = q.Semana });
+            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = (object?)q.Anio ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar,10) { Value = (object?)q.Semana ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@FECHADIA", SqlDbType.DateTime) { Value = (object?)q.FechaDia ?? DBNull.Value });
 
             await using var rdr = await cmd.ExecuteReaderAsync();
 
@@ -116,6 +117,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     IdEstimacionBisemanal = rdr.Get<string?>("IDESTIMACIONBISEMANAL") ?? "",
                     Anio = rdr.Get<int?>("BISEMANALANIO") ?? 0,
                     Semana = rdr.Get<string?>("BISEMANALSEMANA") ?? "",
+                    FechaDia = rdr.Get<DateTime?>("FECHADIA"),
+                    DiaNombre = rdr.Get<string?>("DIANOMBRE") ?? "",
                     TotalCajasBisemanal = rdr.Get<int?>("TOTALCAJASBISEMANAL") ?? 0,
                     IdDistribucionFrigorifico = rdr.FirstExistingAsString("IDDISTRUBUCIONFRIGORIFICO"),
                     IdFrigorifico = rdr.Get<string?>("IDFRIGORIFICO") ?? "",
@@ -144,8 +147,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa });
             cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie });
             cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada });
-            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = q.Anio });
-            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar, 10) { Value = q.Semana });
+            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = (object?)q.Anio ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar, 10) { Value = (object?)q.Semana ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@FECHADIA", SqlDbType.DateTime) { Value = (object?)q.FechaDia ?? DBNull.Value });
 
             await using var rdr = await cmd.ExecuteReaderAsync();
 
@@ -158,6 +162,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     IdEstimacionBisemanal = rdr.Get<string?>("IDESTIMACIONBISEMANAL") ?? "",
                     Anio = rdr.Get<int?>("BISEMANALANIO") ?? 0,
                     Semana = rdr.Get<string?>("BISEMANALSEMANA") ?? "",
+                    FechaDia = rdr.Get<DateTime?>("FECHADIA"),
+                    DiaNombre = rdr.Get<string?>("DIANOMBRE") ?? "",
                     TotalCajasBisemanal = rdr.Get<int?>("TOTALCAJASBISEMANAL") ?? 0,
                     // tolerante al typo
                     IdDistribucionPacking = rdr.FirstExistingAsString("IDDISTRUBUCIONPACKING", "IDDISTRIBUCIONPACKING"),
