@@ -134,6 +134,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public string IdEstimacionBisemanal { get; set; } = string.Empty;   // IDESTIMACIONBISEMANAL
         public int Anio { get; set; }                                       // BISEMANALANIO
         public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
+        public DateTime? FechaDia { get; set; }
+        public String? DiaNombre { get; set; }
         public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
         public string IdDistribucionPacking { get; set; } = string.Empty;   // IDDISTRIBUCIONPACKING
         public string IdPacking { get; set; } = string.Empty;               // IDPACKING
