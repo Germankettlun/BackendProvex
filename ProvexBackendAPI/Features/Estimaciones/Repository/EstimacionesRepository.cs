@@ -82,16 +82,16 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     // Bisemanal
                     Bis_ID = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL"),
                     Bis_AnioBase = rdr.Get<int?>("ANIO"),
-                    Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),
-                    Bis_DistFrio = rdr.Get<int?>("DIST_FRI"),
-                    Bis_DistPacking = rdr.Get<int?>("DIST_PACK"),
-                    Bis_PorcExport = rdr.Get<int?>("PCT_EXP_PORC") ?? 0, 
+                    Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),                    
+                    Bis_PorcExport = rdr.Get<int?>("PCT_EXP_PORC") ?? 0,
 
                     // Días
                     Dia_Nombre = rdr.FirstExistingAsString("NOMBRE_DIA"),
                     Dia_Fecha = rdr.Get<DateTime?>("DIA"),
                     Dia_Estimado = rdr.Get<decimal?>("CAJAS_ESTIMADAS_SIN_PORC"),
-                    Dia_Producido = rdr.Get<decimal?>("CAJAS_P")
+                    Dia_Producido = rdr.Get<decimal?>("CAJAS_P"),
+                    Dia_DistribucionFrio = rdr.Get<bool?>("DIST_FRI"),
+                    Dia_DistribucionPacking = rdr.Get<bool?>("DIST_PACK")
                 });
             }
 
@@ -249,35 +249,31 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     s => BuildEmptyFromSemanaRow(s)
                 );
 
-                // 3) Agrupar lo que traiga el SP por (Año + Semana string normalizada)
+                // 3) Agrupar por semana (sin distribución en la clave)
                 var bisGroups = g.Where(r => r.Bis_ID.HasValue
                                           || (r.Bis_AnioBase.HasValue && !string.IsNullOrWhiteSpace(r.Bis_SemanaBase)))
                                  .GroupBy(r => new
                                  {
-                                     r.Bis_AnioBase,                         // int?
-                                     Semana = ToWeek2(r.Bis_SemanaBase!),   // string "01".."53"
+                                     r.Bis_AnioBase,                       // int?
+                                     Semana = ToWeek2(r.Bis_SemanaBase!),  // "01".."53"
                                      r.Bis_ID,
-                                     r.Bis_DistFrio,
-                                     r.Bis_DistPacking,
                                      r.Bis_PorcExport
                                  });
 
-                // 4) Pisar placeholders con los datos reales (si caen dentro del rango N)
+                // 4) Pisar placeholders con datos reales
                 foreach (var bg in bisGroups)
                 {
                     if (!bg.Key.Bis_AnioBase.HasValue) continue;
                     var key = $"{bg.Key.Bis_AnioBase.Value:D4}-{bg.Key.Semana}";
-                    if (!byKey.TryGetValue(key, out var bis)) continue; // fuera del slice pedido
+                    if (!byKey.TryGetValue(key, out var bis)) continue;
 
                     // Metadatos de la semana
                     bis.ID = bg.Key.Bis_ID;
                     bis.AnioBase = bg.Key.Bis_AnioBase;
                     bis.SemanaBase = bg.Key.Semana;
-                    bis.DistribucionFrio = bg.Key.Bis_DistFrio;
-                    bis.DistribucionPacking = bg.Key.Bis_DistPacking;
                     bis.PorcentajeExportacion = bg.Key.Bis_PorcExport;
 
-                    // Días: mapeo por nombre o por fecha exacta
+                    // Días: mapear valores y distribución POR DÍA
                     foreach (var d in bg)
                     {
                         int idx = -1;
@@ -294,11 +290,18 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                         if (idx < 0 || idx >= 7) continue;
 
                         var dia = bis.Dias![idx];
+
+                        // Valores base
                         dia.Estimado = d.Dia_Estimado;
                         dia.Producido = d.Dia_Producido;
-
                         if (d.Dia_Fecha.HasValue) dia.FechaDia = d.Dia_Fecha;
                         if (!string.IsNullOrWhiteSpace(d.Dia_Nombre)) dia.NombreDia = d.Dia_Nombre;
+
+                        // NUEVO: distribución por día
+                        // Ideal: si tu SP ya trae columnas por día (p.ej. Dia_DistFrio / Dia_DistPacking)
+                        // usa esas; si no existen aún, caes por defecto al valor de la semana del registro (si venían).
+                        dia.DistribucionFrio = d.Dia_DistribucionFrio;
+                        dia.DistribucionPacking = d.Dia_DistribucionPacking;
                     }
                 }
 
@@ -334,15 +337,17 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             // var monday = m.Inicio.Date.AddDays((7 + (int)DayOfWeek.Monday - (int)m.Inicio.DayOfWeek) % 7);
             var monday = m.Inicio.Date;
 
-            var dias = new List<DiaNode>(7);
+            var dias = new List<DiaValorNode>(7);
             for (int i = 0; i < 7; i++)
             {
-                dias.Add(new DiaNode
+                dias.Add(new DiaValorNode
                 {
                     NombreDia = _diasEs[i],
                     FechaDia = monday.AddDays(i),
                     Estimado = null,
-                    Producido = null
+                    Producido = null,
+                    DistribucionFrio = null, 
+                    DistribucionPacking = null
                 });
             }
 
@@ -350,9 +355,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             {
                 ID = null,
                 AnioBase = m.AnioBase,
-                SemanaBase = ToWeek2(m.SemanaBase), // siempre 2 dígitos
-                DistribucionFrio = null,
-                DistribucionPacking = null,
+                SemanaBase = ToWeek2(m.SemanaBase), // siempre 2 dígitos              
                 PorcentajeExportacion = null,
                 Dias = dias
             };

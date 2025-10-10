@@ -115,44 +115,23 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public decimal? Producido { get; set; }
         }
 
-        public sealed class BisemanalNode
+        public class BisemanalNode
         {
-            [JsonPropertyName("ID")]
             public int? ID { get; set; }
-
-            [JsonPropertyName("AnioBase")]
             public int? AnioBase { get; set; }
-
-            [JsonPropertyName("SemanaBase")]
             public string? SemanaBase { get; set; }
 
-            [JsonPropertyName("DistribucionFrio")]
-            public int? DistribucionFrio { get; set; }
+            // (Opcional) Si esto queda a nivel semana, se mantiene:
+            public decimal? PorcentajeExportacion { get; set; }
 
-            [JsonPropertyName("DistribucionPacking")]
-            public int? DistribucionPacking { get; set; }
+            // QUITAR de aquí si lo tenías:
+            // public decimal? DistribucionFrio { get; set; }
+            // public decimal? DistribucionPacking { get; set; }
 
-            [JsonPropertyName("PorcentajeExportacion")]
-            public int? PorcentajeExportacion { get; set; }
-
-            [JsonPropertyName("dias")]
-            public List<DiaNode>? Dias { get; set; }
+            public List<DiaValorNode>? Dias { get; set; }
         }
 
-        public sealed class DiaNode
-        {
-            [JsonPropertyName("NombreDia")]
-            public string? NombreDia { get; set; }
-
-            [JsonPropertyName("FechaDia")]
-            public DateTime? FechaDia { get; set; } // "yyyy-MM-dd"
-
-            [JsonPropertyName("Estimado")]
-            public decimal? Estimado { get; set; }
-
-            [JsonPropertyName("Producido")]
-            public decimal? Producido { get; set; }
-        }
+       
 
         public class EstimacionSemanalDto
         {
@@ -218,8 +197,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public int? Bis_ID { get; set; }
             public int? Bis_AnioBase { get; set; }
             public string? Bis_SemanaBase { get; set; }
-            public int? Bis_DistFrio { get; set; }
-            public int? Bis_DistPacking { get; set; }
+           
             public int? Bis_PorcExport { get; set; }
 
             // Días
@@ -227,7 +205,22 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public DateTime? Dia_Fecha { get; set; } // yyyy-MM-dd
             public decimal? Dia_Estimado { get; set; }
             public decimal? Dia_Producido { get; set; }
+
+            public bool? Dia_DistribucionFrio { get; set; }
+            public bool? Dia_DistribucionPacking { get; set; }
         }
+
+        public class DiaValorNode
+        {
+            public DateTimeOffset? FechaDia { get; set; }
+            public string? NombreDia { get; set; }
+            public decimal? Estimado { get; set; }
+            public decimal? Producido { get; set; }
+            public bool? DistribucionFrio { get; set; }
+            public bool? DistribucionPacking { get; set; }
+        }
+
+
     }
 }
 
