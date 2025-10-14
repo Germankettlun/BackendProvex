@@ -80,12 +80,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     Sig_Producido = rdr.Get<int?>("CAJAS_P_SIGUIENTE_SIN_PORC"),
 
                     // Bisemanal
-                    Bis_ID = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL"),
+                    
                     Bis_AnioBase = rdr.Get<int?>("ANIO"),
                     Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),                    
                     Bis_PorcExport = rdr.Get<int?>("PCT_EXP_PORC") ?? 0,
 
                     // Días
+                    Bis_ID = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL"),
                     Dia_Nombre = rdr.FirstExistingAsString("NOMBRE_DIA"),
                     Dia_Fecha = rdr.Get<DateTime?>("DIA"),
                     Dia_Estimado = rdr.Get<decimal?>("CAJAS_ESTIMADAS_SIN_PORC"),
@@ -256,7 +257,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                                  {
                                      r.Bis_AnioBase,                       // int?
                                      Semana = ToWeek2(r.Bis_SemanaBase!),  // "01".."53"
-                                     r.Bis_ID,
+                                     
                                      r.Bis_PorcExport
                                  });
 
@@ -268,7 +269,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     if (!byKey.TryGetValue(key, out var bis)) continue;
 
                     // Metadatos de la semana
-                    bis.ID = bg.Key.Bis_ID;
+                   
                     bis.AnioBase = bg.Key.Bis_AnioBase;
                     bis.SemanaBase = bg.Key.Semana;
                     bis.PorcentajeExportacion = bg.Key.Bis_PorcExport;
@@ -292,6 +293,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                         var dia = bis.Dias![idx];
 
                         // Valores base
+                        dia.IdBisemanal = d.Bis_ID;
                         dia.Estimado = d.Dia_Estimado;
                         dia.Producido = d.Dia_Producido;
                         if (d.Dia_Fecha.HasValue) dia.FechaDia = d.Dia_Fecha;
@@ -342,6 +344,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             {
                 dias.Add(new DiaValorNode
                 {
+                    IdBisemanal = null,
                     NombreDia = _diasEs[i],
                     FechaDia = monday.AddDays(i),
                     Estimado = null,
@@ -353,7 +356,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             return new BisemanalNode
             {
-                ID = null,
+               
                 AnioBase = m.AnioBase,
                 SemanaBase = ToWeek2(m.SemanaBase), // siempre 2 dígitos              
                 PorcentajeExportacion = null,
