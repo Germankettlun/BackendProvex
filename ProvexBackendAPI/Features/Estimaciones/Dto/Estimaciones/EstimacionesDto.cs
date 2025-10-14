@@ -117,16 +117,14 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
 
         public class BisemanalNode
         {
-            public int? ID { get; set; }
+           
             public int? AnioBase { get; set; }
             public string? SemanaBase { get; set; }
 
             // (Opcional) Si esto queda a nivel semana, se mantiene:
             public decimal? PorcentajeExportacion { get; set; }
 
-            // QUITAR de aquí si lo tenías:
-            // public decimal? DistribucionFrio { get; set; }
-            // public decimal? DistribucionPacking { get; set; }
+           
 
             public List<DiaValorNode>? Dias { get; set; }
         }
@@ -194,13 +192,14 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public decimal? Sig_Producido { get; set; }
 
             // Bisemanal
-            public int? Bis_ID { get; set; }
+            
             public int? Bis_AnioBase { get; set; }
             public string? Bis_SemanaBase { get; set; }
            
             public int? Bis_PorcExport { get; set; }
 
             // Días
+            public int? Bis_ID { get; set; }
             public string? Dia_Nombre { get; set; }
             public DateTime? Dia_Fecha { get; set; } // yyyy-MM-dd
             public decimal? Dia_Estimado { get; set; }
@@ -212,6 +211,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
 
         public class DiaValorNode
         {
+            public int? IdBisemanal { get; set; } 
             public DateTimeOffset? FechaDia { get; set; }
             public string? NombreDia { get; set; }
             public decimal? Estimado { get; set; }
