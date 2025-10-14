@@ -7,11 +7,11 @@ pr:
 pool:
   name: PoolPrxSII
   demands:
-    - agent.name -equals IISAgent01
+    - agent.name -equals IISDev
     - agent.os -equals Windows_NT
 
 variables:
-  - group: ERP-Backend-Production
+  - group: ERP-Backend-Development
   - name: configuration
     value: Release
   - name: dotnetVersion
