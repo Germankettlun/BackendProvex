@@ -1,8 +1,8 @@
 trigger:
-  branches: { include: [ dev ] }
+  branches: { include: [ pro ] }
 
 pr:
-  branches: { include: [ dev ] }
+  branches: { include: [ prod ] }
 
 pool:
   name: PoolPrxSII
