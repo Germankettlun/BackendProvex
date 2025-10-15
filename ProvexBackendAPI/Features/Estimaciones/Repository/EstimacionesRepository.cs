@@ -29,7 +29,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
 
-            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_EstimacionBisemanal", conn)
+            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_EstimacionBisemanal_new", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
