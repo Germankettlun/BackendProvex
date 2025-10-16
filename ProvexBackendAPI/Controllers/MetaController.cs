@@ -64,10 +64,6 @@ namespace ProvexBackendAPI.Controllers
 
             return Ok(response);
         }
-
-        [HttpGet("healthz")]
-        [AllowAnonymous]
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-        public IActionResult Healthz() => Ok(new { status = "ok" });
     }
 }
+
