@@ -1,5 +1,4 @@
 ﻿using Asp.Versioning;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +8,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models.Users;
+using ProvexBackendAPI.Features.Estimaciones.Repository;
+using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
+using ProvexBackendAPI.Features.Estimaciones.Services;
+using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Filters;
 using ProvexBackendAPI.Infrastructure.Auth;
+using ProvexBackendAPI.Middleware;
 using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services;
@@ -26,6 +31,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
                            ProvexBackendAPI.Repository.UserRepository>();
 
+builder.Services.AddScoped(
+    typeof(ProvexBackendAPI.Repository.IRepository.IGenericRepository<>),
+    typeof(ProvexBackendAPI.Repository.GenericRepository<>));
+
+builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
+    ProvexBackendAPI.Repository.UnitOfWork>();
+
+builder.Services.AddScoped<IComboRepository, ComboRepository>();
+
+builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
+
+builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
+builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>();
+
+
+
+
+
 // Service 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
                            ProvexBackendAPI.Services.UserService>();
@@ -33,8 +56,20 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
 
+builder.Services.AddScoped(
+    typeof(ProvexBackendAPI.Services.IServices.IGenericService<>),
+    typeof(ProvexBackendAPI.Services.GenericService<>));
+
+builder.Services.AddScoped<IComboService, ComboService>();
+builder.Services.AddScoped<ITemporadasService, TemporadasService>();
+builder.Services.AddScoped<IDistribucionService, DistribucionService>();
+builder.Services.AddScoped<IEstimacionesService, EstimacionesService>();
+
+
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();
+
+builder.Services.AddScoped<ISemanaVigenteProvider, SemanaVigenteProvider>();
 
 
 // ===== EF Core + SQL Server =====
@@ -42,15 +77,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Controllers 
-builder.Services.AddControllers();
-
-//AutoMapper
-
-
-builder.Services.AddAutoMapper(
-    cfg => { /* opcional: cfg.AddProfile<TuProfile>(); */ },
-    AppDomain.CurrentDomain.GetAssemblies()
+builder.Services.AddControllers(options =>
+{ 
+    //Filtro del middleware
+    options.Filters.Add<ApiResponseWrapperFilter>();
+}
 );
+
+
+
 
 
 //:NET Identity con GUID
@@ -183,7 +218,7 @@ builder.Services.AddCors(o =>
     o.AddDefaultPolicy(p => p
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .WithOrigins("http://localhost:3000", "http://localhost:5173"));
+        .WithOrigins("http://localhost:3000", "http://localhost:5173", "http://10.115.1.252:3002"));
 });
 
 
@@ -199,6 +234,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();

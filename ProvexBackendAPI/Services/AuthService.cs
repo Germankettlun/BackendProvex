@@ -1,12 +1,16 @@
-﻿using AutoMapper;
+﻿
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto.Authentication;
+using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
+using ProvexBackendAPI.Helpers.Mapping;
 using ProvexBackendAPI.Services.IServices;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Authentication;
 using System.Security.Claims;
 using System.Text;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
@@ -22,72 +26,51 @@ namespace ProvexBackendAPI.Services
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
-        //private readonly IConfiguration _config;
-        private readonly IMapper _mapper;
+        private readonly ISemanaVigenteProvider _semanaProvider;
 
-        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IConfiguration config, IMapper mapper, IUserService userService
-        )
+
+        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IUserService userService,ISemanaVigenteProvider semanaProvider)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _userService = userService;
             _tokenService = tokenService;
-            //_config = config;
-            _mapper = mapper;
+            _semanaProvider = semanaProvider;
+
         }
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
         {
+
+            if (loginDto is null) throw new ArgumentNullException(nameof(loginDto));
+
             if (string.IsNullOrWhiteSpace(loginDto.Username))
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null,
-                    Message = "El Username es requerido"
-                };
-            }
+                throw new ValidationException("El username es requerido.");
 
             if (string.IsNullOrWhiteSpace(loginDto.Password))
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null,
-                    Message = "Password requerido"
-                };
-            }
+                throw new ValidationException("El password es requerido.");
 
             var input = loginDto.Username.Trim();
             ApplicationUser? user = input.Contains('@')
                 ? await _userManager.FindByEmailAsync(input)
                 : await _userManager.FindByNameAsync(input);
+            
+            var semana = await _semanaProvider.GetAsync(codigoEmpresa: "PRX", codigoTemporada: null, soloVigente: true);
 
-            if (user == null)
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null,
-                    Message = "Username no encontrado"
-                };
-            }
+            if (user is null)
+            throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
             // Verificar contraseña ( Identity )
-            var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: false);
+            var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
+
+            if (check.IsLockedOut)
+                throw new UnauthorizedAccessException("locked_out");
+            if (check.IsNotAllowed)
+                throw new UnauthorizedAccessException("not_allowed");
+            if (check.RequiresTwoFactor)
+                throw new UnauthorizedAccessException("requires_2fa");
             if (!check.Succeeded)
-            {
-                return new LoginResponseDto
-                {
-                    Token = "",
-                    User = null,
-                    ExpiresAt = null,
-                    Message = "Credenciales son incorrectas"
-                };
-            }
+                throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
             var token = await _tokenService.GenerateAsync(
             user,
@@ -95,7 +78,8 @@ namespace ProvexBackendAPI.Services
             );
 
             
-            var userDto = _mapper.Map<UserDataDto>(user);
+            //var userDto = _mapper.Map<UserDataDto>(user);
+            var userDto = user.ToUserDataDto();
 
             return new LoginResponseDto
             {
@@ -103,7 +87,9 @@ namespace ProvexBackendAPI.Services
                 Token = token.Token,
                 User = userDto,
                 ExpiresAt = token.ExpiresAtUtc,
-                Message = "Usuario logueado correctamente."
+                AnoBaseSemanaVigente = semana?.AnioBase,
+                SemanaBaseSemanaVigente = semana is null ? null : semana.SemanaBase
+               
             };
 
 
@@ -174,7 +160,9 @@ namespace ProvexBackendAPI.Services
             if (createdUser == null)
                 throw new ApplicationException("No se pudo recuperar el usuario recién creado.");
 
-            return _mapper.Map<UserDataDto>(createdUser);
+            //return _mapper.Map<UserDataDto>(createdUser);
+            return createdUser.ToUserDataDto();
+           
 
 
         }

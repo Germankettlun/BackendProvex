@@ -1,19 +1,17 @@
 trigger:
-  branches:
-    include: [ Prod ]
+  branches: { include: [ dev ] }
 
 pr:
-  branches:
-    include: [ Prod ]
+  branches: { include: [ dev ] }
 
 pool:
   name: PoolPrxSII
   demands:
-    - agent.name -equals IISAgent01
-    - agent.os    -equals Windows_NT
+    - agent.name -equals IISDev
+    - agent.os -equals Windows_NT
 
 variables:
-  - group: ERP-Backend-Production
+  - group: ERP-Backend-Development
   - name: configuration
     value: Release
   - name: dotnetVersion
@@ -32,229 +30,259 @@ variables:
     value: 8082
 
 stages:
-# ============================ BUILD ============================
-  - stage: Build
-    displayName: Build & Publish
-    jobs:
-      - job: BuildAndPublish
-        steps:
-          - task: UseDotNet@2
-            displayName: Install .NET SDK
-            inputs:
-              packageType: sdk
-              version: $(dotnetVersion)
+- stage: Build
+  displayName: Build & Publish
+  jobs:
+  - job: BuildAndPublish
+    steps:
+    - task: UseDotNet@2
+      displayName: Install .NET SDK
+      inputs:
+        packageType: sdk
+        version: $(dotnetVersion)
 
-          - task: DotNetCoreCLI@2
-            displayName: Restore
-            inputs:
-              command: restore
-              projects: '**/*.sln'
+    - task: DotNetCoreCLI@2
+      displayName: Restore
+      inputs:
+        command: restore
+        projects: '**/*.sln'
 
-          - task: DotNetCoreCLI@2
-            displayName: Build
-            inputs:
-              command: build
-              projects: '**/*.sln'
-              arguments: '--configuration $(configuration) --no-restore'
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: build
+        projects: '**/*.sln'
+        arguments: '--configuration $(configuration) --no-restore'
 
-          - task: DotNetCoreCLI@2
-            displayName: Publish (self-contained win-x64)
-            inputs:
-              command: publish
-              publishWebProjects: false
-              projects: '**/ProvexBackendAPI.csproj'   # ajusta si tu csproj se llama distinto
-              arguments: >-
-                --configuration $(configuration)
-                --output $(publishFolder)
-                --runtime win-x64
-                /p:PublishTrimmed=false
-                /p:SelfContained=true
-                --verbosity minimal
+    - task: DotNetCoreCLI@2
+      displayName: Publish (self-contained win-x64)
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: '**/ProvexBackendAPI.csproj'
+        arguments: >-
+          --configuration $(configuration)
+          --output $(publishFolder)
+          --runtime win-x64
+          /p:PublishTrimmed=false
+          /p:SelfContained=true
+          --verbosity minimal
 
-          - task: PowerShell@2
-            displayName: Build appsettings.Production.json
-            inputs:
-              targetType: inline
-              script: |
-                $cfg = [ordered]@{
-                  ApiSettings       = @{ SecretKey = "$(SecretKey)" }
-                  ConnectionStrings = @{ DefaultConnection = "$(ConnectionBD)" }
-                  Jwt = @{
-                    Issuer             = "$(Jwt.Issuer)"
-                    Audience           = "$(Jwt.Audience)"
-                    Key                = "$(Jwt.Key)"
-                    AccessTokenMinutes = [int]"$(Jwt.AccessTokenMinutes)"
-                  }
-                  AzureAd = @{
-                    Instance = "$(AzureAd.Instance)"
-                    Domain   = "$(AzureAd.Domain)"
-                    TenantId = "$(AzureAd.TenantId)"
-                    ClientId = "$(AzureAd.ClientId)"
-                  }
-                  AllowedHosts = "*"
-                }
-                $json = $cfg | ConvertTo-Json -Depth 8
-                $out  = Join-Path "$(publishFolder)" "appsettings.Production.json"
-                $json | Out-File -FilePath $out -Encoding utf8 -Force
-                Write-Host "Generado: $out"
+    - task: PowerShell@2
+      displayName: Build appsettings.json (+Production)
+      inputs:
+        targetType: inline
+        script: |
+          $cfg = [ordered]@{
+            ApiSettings       = @{ SecretKey = "$(SecretKey)" }
+            ConnectionStrings = @{ DefaultConnection = "$(ConnectionBD)" }
+            Jwt = @{
+              Issuer             = "$(Jwt.Issuer)"
+              Audience           = "$(Jwt.Audience)"
+              Key                = "$(Jwt.Key)"
+              AccessTokenMinutes = [int]"$(Jwt.AccessTokenMinutes)"
+            }
+            AzureAd = @{
+              Instance = "$(AzureAd.Instance)"
+              Domain   = "$(AzureAd.Domain)"
+              TenantId = "$(AzureAd.TenantId)"
+              ClientId = "$(AzureAd.ClientId)"
+            }
+            AllowedHosts = "*"
+          }
+          $json = $cfg | ConvertTo-Json -Depth 8
+          $base = Join-Path "$(publishFolder)" "appsettings.json"
+          $prod = Join-Path "$(publishFolder)" "appsettings.Production.json"
+          $json | Out-File -FilePath $base -Encoding utf8 -Force
+          Copy-Item $base $prod -Force
+          Write-Host "Escritos: $base y $prod"
 
-          - task: PublishPipelineArtifact@1
-            displayName: Publish Artifact
-            inputs:
-              targetPath: '$(publishFolder)'
-              artifact:   ERPApi
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Artifact
+      inputs:
+        targetPath: '$(publishFolder)'
+        artifact: ERPApi
 
-# ============================ DEPLOY ============================
-  - stage: Deploy
-    displayName: Deploy to IIS (port $(bindingPort))
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
-      - job: DeployToIIS
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: Download Artifacts
-            inputs:
-              artifact: 'ERPApi'
-              path: '$(deploySource)'
+- stage: Deploy
+  displayName: Deploy to IIS (port $(bindingPort))
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployToIIS
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Artifacts
+      inputs:
+        artifact: ERPApi
+        path: '$(deploySource)'
 
-          - task: PowerShell@2
-            displayName: 'DEBUG: list artifact'
-            inputs:
-              targetType: inline
-              script: |
-                Write-Host "deploySource: $(deploySource)"
-                Get-ChildItem -Recurse -Path "$(deploySource)" |
-                  Select FullName,Length,LastWriteTime | Format-Table -AutoSize
+    - task: PowerShell@2
+      displayName: 'DEBUG: list artifact'
+      inputs:
+        targetType: inline
+        script: |
+          Write-Host "deploySource: $(deploySource)"
+          Get-ChildItem -Recurse -Path "$(deploySource)" |
+            Select FullName,Length,LastWriteTime | Format-Table -AutoSize
 
-          - task: PowerShell@2
-            displayName: Prepare target folder
-            inputs:
-              targetType: inline
-              script: |
-                if (-not (Test-Path '$(physicalPath)')) { New-Item -Path '$(physicalPath)' -ItemType Directory | Out-Null }
-                if (-not (Test-Path '$(physicalPath)\logs')) { New-Item -Path '$(physicalPath)\logs' -ItemType Directory | Out-Null }
+    - task: PowerShell@2
+      displayName: Prepare target folder
+      inputs:
+        targetType: inline
+        script: |
+          if (-not (Test-Path '$(physicalPath)')) { New-Item -Path '$(physicalPath)' -ItemType Directory | Out-Null }
+          if (-not (Test-Path '$(physicalPath)\logs')) { New-Item -Path '$(physicalPath)\logs' -ItemType Directory | Out-Null }
 
-          - task: PowerShell@2
-            displayName: Stop App Pool if exists
-            inputs:
-              targetType: inline
-              script: |
-                Import-Module WebAdministration
-                if (Test-Path "IIS:\AppPools\$(appPoolName)") {
-                  $state = (Get-WebAppPoolState -Name '$(appPoolName)').Value
-                  if ($state -ne 'Stopped') { Stop-WebAppPool -Name '$(appPoolName)' }
-                }
+    - task: PowerShell@2
+      displayName: Stop App Pool if exists
+      inputs:
+        targetType: inline
+        script: |
+          Import-Module WebAdministration
+          if (Test-Path "IIS:\AppPools\$(appPoolName)") {
+            $state = (Get-WebAppPoolState -Name '$(appPoolName)').Value
+            if ($state -ne 'Stopped') { Stop-WebAppPool -Name '$(appPoolName)' }
+          }
 
-          - task: PowerShell@2
-            displayName: Robocopy to IIS folder
-            inputs:
-              targetType: inline
-              script: |
-                $root = "$(deploySource)"
+    - task: PowerShell@2
+      displayName: Robocopy to IIS folder
+      inputs:
+        targetType: inline
+        script: |
+          $root = "$(deploySource)"
+          $exe = Get-ChildItem -Path $root -Recurse -File -Filter *.exe -ErrorAction SilentlyContinue |
+                 Where-Object { $_.FullName -notmatch '\\unzipped\\' } |
+                 Select-Object -First 1
+          if (-not $exe) {
+            $zip = Get-ChildItem -Path $root -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $zip) { throw "No se encontró .exe ni .zip en '$root'." }
+            $unz = Join-Path $root "unzipped"
+            if (Test-Path $unz) { Remove-Item -Recurse -Force $unz }
+            Expand-Archive -Path $zip.FullName -DestinationPath $unz -Force
+            $exe = Get-ChildItem -Path $unz -Recurse -File -Filter *.exe | Select-Object -First 1
+            if (-not $exe) { throw "El ZIP no contiene .exe publicable." }
+          }
+          $src = $exe.DirectoryName
+          $dst = '$(physicalPath)'
+          if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
+          robocopy "$src" "$dst" /MIR /XD "$dst\logs" /XF *.pdb /NFL /NDL /NJH /NJS /R:2 /W:1
+          $rc = $LASTEXITCODE
+          if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
+          $global:LASTEXITCODE = 0; $host.SetShouldExit(0); exit 0
 
-                # Detectar subcarpeta única
-                $kids = Get-ChildItem -Path $root
-                $candidateRoot = $root
-                if (($kids | ? { $_.PSIsContainer }).Count -eq 1 -and ($kids | ? { -not $_.PSIsContainer }).Count -eq 0) {
-                  $candidateRoot = ($kids | ? { $_.PSIsContainer }).FullName
-                }
+    - task: PowerShell@2
+      displayName: Copy appsettings*.json to target
+      inputs:
+        targetType: inline
+        script: |
+          $src = '$(deploySource)'
+          $dst = '$(physicalPath)'
+          foreach ($f in 'appsettings.json','appsettings.Production.json') {
+            $p = Join-Path $src $f
+            if (Test-Path $p) { Copy-Item $p $dst -Force; Write-Host "Copiado: $f" }
+          }
 
-                # Descomprimir si hay ZIP
-                $zip = Get-ChildItem -Path $candidateRoot -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
-                if ($zip) {
-                  $unz = Join-Path $root "unzipped"
-                  if (Test-Path $unz) { Remove-Item -Recurse -Force $unz }
-                  Expand-Archive -Path $zip.FullName -DestinationPath $unz -Force
-                  $candidateRoot = $unz
-                }
+    - task: PowerShell@2
+      displayName: Create/Configure IIS Site and Binding
+      inputs:
+        targetType: inline
+        script: |
+          Import-Module WebAdministration
+          if (-not (Test-Path "IIS:\AppPools\$(appPoolName)")) {
+            New-WebAppPool -Name '$(appPoolName)' | Out-Null
+            Set-ItemProperty "IIS:\AppPools\$(appPoolName)" -Name processModel.identityType -Value "ApplicationPoolIdentity"
+          }
+          if (-not (Test-Path "IIS:\Sites\$(siteName)")) {
+            New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
+          } else {
+            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
+            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath -Value '$(physicalPath)'
+          }
+          $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
+          if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
 
-                # Ubicar carpeta publicable
-                $marker = Get-ChildItem -Path $candidateRoot -Recurse -File -Include *.exe,*.dll,web.config | Select-Object -First 1
-                if (-not $marker) { throw "No se encontró contenido publicable bajo '$candidateRoot'." }
-                $src = $marker.DirectoryName
-                $dst = '$(physicalPath)'
+    - task: PowerShell@2
+      displayName: Fix web.config (dedupe + env)
+      inputs:
+        targetType: inline
+        script: |
+          $dst = '$(physicalPath)'
+          $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
+                Where-Object { $_.Name -ne 'app_offline.exe' } |
+                Sort-Object Length -Descending | Select-Object -First 1
+          if (-not $exe) { throw "No .exe en $dst" }
 
-                Write-Host "Root: $root"
-                Write-Host "SearchRoot: $candidateRoot"
-                Write-Host "Source: $src"
-                Write-Host "Dest: $dst"
+          # Valores
+          $envName   = "$(Environment)"
+          $jwt       = "$(Jwt.Key)"
+          $deployId  = "$(Build.BuildId)"
+          $sha       = "$(Build.SourceVersion)"
+          if ($sha.Length -ge 7) { $sha = $sha.Substring(0,7) }
 
-                if (-not (Test-Path $dst)) { New-Item -Path $dst -ItemType Directory | Out-Null }
-                if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
+          # Escapar para XML
+          $envNameEsc = [System.Security.SecurityElement]::Escape($envName)
+          $jwtEsc     = [System.Security.SecurityElement]::Escape($jwt)
+          $deployEsc  = [System.Security.SecurityElement]::Escape($deployId)
+          $shaEsc     = [System.Security.SecurityElement]::Escape($sha)
 
-                robocopy "$src" "$dst" /MIR /XD "$dst\logs" /XF *.pdb /NFL /NDL /NJH /NJS /R:2 /W:1
-                $rc = $LASTEXITCODE
-                Write-Host "Robocopy RC: $rc"
-                if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
-                $global:LASTEXITCODE = 0; $host.SetShouldExit(0); exit 0
+          $wc = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <location path="." inheritInChildApplications="false">
+              <system.webServer>
+                <handlers>
+                  <clear/>
+                  <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+                </handlers>
+                <aspNetCore processPath=".\$($exe.Name)" hostingModel="inprocess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
+                  <environmentVariables>
+                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$envNameEsc" />
+                    <environmentVariable name="Jwt__Key" value="$jwtEsc" />
+                    <environmentVariable name="DEPLOY_VERSION" value="$deployEsc" />
+                    <environmentVariable name="GIT_SHA_SHORT"  value="$shaEsc" />
+                  </environmentVariables>
+                </aspNetCore>
+              </system.webServer>
+            </location>
+          </configuration>
+          "@
+          $wc | Out-File -FilePath (Join-Path $dst 'web.config') -Encoding utf8 -Force
+          Write-Host "web.config actualizado con DEPLOY_VERSION y GIT_SHA_SHORT"
 
-          - task: PowerShell@2
-            displayName: Create/Configure IIS Site and Binding
-            inputs:
-              targetType: inline
-              script: |
-                Import-Module WebAdministration
-                if (-not (Test-Path "IIS:\AppPools\$(appPoolName)")) {
-                  New-WebAppPool -Name '$(appPoolName)' | Out-Null
-                  Set-ItemProperty "IIS:\AppPools\$(appPoolName)" -Name processModel.identityType -Value "ApplicationPoolIdentity"
-                }
-                if (-not (Test-Path "IIS:\Sites\$(siteName)")) {
-                  New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
-                } else {
-                  Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
-                  Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath   -Value '$(physicalPath)'
-                }
-                $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
-                if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
+    - task: PowerShell@2
+      displayName: 'Sanity: Jwt.Key bytes'
+      inputs:
+        targetType: inline
+        errorActionPreference: 'stop'
+        script: |
+          $p = '$(physicalPath)\appsettings.Production.json'
+          if (-not (Test-Path $p)) { $p = '$(physicalPath)\appsettings.json' }
+          $raw = Get-Content $p -Raw -Encoding UTF8
+          $lines = $raw -split "`r?`n"
+          $rawNoLineComments = ($lines | Where-Object { $_ -notmatch '^\s*//' }) -join "`n"
+          $rawClean = [regex]::Replace($rawNoLineComments, '/\*.*?\*/', '', 'Singleline')
+          $cfg = $rawClean | ConvertFrom-Json
+          $val = $cfg.Jwt.Key
+          try { $bytes = [Convert]::FromBase64String($val); $mode='Base64' } catch { $bytes=[Text.Encoding]::UTF8.GetBytes($val); $mode='UTF8' }
+          Write-Host "Jwt.Key mode=$mode bytes=$($bytes.Length) bits=$($bytes.Length*8)"
+          if ($bytes.Length -lt 16) { throw "Jwt.Key demasiado corta; usa ≥16 bytes (128 bits). Recomendado 32 bytes Base64." }
 
-          - task: PowerShell@2
-            displayName: Fix web.config (dedupe aspNetCore)
-            inputs:
-              targetType: inline
-              script: |
-                $dst = '$(physicalPath)'
-                $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
-                       Where-Object { $_.Name -ne 'app_offline.exe' } |
-                       Sort-Object Length -Descending | Select-Object -First 1
-                if (-not $exe) { throw "No .exe en $dst" }
+    - task: PowerShell@2
+      displayName: Open Windows Firewall port
+      inputs:
+        targetType: inline
+        script: |
+          $rule = Get-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -ErrorAction SilentlyContinue
+          if (-not $rule) {
+            New-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -Direction Inbound -Protocol TCP -LocalPort $(bindingPort) -Action Allow | Out-Null
+          }
 
-                $wc = @"
-                <?xml version="1.0" encoding="utf-8"?>
-                <configuration>
-                  <location path="." inheritInChildApplications="false">
-                    <system.webServer>
-                      <handlers>
-                        <clear/>
-                        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
-                      </handlers>
-                      <aspNetCore processPath=".\$($exe.Name)" stdoutLogEnabled="false" hostingModel="InProcess" />
-                    </system.webServer>
-                  </location>
-                </configuration>
-                "@
-                $path = Join-Path $dst 'web.config'
-                $wc | Out-File -FilePath $path -Encoding utf8 -Force
-                Remove-Item (Join-Path $dst 'ProvexBackendAPI.zip') -ErrorAction SilentlyContinue
-                Write-Host "web.config reescrito con processPath=$($exe.Name)"
-
-          - task: PowerShell@2
-            displayName: Open Windows Firewall port
-            inputs:
-              targetType: inline
-              script: |
-                $rule = Get-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -ErrorAction SilentlyContinue
-                if (-not $rule) {
-                  New-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -Direction Inbound -Protocol TCP -LocalPort $(bindingPort) -Action Allow | Out-Null
-                }
-
-          - task: PowerShell@2
-            displayName: Start App Pool and Site
-            inputs:
-              targetType: inline
-              script: |
-                Import-Module WebAdministration
-                Start-WebAppPool -Name '$(appPoolName)'
-                Start-Website   -Name '$(siteName)'
-                $comp = $env:COMPUTERNAME
-                Write-Host "Publicado en http://$comp:$(bindingPort)/"
+    - task: PowerShell@2
+      displayName: Start App Pool and Site
+      inputs:
+        targetType: inline
+        script: |
+          Import-Module WebAdministration
+          Start-WebAppPool -Name '$(appPoolName)'
+          Start-Website -Name '$(siteName)'
+          Write-Host "Publicado en http://$env:COMPUTERNAME:$(bindingPort)/"

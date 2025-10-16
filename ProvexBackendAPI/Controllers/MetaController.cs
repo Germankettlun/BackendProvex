@@ -1,10 +1,13 @@
 using System;
 using Asp.Versioning;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 
 namespace ProvexBackendAPI.Controllers
 {
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
@@ -41,7 +44,7 @@ namespace ProvexBackendAPI.Controllers
                 ?? Environment.GetEnvironmentVariable("COMMIT_HASH")
                 ?? Environment.GetEnvironmentVariable("BUILD_SOURCEVERSION")
                 ?? _configuration["Deployment:CommitHash"]
-                ?? "unknown";
+                          ?? "unknown";
 
             var environmentName =
                 _environment?.EnvironmentName
@@ -61,5 +64,10 @@ namespace ProvexBackendAPI.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("healthz")]
+        [AllowAnonymous]
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        public IActionResult Healthz() => Ok(new { status = "ok" });
     }
 }

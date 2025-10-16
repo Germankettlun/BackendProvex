@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using ProvexBackendAPI.Exceptions;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
@@ -25,6 +26,7 @@ namespace ProvexBackendAPI.Controllers
 
         }
 
+        
         [HttpPost("Login", Name = "LoginUser")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

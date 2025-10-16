@@ -8,9 +8,9 @@ namespace ProvexBackendAPI.Dto.Authentication
     {
         public class LoginDto
         {
-            [Required(ErrorMessage = "El campo username es requerido")]
+            [Required(ErrorMessage = "El username es requerido")]
             public string? Username { get; set; }
-            [Required(ErrorMessage = "El campo password es requerido")]
+            [Required(ErrorMessage = "El password es requerido")]
             public string? Password { get; set; }
         }
 
@@ -19,7 +19,10 @@ namespace ProvexBackendAPI.Dto.Authentication
             public UserDataDto? User { get; set; }
             public string? Token { get; set; }
             public DateTimeOffset? ExpiresAt { get; set; }
-            public string? Message { get; set; }
+            public int? AnoBaseSemanaVigente { get; set; }
+            public string? SemanaBaseSemanaVigente { get; set; }
+          
+
         }
 
         public class UserRegisterDto
