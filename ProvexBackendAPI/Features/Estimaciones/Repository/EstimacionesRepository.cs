@@ -4,6 +4,7 @@ using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
 using System.Data;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Semanas.SemanasDto;
@@ -102,7 +103,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
         public async Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion)
         {
-            var dict = new Dictionary<string, EstimacionSemanalDto>(StringComparer.OrdinalIgnoreCase);
+            var estimaciones = new Dictionary<string, EstimacionSemanalDto>(StringComparer.OrdinalIgnoreCase);
+
+            // Índice auxiliar por estimación para "get or create" de semanas
+            var semanasIndexPorEstim = new Dictionary<string, Dictionary<string, SemanaEstimacionDto>>(StringComparer.OrdinalIgnoreCase);
 
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
@@ -120,20 +124,24 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             try
             {
                 await using var rdr = await cmd.ExecuteReaderAsync();
-
                 while (await rdr.ReadAsync())
                 {
-                    // ----- NIVEL ESTIMACIÓN (se repite por fila) -----
+                    
                     var idEstim = rdr.Get<string?>("ID_ESTIMACION") ?? string.Empty;
 
-                    if (!dict.TryGetValue(idEstim, out var estim))
+                    if (!estimaciones.TryGetValue(idEstim, out var estim))
                     {
                         estim = new EstimacionSemanalDto
                         {
                             IdEstimacion = idEstim,
                             Contratado = rdr.Get<int?>("CONTRATADO") ?? 0,
-                            IdEnvaseCosecha = rdr.Get<string?>("ID_ENVASE_COSECHA"),
-
+                            KilosBaseEspecie = rdr.Get<int?>("KILOS_BASE") ?? 0,
+                            EnvaseCosechero = new EnvaseCosecheroNode
+                            {
+                                Id = rdr.Get<string?>("ID_ENVASE_COSECHA"),
+                                Nombre = rdr.Get<string?>("NOMBRE_ENVASE_COSECHA") ?? "",
+                                Kilo = rdr.Get<double?>("KILOS_ENVASE") ?? 0.0,
+                            },
                             Totales = new TotalesEstimacionDto
                             {
                                 EstimadoSinPorcentaje = rdr.Get<int?>("TOTAL_E_SIN_PORC"),
@@ -141,34 +149,101 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                                 Proyectado = rdr.Get<int?>("TOTAL_P"),
                                 DiferenciaEstimadoConProyectado = rdr.Get<int?>("DIF_E_CON_P")
                             },
-
                             Semanas = new List<SemanaEstimacionDto>()
                         };
 
-                        dict[idEstim] = estim;
+                        estimaciones[idEstim] = estim;
+                        semanasIndexPorEstim[idEstim] = new Dictionary<string, SemanaEstimacionDto>(StringComparer.OrdinalIgnoreCase);
                     }
 
-                    // ----- NIVEL SEMANA (varía por fila) -----
-                    var semana = new SemanaEstimacionDto
-                    {
-                        Pos = rdr.Get<int?>("POS"),
-                        Anio = rdr.Get<int?>("ANIO") ?? 0,
-                        SemanaNumero = rdr.Get<string?>("SEMANA_NRO"),
-                        EstimadoSinPorcentaje = rdr.Get<int?>("E_SIN_PORC"),
-                        EstimadoConPorcentaje = rdr.Get<int?>("E_CON_PORC"),
-                        PorcentajeSemana = rdr.Get<int?>("P_SEMANA")
-                    };
+                    var semanasIndex = semanasIndexPorEstim[idEstim];
 
-                    estim.Semanas.Add(semana);
+                    // ====== CLAVE DE SEMANA ======
+                    var pos = rdr.Get<int?>("POS");
+                    var anio = rdr.Get<int?>("ANIO") ?? 0;
+                    var semNro = rdr.Get<string?>("SEMANA_NRO");
+
+                    // clave compuesta para no duplicar semanas
+                    var weekKey = $"{anio}|{semNro}|{(pos.HasValue ? pos.Value.ToString() : "-")}";
+
+                    // ====== GET OR CREATE Semana ======
+                    if (!semanasIndex.TryGetValue(weekKey, out var semana))
+                    {
+                        semana = new SemanaEstimacionDto
+                        {
+                            Pos = pos,
+                            Anio = anio,
+                            SemanaNumero = semNro,
+                            EstimadoSinPorcentaje = rdr.Get<int?>("E_SIN_PORC"),
+                            EstimadoConPorcentaje = rdr.Get<int?>("E_CON_PORC"),
+                            PorcentajeSemana = rdr.Get<int?>("P_SEMANA"),
+
+                            // Inicializa listas
+                            DistribucionCategoria = new List<DistribucionCategoriaPorSemanaNode>(),
+                            DistribucionCalibre = new List<DistribucionCalibrePorSemanaNode>(),
+                            PackingPorDia = new List<Semana_DistribucionPackingPorDia>(),
+                            FrigorificoPorDia = new List<Semana_DistribucionFrigorificoPorDia>()
+                        };
+
+                        semanasIndex[weekKey] = semana;
+                        estim.Semanas.Add(semana);
+                    }
+                    else
+                    {
+                        // Si ya existe la semana, opcionalmente refresca métricas base cuando vengan nulas
+                        semana.EstimadoSinPorcentaje ??= rdr.Get<int?>("E_SIN_PORC");
+                        semana.EstimadoConPorcentaje ??= rdr.Get<int?>("E_CON_PORC");
+                        semana.PorcentajeSemana ??= rdr.Get<int?>("P_SEMANA");
+                    }
+
+                    // ====== NODOS: Distribución por CATEGORÍA (por semana) ======
+                    // Reemplaza XXX_XXX por tus columnas reales
+                    var categorias = rdr.Get<string?>("CATEGORIAS_SEMANAS");
+
+
+                    semana.DistribucionCategoria = MapPairs(categorias, (nombre, porcentajeTxt) => new DistribucionCategoriaPorSemanaNode
+                    {
+                        nombreCategoria = nombre,
+                        Porcentaje = porcentajeTxt
+                    }
+                    );
+
+                    // ====== NODOS: Distribución por CALIBRE (por semana) ======
+                    var calibres = rdr.Get<string?>("CALIBRES_SEMANA");
+
+
+                    semana.DistribucionCalibre = MapPairs(calibres, (nombre, porcentajeTxt) => new DistribucionCalibrePorSemanaNode
+                    {
+                        nombreCalibre = nombre,
+                        Porcentaje = porcentajeTxt
+                    }
+                    );
+
+                    // ====== NODOS: PACKING por DÍA ======
+                    string? PackingPorDia = rdr.Get<string?>("PACKINGS_DIA_SEMANA");
+                    // Ej: "lunes (ProvAgro:60%), martes (ProvAgro:40%)"
+
+                  
+
+                    semana.PackingPorDia = BuildPackingPorDia(PackingPorDia);
+                    
+
+                    // ====== NODOS: FRIGORÍFICO por DÍA ======
+                    string? FrigorificoPorDia = rdr.Get<string?>("FRIGORIFICOS_DIA_SEMANA");
+                    // Ej: "lunes (ProvAgro:60%), martes (ProvAgro:40%)"
+
+                    semana.FrigorificoPorDia = BuildFrigorificoPorDia(FrigorificoPorDia);
                 }
             }
             catch (Exception ex)
             {
-
+                // Manejo mínimo; si ya tienes middleware/log, propaga o registra:
+                // _logger.LogError(ex, "Error en GetResumenSemanalAsync");
+                throw;
             }
 
-            // Orden opcional de semanas
-            foreach (var e in dict.Values)
+            // Orden semanas
+            foreach (var e in estimaciones.Values)
             {
                 e.Semanas = e.Semanas
                     .OrderBy(s => s.Pos ?? int.MaxValue)
@@ -176,7 +251,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     .ToList();
             }
 
-            return dict.Values.ToList();
+            return estimaciones.Values.ToList();
         }
 
         private static EstructuraDistribucionDto BuildTree(
@@ -411,7 +486,192 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return ordered.Take(weeksPerPage).ToList();
         }
 
+        //Helper distribución packing / frigorifico
 
+        public static List<Semana_DistribucionPackingPorDia> BuildPackingPorDia(string? raw)
+        {
+            var parsed = ParseDayNamePercentList(raw);
+            return parsed
+                .GroupBy(x => x.Day, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new Semana_DistribucionPackingPorDia
+                {
+                    nombreDia = g.Key,
+                    Packings = g.Select(p => new NombrePorcentajeDto
+                    {
+                        Nombre = p.Name,
+                        Porcentaje = p.PercentText
+                    }).ToList()
+                })
+                .ToList();
+        }
+
+        public static List<Semana_DistribucionFrigorificoPorDia> BuildFrigorificoPorDia(string? raw)
+        {
+            var parsed = ParseDayNamePercentList(raw);
+            return parsed
+                .GroupBy(x => x.Day, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new Semana_DistribucionFrigorificoPorDia
+                {
+                    nombreDia = g.Key,
+                    Frigorificos = g.Select(p => new NombrePorcentajeDto
+                    {
+                        Nombre = p.Name,
+                        Porcentaje = p.PercentText
+                    }).ToList()
+                })
+                .ToList();
+        }
+        public static List<(string Day, string Name, string PercentText, double? PercentValue)>
+          ParseDayNamePercentList(
+              string? raw,
+              char[]? daySeps = null,          // separadores entre días (fuera de paréntesis)
+              char[]? innerPairSeps = null,    // separadores entre pares dentro del paréntesis
+              char[]? innerKvSeps = null)      // separadores nombre:porcentaje
+        {
+            var result = new List<(string Day, string Name, string PercentText, double? PercentValue)>();
+            if (string.IsNullOrWhiteSpace(raw)) return result;
+
+            daySeps ??= new[] { ';', ',' };
+            innerPairSeps ??= new[] { ';', ',' };
+            innerKvSeps ??= new[] { ':', '=' };
+
+            // 1) separar en "bloques de día" solamente por separadores FUERA de paréntesis
+            var dayChunks = SplitOutsideParentheses(raw, daySeps);
+
+            // 2) regex para capturar Día y el contenido entre paréntesis
+            var dayAndInnerRegex = new Regex(
+                @"^\s*([^(]+?)\s*\(\s*(.*?)\s*\)\s*$",
+                RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
+            );
+
+            foreach (var chunk in dayChunks)
+            {
+                var part = chunk.Trim();
+                if (part.Length == 0) continue;
+
+                var m = dayAndInnerRegex.Match(part);
+                if (!m.Success)
+                {
+                    // Si no matchea, devolvemos el texto como "día" sin items (fallback suave)
+                    result.Add((part, "", "", null));
+                    continue;
+                }
+
+                var day = m.Groups[1].Value.Trim();    // "viernes"
+                var inner = m.Groups[2].Value.Trim();  // "La Providencia:60%, Packing Test:40%"
+
+                var pairs = ParseNamePercentPairs(inner, innerPairSeps, innerKvSeps);
+                if (pairs.Count == 0)
+                {
+                    result.Add((day, "", "", null));
+                    continue;
+                }
+
+                foreach (var (name, pctText, pctVal) in pairs)
+                    result.Add((day, name, pctText, pctVal));
+            }
+
+            return result;
+        }
+
+        // ==========================================
+        //   Helper: split fuera de paréntesis
+        //   "A (x, y), B (z)" -> ["A (x, y)", "B (z)"]
+        // ==========================================
+        private static List<string> SplitOutsideParentheses(string text, char[] seps)
+        {
+            var list = new List<string>();
+            if (string.IsNullOrEmpty(text)) return list;
+
+            int depth = 0;
+            int start = 0;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+
+                if (c == '(') depth++;
+                else if (c == ')') depth = Math.Max(0, depth - 1);
+                else if (depth == 0 && Array.IndexOf(seps, c) >= 0)
+                {
+                    // separador a nivel tope → cortamos
+                    var seg = text.Substring(start, i - start).Trim();
+                    if (seg.Length > 0) list.Add(seg);
+                    start = i + 1; // siguiente después del separador
+                }
+            }
+
+            // último segmento
+            var last = text.Substring(start).Trim();
+            if (last.Length > 0) list.Add(last);
+
+            return list;
+        }
+
+        // ==========================================
+        //   Helper: "Nombre:60%, Otro:40%" → pares
+        //   (split normal, aquí ya estamos dentro de paréntesis)
+        // ==========================================
+        private static List<(string Name, string PercentText, double? PercentValue)>
+            ParseNamePercentPairs(string? inner, char[]? pairSeps, char[]? kvSeps)
+        {
+            var pairs = new List<(string, string, double?)>();
+            if (string.IsNullOrWhiteSpace(inner)) return pairs;
+
+            pairSeps ??= new[] { ';', ',' };
+            kvSeps ??= new[] { ':', '=' };
+
+            var chunks = inner.Split(pairSeps, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var chunk in chunks)
+            {
+                var part = chunk.Trim();
+                if (part.Length == 0) continue;
+
+                int idx = -1;
+                foreach (var sep in kvSeps)
+                {
+                    idx = part.IndexOf(sep);
+                    if (idx >= 0) break;
+                }
+
+                if (idx < 0)
+                {
+                    // No hay separador clave-valor → guarda el nombre y porcentaje vacío
+                    pairs.Add((part, "", null));
+                    continue;
+                }
+
+                var name = part[..idx].Trim();
+                var rawVal = part[(idx + 1)..].Trim();
+
+                var percentText = rawVal; // conserva "60%" tal cual
+
+                // Limpieza para número (si te sirve PercentValue)
+                var cleaned = rawVal.Replace("%", "").Trim().Replace(',', '.');
+                if (double.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out var val))
+                    pairs.Add((name, percentText, val));
+                else
+                    pairs.Add((name, percentText, null));
+            }
+
+            return pairs;
+        }
+
+        public static List<TOut> MapPairs<TOut>(
+        string? raw,
+        Func<string, string, TOut> factory,
+        char[]? pairSeps = null,
+        char[]? kvSeps = null)
+        {
+            var pairs = ParseNamePercentPairs(raw, pairSeps, kvSeps);
+            var list = new List<TOut>(pairs.Count);
+            foreach (var (name, percentText, _) in pairs)
+            {
+                list.Add(factory(name, percentText));
+            }
+            return list;
+        }
     }
 
 }
