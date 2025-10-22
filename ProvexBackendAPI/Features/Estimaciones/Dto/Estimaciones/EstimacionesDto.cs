@@ -286,8 +286,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public required DateTime FechaDia { get; set; }   // ← mapea a @FECHA (insert) o @FECHA_ACTUAL (update)
             public decimal? Estimado { get; set; }
             public decimal? Producido { get; set; }
-            public decimal? DistribucionFrio { get; set; }
-            public decimal? DistribucionPacking { get; set; }
+            public bool? DistribucionFrio { get; set; }
+            public bool? DistribucionPacking { get; set; }
         }
 
         public sealed class SpResultEstimacionBisemanalDto
