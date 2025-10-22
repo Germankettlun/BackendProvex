@@ -272,7 +272,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 {
                     check.CommandType = CommandType.StoredProcedure;
                     check.Parameters.AddWithValue("@IDESTIMACION", dto.IdEstimacion);
-                    check.Parameters.AddWithValue("@FECHA", dto.Dia);
+                    check.Parameters.AddWithValue("@FECHA", dto.Dia.FechaDia);
 
                     var scalar = await check.ExecuteScalarAsync();
                     
@@ -293,7 +293,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 
                     cmd.Parameters.AddWithValue("@IDESTIMACION", dto.IdEstimacion);                   
                     cmd.Parameters.AddWithValue("@CAJAS", cajas);
-                    cmd.Parameters.AddWithValue("@FECHA", dto.Dia);
+                    cmd.Parameters.AddWithValue("@FECHA", dto.Dia.FechaDia);
                     cmd.Parameters.AddWithValue("@IDUSUARIO", (object?)userId ?? DBNull.Value);
                
 
