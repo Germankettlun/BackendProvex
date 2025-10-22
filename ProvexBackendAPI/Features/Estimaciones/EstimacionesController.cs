@@ -43,10 +43,35 @@ namespace ProvexBackendAPI.Features.Estimaciones
             [FromQuery] string codigoEmpresa,
             [FromQuery] string idTemporada,
             [FromQuery] int idEstimacion
-    )
+        )
         {
             var data = await _estimacionesService.GetResumenSemanalAsync(codigoEmpresa,idTemporada,idEstimacion);
             return Ok(data);
+        }
+
+        // POST api/v{version}/estimaciones/bisemanal/dia
+        [HttpPost("dia", Name = "UpdateInsertBisemanalDia")]
+        //[Authorize] 
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateInsertBisemanalDia(
+        [FromBody] UpdateEstimacionBisemanalRequest request)
+        {
+            var userId = 1;      
+
+            try
+            {
+                _ = await _estimacionesService.UpsertDiaAsync(request, userId);
+                return Ok(); // 200, data:null
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

@@ -61,5 +61,20 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
 
         }
+
+        public async Task<SpResultEstimacionBisemanalDto> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, int? userId)
+        {
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.IdEstimacion <= 0)
+                throw new ArgumentException("IdEstimacion inválido.", nameof(dto.IdEstimacion));
+
+            if (dto.ValorNuevo < 0)
+                throw new ArgumentException("ValorNuevo no puede ser negativo.", nameof(dto.ValorNuevo));
+            
+            if (dto.Dia.FechaDia < new DateOnly(2000,1,1)) throw new ArgumentException("Fecha inválida.");
+
+            return await _EstimacionesRepository.UpsertDiaAsync(dto, userId);
+        }
     }
 }

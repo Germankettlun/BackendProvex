@@ -271,6 +271,33 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public string? Porcentaje { get; set; }
         }
 
+        //DTO PARA POST
+
+        public sealed class UpdateEstimacionBisemanalRequest
+        {
+            public required int IdEstimacion { get; set; }
+            public required decimal ValorNuevo { get; set; } 
+            public required DiaRequest Dia { get; set; }
+        }
+
+        public sealed class DiaRequest
+        {
+            public required string NombreDia { get; set; }    // informativo
+            public required DateOnly FechaDia { get; set; }   // ← mapea a @FECHA (insert) o @FECHA_ACTUAL (update)
+            public decimal? Estimado { get; set; }
+            public decimal? Producido { get; set; }
+            public decimal? DistribucionFrio { get; set; }
+            public decimal? DistribucionPacking { get; set; }
+        }
+
+        public sealed class SpResultEstimacionBisemanalDto
+        {
+          
+            public int? IdEstimacion { get; set; }
+            public String? Message { get; set; }
+
+        }
+
     }  
 }
 
