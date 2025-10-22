@@ -283,7 +283,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
         public sealed class DiaRequest
         {
             public required string NombreDia { get; set; }    // informativo
-            public required DateOnly FechaDia { get; set; }   // ← mapea a @FECHA (insert) o @FECHA_ACTUAL (update)
+            public required DateTime FechaDia { get; set; }   // ← mapea a @FECHA (insert) o @FECHA_ACTUAL (update)
             public decimal? Estimado { get; set; }
             public decimal? Producido { get; set; }
             public decimal? DistribucionFrio { get; set; }
