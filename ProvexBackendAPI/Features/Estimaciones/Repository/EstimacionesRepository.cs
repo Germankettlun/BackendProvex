@@ -1,9 +1,11 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
 using System.Data;
 using System.Globalization;
+using System.Runtime.Intrinsics.Arm;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
@@ -254,6 +256,90 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return estimaciones.Values.ToList();
         }
 
+
+
+        public async Task<SpResultEstimacionBisemanalDto> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, int? userId)
+        {
+            using var cn = new SqlConnection(_connString);
+            await cn.OpenAsync();
+           
+
+            try
+            {
+                // Verifica si la estimación bisemanal ya existe
+                var exists = false;
+                using (var check = new SqlCommand("[Estimaciones].[usp_EXISTE_ESTIMACION_BISEMANAL]", cn))
+                {
+                    check.CommandType = CommandType.StoredProcedure;
+                    check.Parameters.AddWithValue("@IDESTIMACION", dto.IdEstimacion);
+                    check.Parameters.AddWithValue("@FECHA", dto.Dia.FechaDia.ToDateTime(TimeOnly.MinValue));
+
+                    var scalar = await check.ExecuteScalarAsync();
+                    
+                    exists = Convert.ToInt32(scalar) == 1;
+                }
+
+                var cajas = Convert.ToInt32(Math.Round(dto.ValorNuevo, 0, MidpointRounding.AwayFromZero));
+
+                //  UPDATE si existe; INSERT si no existe
+                using var cmd = new SqlCommand(exists
+                    ? "[Estimaciones].[usp_UPDATE_EstimacionBisemanal_Dia]"
+                    : "[Estimaciones].[usp_INSERT_EstimacionBisemanal_Dia]", cn)
+                {
+                    CommandType = CommandType.StoredProcedure,
+                    CommandTimeout = 60
+                };
+
+                
+                    cmd.Parameters.AddWithValue("@IDESTIMACION", dto.IdEstimacion);                   
+                    cmd.Parameters.AddWithValue("@CAJAS", cajas);
+                    cmd.Parameters.AddWithValue("@FECHA", dto.Dia.FechaDia.ToDateTime(TimeOnly.MinValue));
+                    cmd.Parameters.AddWithValue("@IDUSUARIO", (object?)userId ?? DBNull.Value);
+               
+
+                var result = new SpResultEstimacionBisemanalDto();
+                using (var rdr2 = await cmd.ExecuteReaderAsync())
+                {
+                    if (await rdr2.ReadAsync())
+                    {
+                        int? sInt = rdr2.Get<int?>("SUCCESS");
+                       
+                        bool ok = (sInt.HasValue && sInt.Value == 1);
+
+
+                        if (!ok)
+                        {
+                            var errMsg = rdr2.Get<string?>("ERROR_MESSAGE")
+                                      ?? rdr2.Get<string?>("MENSAJE")
+                                      ?? "Operación fallida.";
+                            throw new InvalidOperationException(errMsg);
+                        }
+
+
+                        result.IdEstimacion = exists? (rdr2.Get<int?>("ID_ESTIMACION") ?? dto.IdEstimacion) : (rdr2.Get<int?>("ID_INSERTADO") ?? dto.IdEstimacion);
+
+                        result.Message = rdr2.Get<string?>("MENSAJE")
+                                       ?? (exists ? "Actualizado" : "Insertado");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("El procedimiento no devolvió resultado. No se pudo confirmar la operación.");
+                    }
+                   
+                }
+
+               
+                return result;
+            }
+            catch
+            {
+               
+                throw;
+            }
+        }
+
+
+
         private static EstructuraDistribucionDto BuildTree(
      List<RowFlat> rows,
      EstimacionBisemanalQueryDto req,
@@ -405,7 +491,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return s.Length == 1 ? "0" + s : s;
         }
 
-        private static string ToWeek2(int w) => w.ToString("00", CultureInfo.InvariantCulture);
+       
 
         // Construye una semana (BisemanalNode) con 7 días en null usando INICIO..TERMINO
         private static BisemanalNode BuildEmptyFromSemanaRow(SemanaVigenteRow m)
@@ -672,6 +758,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             }
             return list;
         }
+
+       
     }
 
 }
