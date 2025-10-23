@@ -52,30 +52,32 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             await using var rdr = await cmd.ExecuteReaderAsync();
             while (await rdr.ReadAsync())
             {
-               
+                // Saltar filas sin ID_ESTIMACION (la primera fila “NULL” del SP, etc.)
+                var estId = rdr.Get<int?>("ID_ESTIMACION");  // puede ser null
+
                 rows.Add(new RowFlat
                 {
                     // Raíz
-                    PesoBaseEspecie = rdr.Get<double?>("ESPECIE_KILO_BASE") ?? 0.0, 
+                    PesoBaseEspecie = rdr.Get<double?>("ESPECIE_KILO_BASE") ?? 0.0,
                     Especie = rdr.FirstExistingAsString("NOM_ESP"),
 
                     // Item
                     IdProductor = rdr.FirstExistingAsString("ID_PRODUCTOR"),
                     Productor = rdr.FirstExistingAsString("NOM_PROD"),
                     Variedad = rdr.FirstExistingAsString("NOM_VAR"),
-                    Agronomo = rdr.FirstExistingAsString("NOM_USUARIO_AGRONOMO") ?? "", 
+                    Agronomo = rdr.FirstExistingAsString("NOM_USUARIO_AGRONOMO") ?? "",
                     DistribucionCalibre = rdr.Get<bool?>("DIST_CAL"),
                     DistribucionCategoria = rdr.Get<bool?>("DIST_CAT"),
 
                     // Envase
-                    EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "", //Falta
-                    EnvaseNombre = rdr.FirstExistingAsString("NOM_ENVASE_COSECHA") ?? "", 
-                    EnvaseKilo = rdr.Get<int?>("KG_DIA_ENVASE") ?? 0, 
+                    EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "",
+                    EnvaseNombre = rdr.FirstExistingAsString("NOM_ENVASE_COSECHA") ?? "",
+                    EnvaseKilo = rdr.Get<int?>("KG_DIA_ENVASE") ?? 0,
 
                     // Estimación + semanas
-                    Est_ID = rdr.Get<int?>("ID_ESTIMACION"),
-                    Est_Contratado = rdr.Get<int?>("CAJAS_CONTRATADAS") ?? 0, 
-                    Est_FCosecha = rdr.FirstExistingAsString("FECHA_INICIO_COSECHA_YM") ?? "", 
+                    Est_ID = estId,
+                    Est_Contratado = rdr.Get<int?>("CAJAS_CONTRATADAS") ?? 0,
+                    Est_FCosecha = rdr.FirstExistingAsString("FECHA_INICIO_COSECHA_YM") ?? "",
 
                     Ant_Estimado = rdr.Get<int?>("CAJAS_E_ANTERIOR_SIN_PORC"),
                     Ant_Producido = rdr.Get<int?>("CAJAS_P_ANTERIOR"),
@@ -83,9 +85,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     Sig_Producido = rdr.Get<int?>("CAJAS_P_SIGUIENTE_SIN_PORC"),
 
                     // Bisemanal
-                    
                     Bis_AnioBase = rdr.Get<int?>("ANIO"),
-                    Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),                    
+                    Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),
                     Bis_PorcExport = rdr.Get<int?>("PCT_EXP_PORC") ?? 0,
 
                     // Días
@@ -355,13 +356,11 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             var itemGroups = rows.GroupBy(r => new
             {
-                r.IdProductor,
-                r.Productor,
-                r.Variedad,
-                r.Agronomo,
-                r.EnvaseId,
-                r.EnvaseNombre,
-                r.EnvaseKilo
+                HasEst = r.Est_ID.HasValue,
+                EstId = r.Est_ID ?? -1,
+                IdProductor = r.Est_ID.HasValue ? null : r.IdProductor,
+                Especie = r.Est_ID.HasValue ? null : r.Especie,
+                Variedad = r.Est_ID.HasValue ? null : r.Variedad
             });
 
             foreach (var g in itemGroups)
@@ -370,72 +369,62 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
                 var item = new ItemNode
                 {
-                    Id_Productor = g.Key.IdProductor,
-                    Productor = g.Key.Productor,
-                    Variedad = g.Key.Variedad,
-                    Agronomo = g.Key.Agronomo,
+                    Id_Productor = any.IdProductor,
+                    Productor = any.Productor,
+                    Variedad = any.Variedad,
+                    Agronomo = any.Agronomo,
                     DistribucionCalibre = any.DistribucionCalibre,
                     DistribucionCategoria = any.DistribucionCategoria,
                     EnvaseCosechero = new EnvaseCosecheroNode
                     {
-                        Id = g.Key.EnvaseId,
-                        Nombre = g.Key.EnvaseNombre,
-                        Kilo = g.Key.EnvaseKilo
+                        Id = any.EnvaseId,
+                        Nombre = any.EnvaseNombre,
+                        Kilo = any.EnvaseKilo
                     }
                 };
 
-                // Representante con estimación (si existe)
-                var anyEst = g.FirstOrDefault(r => r.Est_ID.HasValue && r.Est_ID.Value >= 0);
-
-                // Estimación SIEMPRE “llena pero null”
                 var est = new EstimacionNode
                 {
-                    ID = anyEst?.Est_ID,
-                    Contratado = anyEst?.Est_Contratado,
-                    FCosecha = anyEst?.Est_FCosecha,
+                    ID = any.Est_ID,                          // puede ser null (grupo “sin estimación”)
+                    Contratado = any.Est_Contratado,
+                    FCosecha = any.Est_FCosecha,
                     Semanas = new SemanasNode
                     {
-                        Anterior = new SemanaValorNode { Estimado = anyEst?.Ant_Estimado, Producido = anyEst?.Ant_Producido },
-                        Siguiente = new SemanaValorNode { Estimado = anyEst?.Sig_Estimado, Producido = anyEst?.Sig_Producido },
+                        Anterior = new SemanaValorNode { Estimado = any.Ant_Estimado, Producido = any.Ant_Producido },
+                        Siguiente = new SemanaValorNode { Estimado = any.Sig_Estimado, Producido = any.Sig_Producido },
                         Bisemanal = new List<BisemanalNode>()
                     }
                 };
 
-                // 1) Elegir semanas esperadas (N consecutivas) desde el provider
+                // Semanas esperadas + placeholders desde provider (igual que ya lo tienes)
                 int n = req.WeeksPerPage <= 0 ? 2 : req.WeeksPerPage;
                 var expectedRows = PickWeeks(semanasProvider, req.AnioBase, req.SemanaBase, g, n);
 
-                // 2) Sembrar placeholders desde provider (7 días con fechas + nulls)
                 var byKey = expectedRows.ToDictionary(
                     s => $"{s.AnioBase:D4}-{ToWeek2(s.SemanaBase)}",
                     s => BuildEmptyFromSemanaRow(s)
                 );
 
-                // 3) Agrupar por semana (sin distribución en la clave)
+                // Grupos por semana y “pisada” de placeholders (igual que ya lo tienes)
                 var bisGroups = g.Where(r => r.Bis_ID.HasValue
                                           || (r.Bis_AnioBase.HasValue && !string.IsNullOrWhiteSpace(r.Bis_SemanaBase)))
                                  .GroupBy(r => new
                                  {
-                                     r.Bis_AnioBase,                       // int?
-                                     Semana = ToWeek2(r.Bis_SemanaBase!),  // "01".."53"
-                                     
+                                     r.Bis_AnioBase,
+                                     Semana = ToWeek2(r.Bis_SemanaBase!),
                                      r.Bis_PorcExport
                                  });
 
-                // 4) Pisar placeholders con datos reales
                 foreach (var bg in bisGroups)
                 {
                     if (!bg.Key.Bis_AnioBase.HasValue) continue;
                     var key = $"{bg.Key.Bis_AnioBase.Value:D4}-{bg.Key.Semana}";
                     if (!byKey.TryGetValue(key, out var bis)) continue;
 
-                    // Metadatos de la semana
-                   
                     bis.AnioBase = bg.Key.Bis_AnioBase;
                     bis.SemanaBase = bg.Key.Semana;
                     bis.PorcentajeExportacion = bg.Key.Bis_PorcExport;
 
-                    // Días: mapear valores y distribución POR DÍA
                     foreach (var d in bg)
                     {
                         int idx = -1;
@@ -452,23 +441,16 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                         if (idx < 0 || idx >= 7) continue;
 
                         var dia = bis.Dias![idx];
-
-                        // Valores base
                         dia.IdBisemanal = d.Bis_ID;
                         dia.Estimado = d.Dia_Estimado;
                         dia.Producido = d.Dia_Producido;
                         if (d.Dia_Fecha.HasValue) dia.FechaDia = d.Dia_Fecha;
                         if (!string.IsNullOrWhiteSpace(d.Dia_Nombre)) dia.NombreDia = d.Dia_Nombre;
-
-                        // NUEVO: distribución por día
-                        // Ideal: si tu SP ya trae columnas por día (p.ej. Dia_DistFrio / Dia_DistPacking)
-                        // usa esas; si no existen aún, caes por defecto al valor de la semana del registro (si venían).
                         dia.DistribucionFrio = d.Dia_DistribucionFrio;
                         dia.DistribucionPacking = d.Dia_DistribucionPacking;
                     }
                 }
 
-                // 5) Orden final: exactamente como expectedRows
                 est.Semanas!.Bisemanal = expectedRows
                     .Select(s => byKey[$"{s.AnioBase:D4}-{ToWeek2(s.SemanaBase)}"])
                     .ToList();
