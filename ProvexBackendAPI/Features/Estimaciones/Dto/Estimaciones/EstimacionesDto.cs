@@ -125,8 +125,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public int? AnioBase { get; set; }
             public string? SemanaBase { get; set; }
 
-            // (Opcional) Si esto queda a nivel semana, se mantiene:
-            public decimal? PorcentajeExportacion { get; set; }
+            //// (Opcional) Si esto queda a nivel semana, se mantiene:
+            //public decimal? PorcentajeExportacion { get; set; }
 
 
 
