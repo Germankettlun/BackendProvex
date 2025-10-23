@@ -143,7 +143,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                             EnvaseCosechero = new EnvaseCosecheroNode
                             {
                                 Id = rdr.Get<string?>("ID_ENVASE_COSECHA"),
-                                Nombre = rdr.Get<string?>("NOMBRE_ENVASE_COSECHA") ?? "",
+                                Nombre = rdr.Get<string?>("NOM_ENVASE_COSECHA") ?? "",
                                 Kilo = rdr.Get<double?>("KILOS_ENVASE") ?? 0.0,
                             },
                             Totales = new TotalesEstimacionDto
@@ -569,8 +569,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             {
                
                 AnioBase = m.AnioBase,
-                SemanaBase = ToWeek2(m.SemanaBase), // siempre 2 dígitos              
-                PorcentajeExportacion = null,
+                SemanaBase = ToWeek2(m.SemanaBase), // siempre 2 dígitos             
                 Dias = dias
             };
         }
