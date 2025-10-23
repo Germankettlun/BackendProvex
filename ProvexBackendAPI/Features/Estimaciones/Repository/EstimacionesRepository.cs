@@ -68,6 +68,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     Agronomo = rdr.FirstExistingAsString("NOM_USUARIO_AGRONOMO") ?? "",
                     DistribucionCalibre = rdr.Get<bool?>("DIST_CAL"),
                     DistribucionCategoria = rdr.Get<bool?>("DIST_CAT"),
+                    PorcentajeExportacion = rdr.Get<int?>("PCT_EXP_PORC") ?? 0,
 
                     // Envase
                     EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "",
@@ -87,13 +88,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     // Bisemanal
                     Bis_AnioBase = rdr.Get<int?>("ANIO"),
                     Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),
-                    Bis_PorcExport = rdr.Get<int?>("PCT_EXP_PORC") ?? 0,
+                    
 
                     // Días
                     Bis_ID = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL"),
                     Dia_Nombre = rdr.FirstExistingAsString("NOMBRE_DIA"),
                     Dia_Fecha = rdr.Get<DateTime?>("DIA"),
-                    Dia_Estimado = rdr.Get<decimal?>("CAJAS_ESTIMADAS_SIN_PORC"),
+                    Dia_Estimado = rdr.Get<decimal?>("CAJAS_E_DISTRIB_SIN_PORC"),
                     Dia_Producido = rdr.Get<decimal?>("CAJAS_P"),
                     Dia_DistribucionFrio = rdr.Get<bool?>("DIST_FRI"),
                     Dia_DistribucionPacking = rdr.Get<bool?>("DIST_PACK")
@@ -375,6 +376,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     Agronomo = any.Agronomo,
                     DistribucionCalibre = any.DistribucionCalibre,
                     DistribucionCategoria = any.DistribucionCategoria,
+                    PorcentajeExportacion = any.PorcentajeExportacion,
                     EnvaseCosechero = new EnvaseCosecheroNode
                     {
                         Id = any.EnvaseId,
@@ -411,8 +413,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                                  .GroupBy(r => new
                                  {
                                      r.Bis_AnioBase,
-                                     Semana = ToWeek2(r.Bis_SemanaBase!),
-                                     r.Bis_PorcExport
+                                     Semana = ToWeek2(r.Bis_SemanaBase!)
                                  });
 
                 foreach (var bg in bisGroups)
@@ -423,31 +424,52 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
                     bis.AnioBase = bg.Key.Bis_AnioBase;
                     bis.SemanaBase = bg.Key.Semana;
-                    bis.PorcentajeExportacion = bg.Key.Bis_PorcExport;
+                    
 
                     foreach (var d in bg)
                     {
+                        if (bis.Dias is null || bis.Dias.Count != 7) continue;
+
+                        // 1) Intento por FECHA (más confiable si tus placeholders traen FechaDia)
                         int idx = -1;
-                        if (!string.IsNullOrWhiteSpace(d.Dia_Nombre))
+                        if (d.Dia_Fecha.HasValue)
                         {
-                            var nom = d.Dia_Nombre.Trim().ToUpperInvariant();
-                            idx = Array.FindIndex(_diasEs, x => x == nom);
+                            // Si tus placeholders tienen FechaDia poblada, intenta match directo
+                            idx = bis.Dias.FindIndex(x => x.FechaDia.HasValue &&
+                                                          x.FechaDia.Value.Date == d.Dia_Fecha.Value.Date);
+
+                            // Si no encontró por igualdad exacta, calcula por DayOfWeek (semana ISO lunes=0)
+                            if (idx < 0) idx = MapDayOfWeekToIndex(d.Dia_Fecha.Value.DayOfWeek);
                         }
+
+                        // 2) Si no hay fecha o no se pudo, usa el NOMBRE robusto (quita acentos / acepta abreviaturas)
+                        if (idx < 0 && !string.IsNullOrWhiteSpace(d.Dia_Nombre))
+                        {
+                            idx = MapNombreADiaIndex(d.Dia_Nombre);
+                        }
+
+                        // 3) Fallback: intenta otra vez por fecha si hay (por si placeholders sí tenían fechas)
                         if (idx < 0 && d.Dia_Fecha.HasValue)
                         {
-                            idx = bis.Dias!.FindIndex(x => x.FechaDia.HasValue &&
-                                                           x.FechaDia.Value.Date == d.Dia_Fecha.Value.Date);
+                            idx = bis.Dias.FindIndex(x => x.FechaDia.HasValue &&
+                                                          x.FechaDia.Value.Date == d.Dia_Fecha.Value.Date);
                         }
-                        if (idx < 0 || idx >= 7) continue;
 
-                        var dia = bis.Dias![idx];
-                        dia.IdBisemanal = d.Bis_ID;
-                        dia.Estimado = d.Dia_Estimado;
-                        dia.Producido = d.Dia_Producido;
+                        // 4) Validación de rango
+                        if (idx < 0 || idx >= bis.Dias.Count) continue;
+
+                        var dia = bis.Dias[idx];
+
+                        // Si tienes múltiples filas por el mismo día, conviene ACUMULAR:
+                        dia.IdBisemanal = d.Bis_ID ?? dia.IdBisemanal;
+                        dia.Estimado = (dia.Estimado ?? 0) + (d.Dia_Estimado ?? 0);
+                        dia.Producido = (dia.Producido ?? 0) + (d.Dia_Producido ?? 0);
+
                         if (d.Dia_Fecha.HasValue) dia.FechaDia = d.Dia_Fecha;
                         if (!string.IsNullOrWhiteSpace(d.Dia_Nombre)) dia.NombreDia = d.Dia_Nombre;
-                        dia.DistribucionFrio = d.Dia_DistribucionFrio;
-                        dia.DistribucionPacking = d.Dia_DistribucionPacking;
+
+                        dia.DistribucionFrio = d.Dia_DistribucionFrio ?? dia.DistribucionFrio;
+                        dia.DistribucionPacking = d.Dia_DistribucionPacking ?? dia.DistribucionPacking;
                     }
                 }
 
@@ -466,6 +488,52 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
         private static readonly string[] _diasEs = new[] { "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO" };
 
+        private static int MapDayOfWeekToIndex(DayOfWeek dow)
+        {
+            // DayOfWeek: Sunday=0 ... Saturday=6
+            // Queremos:  LUNES=0 ... DOMINGO=6
+            // Fórmula: (dow + 6) % 7
+            return ((int)dow + 6) % 7;
+        }
+
+        private static string StripDiacritics(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text ?? "";
+            var norm = text.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(capacity: norm.Length);
+            foreach (var ch in norm)
+            {
+                var uc = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch);
+                if (uc != System.Globalization.UnicodeCategory.NonSpacingMark) sb.Append(ch);
+            }
+            return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+        }
+
+        private static int MapNombreADiaIndex(string? nombreDia)
+        {
+            if (string.IsNullOrWhiteSpace(nombreDia)) return -1;
+
+            var raw = StripDiacritics(nombreDia.Trim().ToUpperInvariant());
+            // Acepta largos y abreviaturas de 3+ letras
+            // Normalizamos a las claves completas del arreglo base
+            // Ej.: "MIE", "MIER", "MIERCOLES" -> "MIERCOLES"
+            string canon = raw switch
+            {
+                var s when s.StartsWith("LUN") => "LUNES",
+                var s when s.StartsWith("MAR") => "MARTES",
+                var s when s.StartsWith("MIE") => "MIERCOLES",
+                var s when s.StartsWith("JUE") => "JUEVES",
+                var s when s.StartsWith("VIE") => "VIERNES",
+                var s when s.StartsWith("SAB") => "SABADO",
+                var s when s.StartsWith("DOM") => "DOMINGO",
+                _ => raw
+            };
+
+            for (int i = 0; i < _diasEs.Length; i++)
+                if (_diasEs[i] == canon) return i;
+
+            return -1;
+        }
 
         private static string ToWeek2(string s)
         {
