@@ -61,6 +61,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             [JsonPropertyName("distribucionCategoria")]
             public bool? DistribucionCategoria { get; set; }
 
+            [JsonPropertyName("porcentajeexp")]
+            public int? PorcentajeExportacion { get; set; }
+
             [JsonPropertyName("envaseCosechero")]
             public EnvaseCosecheroNode? EnvaseCosechero { get; set; }
 
@@ -179,6 +182,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public double? PesoBaseEspecie { get; set; }
             public string? Especie { get; set; }
 
+
+
             // Item
             public string? IdProductor { get; set; }
             public string? Productor { get; set; }
@@ -186,6 +191,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public string? Agronomo { get; set; }
             public bool? DistribucionCalibre { get; set; }
             public bool? DistribucionCategoria { get; set; }
+
+            public int? PorcentajeExportacion { get; set; }
 
             // Envase
             public string? EnvaseId { get; set; }
@@ -207,7 +214,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public int? Bis_AnioBase { get; set; }
             public string? Bis_SemanaBase { get; set; }
 
-            public int? Bis_PorcExport { get; set; }
+         
 
             // Días
             public int? Bis_ID { get; set; }
