@@ -85,59 +85,33 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return Ok(data);
         }
 
-        // GET api/v{version}/distribucion/packing
-        [HttpGet("packing", Name = "GetDistribucionPacking")]
-        [ProducesResponseType(typeof(List<DistribucionPackingDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetPacking(
-            [FromQuery] DistribucionPackingQueryDto q
-    )
-        {
-           
-            var data = await _service.GetDistribucionPackingAsync(q);
-            return Ok(data);
-        }
+        
 
         // GET api/v{version}/distribucion/frigorifico
-        [HttpGet("frigorifico", Name = "GetDistribucionFrigorifico")]
-        [ProducesResponseType(typeof(List<DistribucionFrigorificoDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetFrigorifico(
-            [FromQuery] DistribucionPackingQueryDto q
-    )
-        {
-
-            var data = await _service.GetDistribucionFrigorificoAsync(q);
-            return Ok(data);
-        }
-
-        // GET api/v{version}/distribucion/frigorifico
-        [HttpGet("frigorificoAgrupado", Name = "GetFrigorificoAgrupado")]
+        [HttpGet("frigorifico", Name = "GetFrigorificoAgrupado")]
         [ProducesResponseType(typeof(List<DistribucionFrigorificoDiaDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetFrigorificoAgrupado(
-            [FromQuery] DistribucionPackingQueryDto q
+            [FromQuery] int idBisemanal
     )
         {
 
-            var data = await _service.GetDistribucionFrigorificoAgrupadoAsync(q);
+            var data = await _service.GetDistribucionFrigorificoAgrupadoAsync(idBisemanal);
             return Ok(data);
         }
 
         // GET api/v{version}/distribucion/packing
-        [HttpGet("packingAgrupado", Name = "GetPackingAgrupado")]
+        [HttpGet("packing", Name = "GetPackingAgrupado")]
         [ProducesResponseType(typeof(List<DistribucionPackingDiaDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetFrigoriGetPackingAgrupadoficoAgrupado(
-            [FromQuery] DistribucionPackingQueryDto q
+            [FromQuery] int idBisemanal
     )
         {
 
-            var data = await _service.GetDistribucionPackingAgrupadoAsync(q);
+            var data = await _service.GetDistribucionPackingAgrupadoAsync(idBisemanal);
             return Ok(data);
         }
     }
