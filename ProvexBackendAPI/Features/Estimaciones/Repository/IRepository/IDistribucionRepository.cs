@@ -1,4 +1,5 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
+using System.Numerics;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 {
@@ -17,12 +18,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
       string codigoTemporada,
       string? idCalibre);
 
-     Task<List<DistribucionPackingDto>> GetRowsDistribucionPackingAsync(DistribucionPackingQueryDto q);
 
-        Task<List<DistribucionPackingDiaDto>> GetRowsDistribucionPackingAgrupadoAsync(DistribucionPackingQueryDto q);
 
-        Task<List<DistribucionFrigorificoDto>> GetRowsDistribucionFrigorificoAsync(DistribucionPackingQueryDto q);
+        Task<List<DistribucionPackingDiaDto>> GetRowsDistribucionPackingAgrupadoAsync(int idBisemanal);
 
-     Task<List<DistribucionFrigorificoDiaDto>> GetRowsDistribucionFrigorificoAgrupadoAsync(DistribucionPackingQueryDto q);
+
+
+     Task<List<DistribucionFrigorificoDiaDto>> GetRowsDistribucionFrigorificoAgrupadoAsync(int idBisemanal);
     }
 }

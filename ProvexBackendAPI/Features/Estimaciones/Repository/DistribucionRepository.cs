@@ -87,9 +87,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return list;
         }
 
-        public async Task<List<DistribucionFrigorificoDto>> GetRowsDistribucionFrigorificoAsync(DistribucionPackingQueryDto q) { var list = new List<DistribucionFrigorificoDto>(); await using var conn = new SqlConnection(_connString); await conn.OpenAsync(); await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_BISEMANAL_FRIGORIFICO_SEMANAANO", conn) { CommandType = CommandType.StoredProcedure }; cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa }); cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie }); cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada }); cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = (object?)q.Anio ?? DBNull.Value }); cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar, 10) { Value = (object?)q.Semana ?? DBNull.Value }); cmd.Parameters.Add(new SqlParameter("@FECHADIA", SqlDbType.DateTime) { Value = (object?)q.FechaDia ?? DBNull.Value }); await using var rdr = await cmd.ExecuteReaderAsync(); while (await rdr.ReadAsync()) { list.Add(new DistribucionFrigorificoDto { IdEstimacion = rdr.Get<string?>("IDESTIMACION") ?? "", IdEspecie = rdr.Get<string?>("IDESPECIE") ?? "", IdEstimacionBisemanal = rdr.Get<string?>("IDESTIMACIONBISEMANAL") ?? "", Anio = rdr.Get<int?>("BISEMANALANIO") ?? 0, Semana = rdr.Get<string?>("BISEMANALSEMANA") ?? "", FechaDia = rdr.Get<DateTime?>("FECHADIA"), DiaNombre = rdr.Get<string?>("DIANOMBRE") ?? "", TotalCajasBisemanal = rdr.Get<int?>("TOTALCAJASBISEMANAL") ?? 0, IdDistribucionFrigorifico = rdr.FirstExistingAsString("IDDISTRUBUCIONFRIGORIFICO"), IdFrigorifico = rdr.Get<string?>("IDFRIGORIFICO") ?? "", Porcentaje = rdr.Get<int?>("PORCENTAJE") ?? 0, FrigorificoNombre = rdr.FirstExistingAsString("FRIGORIFICO"), SumaPorcentajeEs100 = rdr.Get<bool?>("SumaPorcentajeEs100") ?? false }); } return list; }
 
-        public async Task<List<DistribucionFrigorificoDiaDto>> GetRowsDistribucionFrigorificoAgrupadoAsync(DistribucionPackingQueryDto q)
+        public async Task<List<DistribucionFrigorificoDiaDto>> GetRowsDistribucionFrigorificoAgrupadoAsync(int idBisemanal)
         {
             // key -> objeto por día
             var byDay = new Dictionary<string, DistribucionFrigorificoDiaDto>();
@@ -102,12 +101,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 CommandType = CommandType.StoredProcedure
             };
 
-            cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada });
-            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = (object?)q.Anio ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar, 10) { Value = (object?)q.Semana ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@FECHADIA", SqlDbType.DateTime) { Value = (object?)q.FechaDia ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION_BISEMANAL", SqlDbType.Int) { Value = idBisemanal });
+
+          
 
             await using var rdr = await cmd.ExecuteReaderAsync();
 
@@ -178,7 +174,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 .ToList();
         }
 
-        public async Task<List<DistribucionPackingDiaDto>> GetRowsDistribucionPackingAgrupadoAsync(DistribucionPackingQueryDto q)
+        public async Task<List<DistribucionPackingDiaDto>> GetRowsDistribucionPackingAgrupadoAsync(int idBisemanal)
         {
             // key -> objeto por día
             var byDay = new Dictionary<string, DistribucionPackingDiaDto>();
@@ -191,12 +187,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 CommandType = CommandType.StoredProcedure
             };
 
-            cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada });
-            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = (object?)q.Anio ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar, 10) { Value = (object?)q.Semana ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@FECHADIA", SqlDbType.DateTime) { Value = (object?)q.FechaDia ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION_BISEMANAL", SqlDbType.Int) { Value = idBisemanal });
+
 
             await using var rdr = await cmd.ExecuteReaderAsync();
 
@@ -269,50 +261,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
 
 
-        //ANTIGUO
-        public async Task<List<DistribucionPackingDto>> GetRowsDistribucionPackingAsync(DistribucionPackingQueryDto q)
-        {
-            var list = new List<DistribucionPackingDto>();
-
-            await using var conn = new SqlConnection(_connString);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_BISEMANAL_PACKING_SEMANAANO", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = q.CodigoEmpresa });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = q.CodigoEspecie });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = q.CodigoTemporada });
-            cmd.Parameters.Add(new SqlParameter("@ANIO", SqlDbType.Int) { Value = (object?)q.Anio ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@SEMANA", SqlDbType.VarChar, 10) { Value = (object?)q.Semana ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@FECHADIA", SqlDbType.DateTime) { Value = (object?)q.FechaDia ?? DBNull.Value });
-
-            await using var rdr = await cmd.ExecuteReaderAsync();
-
-            while (await rdr.ReadAsync())
-            {
-                list.Add(new DistribucionPackingDto
-                {
-                    IdEstimacion = rdr.Get<string?>("IDESTIMACION") ?? "",
-                    IdEspecie = rdr.Get<string?>("IDESPECIE") ?? "",
-                    IdEstimacionBisemanal = rdr.Get<string?>("IDESTIMACIONBISEMANAL") ?? "",
-                    Anio = rdr.Get<int?>("BISEMANALANIO") ?? 0,
-                    Semana = rdr.Get<string?>("BISEMANALSEMANA") ?? "",
-                    FechaDia = rdr.Get<DateTime?>("FECHADIA"),
-                    DiaNombre = rdr.Get<string?>("DIANOMBRE") ?? "",
-                    TotalCajasBisemanal = rdr.Get<int?>("TOTALCAJASBISEMANAL") ?? 0,
-                    // tolerante al typo
-                    IdDistribucionPacking = rdr.FirstExistingAsString("IDDISTRUBUCIONPACKING", "IDDISTRIBUCIONPACKING"),
-                    IdPacking = rdr.Get<string?>("IDPACKING") ?? "",
-                    Porcentaje = rdr.Get<int?>("PORCENTAJE") ?? 0,
-                    PackingNombre = rdr.FirstExistingAsString("PACKING"),
-                    SumaPorcentajeEs100 = rdr.Get<bool?>("SumaPorcentajeEs100") ?? false
-                });
-            }
-
-            return list;
-        }
+      
     }
 }
