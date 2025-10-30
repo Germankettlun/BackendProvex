@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Data.SqlClient;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
+using ProvexBackendAPI.Helpers.Builders;
+using ProvexBackendAPI.Helpers.Mapping;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
 using System.Data;
 using System.Globalization;
@@ -52,56 +53,11 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             await using var rdr = await cmd.ExecuteReaderAsync();
             while (await rdr.ReadAsync())
             {
-                // Saltar filas sin ID_ESTIMACION (la primera fila “NULL” del SP, etc.)
-                var estId = rdr.Get<int?>("ID_ESTIMACION");  // puede ser null
-
-                rows.Add(new RowFlat
-                {
-                    // Raíz
-                    PesoBaseEspecie = rdr.Get<double?>("ESPECIE_KILO_BASE") ?? 0.0,
-                    Especie = rdr.FirstExistingAsString("NOM_ESP"),
-
-                    // Item
-                    IdProductor = rdr.FirstExistingAsString("ID_PRODUCTOR"),
-                    Productor = rdr.FirstExistingAsString("NOM_PROD"),
-                    Variedad = rdr.FirstExistingAsString("NOM_VAR"),
-                    Agronomo = rdr.FirstExistingAsString("NOM_USUARIO_AGRONOMO") ?? "",
-                    DistribucionCalibre = rdr.Get<bool?>("DIST_CAL"),
-                    DistribucionCategoria = rdr.Get<bool?>("DIST_CAT"),
-                    PorcentajeExportacion = rdr.Get<int?>("PCT_EXP_PORC") ?? 0,
-
-                    // Envase
-                    EnvaseId = rdr.FirstExistingAsString("ENVASE_ID") ?? "",
-                    EnvaseNombre = rdr.FirstExistingAsString("NOM_ENVASE_COSECHA") ?? "",
-                    EnvaseKilo = rdr.Get<int?>("KG_DIA_ENVASE") ?? 0,
-
-                    // Estimación + semanas
-                    Est_ID = estId,
-                    Est_Contratado = rdr.Get<int?>("CAJAS_CONTRATADAS") ?? 0,
-                    Est_FCosecha = rdr.FirstExistingAsString("FECHA_INICIO_COSECHA_YM") ?? "",
-
-                    Ant_Estimado = rdr.Get<int?>("CAJAS_E_ANTERIOR_SIN_PORC"),
-                    Ant_Producido = rdr.Get<int?>("CAJAS_P_ANTERIOR"),
-                    Sig_Estimado = rdr.Get<int?>("CAJAS_E_SIGUIENTE_SIN_PORC"),
-                    Sig_Producido = rdr.Get<int?>("CAJAS_P_SIGUIENTE_SIN_PORC"),
-
-                    // Bisemanal
-                    Bis_AnioBase = rdr.Get<int?>("ANIO"),
-                    Bis_SemanaBase = rdr.FirstExistingAsString("SEMANA_NRO"),
-                    
-
-                    // Días
-                    Bis_ID = rdr.Get<int?>("ID_ESTIMACION_BISEMANAL"),
-                    Dia_Nombre = rdr.FirstExistingAsString("NOMBRE_DIA"),
-                    Dia_Fecha = rdr.Get<DateTime?>("DIA"),
-                    Dia_Estimado = rdr.Get<decimal?>("CAJAS_E_DISTRIB_SIN_PORC"),
-                    Dia_Producido = rdr.Get<decimal?>("CAJAS_P"),
-                    Dia_DistribucionFrio = rdr.Get<bool?>("DIST_FRI"),
-                    Dia_DistribucionPacking = rdr.Get<bool?>("DIST_PACK")
-                });
+                // Usa tu mapper de feature:
+                rows.Add(rdr.MapRowFlat());
             }
 
-            return BuildTree(rows, req, semanas);
+            return EstimacionesTreeBuilder.BuildTree(rows, req, semanas);
         }
 
 
@@ -340,158 +296,11 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         }
 
 
-
-        private static EstructuraDistribucionDto BuildTree(
-     List<RowFlat> rows,
-     EstimacionBisemanalQueryDto req,
-     IReadOnlyList<SemanaVigenteRow> semanasProvider 
- )
-        {
-            var root = new EstructuraDistribucionDto
-            {
-                PesoBaseEspecie = rows.FirstOrDefault()?.PesoBaseEspecie,
-                Especie = rows.FirstOrDefault()?.Especie,
-                Items = new List<ItemNode>()
-            };
-
-            var itemGroups = rows.GroupBy(r => new
-            {
-                HasEst = r.Est_ID.HasValue,
-                EstId = r.Est_ID ?? -1,
-                IdProductor = r.Est_ID.HasValue ? null : r.IdProductor,
-                Especie = r.Est_ID.HasValue ? null : r.Especie,
-                Variedad = r.Est_ID.HasValue ? null : r.Variedad
-            });
-
-            foreach (var g in itemGroups)
-            {
-                var any = g.First();
-
-                var item = new ItemNode
-                {
-                    Id_Productor = any.IdProductor,
-                    Productor = any.Productor,
-                    Variedad = any.Variedad,
-                    Agronomo = any.Agronomo,
-                    DistribucionCalibre = any.DistribucionCalibre,
-                    DistribucionCategoria = any.DistribucionCategoria,
-                    PorcentajeExportacion = any.PorcentajeExportacion,
-                    EnvaseCosechero = new EnvaseCosecheroNode
-                    {
-                        Id = any.EnvaseId,
-                        Nombre = any.EnvaseNombre,
-                        Kilo = any.EnvaseKilo
-                    }
-                };
-
-                var est = new EstimacionNode
-                {
-                    ID = any.Est_ID,                          // puede ser null (grupo “sin estimación”)
-                    Contratado = any.Est_Contratado,
-                    FCosecha = any.Est_FCosecha,
-                    Semanas = new SemanasNode
-                    {
-                        Anterior = new SemanaValorNode { Estimado = any.Ant_Estimado, Producido = any.Ant_Producido },
-                        Siguiente = new SemanaValorNode { Estimado = any.Sig_Estimado, Producido = any.Sig_Producido },
-                        Bisemanal = new List<BisemanalNode>()
-                    }
-                };
-
-               
-                int n = req.WeeksPerPage <= 0 ? 2 : req.WeeksPerPage;
-                var expectedRows = PickWeeks(semanasProvider, req.AnioBase, req.SemanaBase, g, n);
-
-                var byKey = expectedRows.ToDictionary(
-                    s => $"{s.AnioBase:D4}-{ToWeek2(s.SemanaBase)}",
-                    s => BuildEmptyFromSemanaRow(s)
-                );
-
-                
-                var bisGroups = g.Where(r => r.Bis_ID.HasValue
-                                          || (r.Bis_AnioBase.HasValue && !string.IsNullOrWhiteSpace(r.Bis_SemanaBase)))
-                                 .GroupBy(r => new
-                                 {
-                                     r.Bis_AnioBase,
-                                     Semana = ToWeek2(r.Bis_SemanaBase!)
-                                 });
-
-                foreach (var bg in bisGroups)
-                {
-                    if (!bg.Key.Bis_AnioBase.HasValue) continue;
-                    var key = $"{bg.Key.Bis_AnioBase.Value:D4}-{bg.Key.Semana}";
-                    if (!byKey.TryGetValue(key, out var bis)) continue;
-
-                    bis.AnioBase = bg.Key.Bis_AnioBase;
-                    bis.SemanaBase = bg.Key.Semana;
-                    
-
-                    foreach (var d in bg)
-                    {
-                        if (bis.Dias is null || bis.Dias.Count != 7) continue;
-
-                        
-                        int idx = -1;
-                        if (d.Dia_Fecha.HasValue)
-                        {
-                            // Si tus placeholders tienen FechaDia poblada, intenta match directo
-                            idx = bis.Dias.FindIndex(x => x.FechaDia.HasValue &&
-                                                          x.FechaDia.Value.Date == d.Dia_Fecha.Value.Date);
-
-                            // Si no encontró por igualdad exacta, calcula por DayOfWeek (semana ISO lunes=0)
-                            if (idx < 0) idx = MapDayOfWeekToIndex(d.Dia_Fecha.Value.DayOfWeek);
-                        }
-
-                        
-                        if (idx < 0 && !string.IsNullOrWhiteSpace(d.Dia_Nombre))
-                        {
-                            idx = MapNombreADiaIndex(d.Dia_Nombre);
-                        }
-
-                        
-                        if (idx < 0 && d.Dia_Fecha.HasValue)
-                        {
-                            idx = bis.Dias.FindIndex(x => x.FechaDia.HasValue &&
-                                                          x.FechaDia.Value.Date == d.Dia_Fecha.Value.Date);
-                        }
-
-                       
-                        if (idx < 0 || idx >= bis.Dias.Count) continue;
-
-                        var dia = bis.Dias[idx];
-
-                     
-                        dia.IdBisemanal = d.Bis_ID ?? dia.IdBisemanal;
-                        dia.Estimado = (dia.Estimado ?? 0) + (d.Dia_Estimado ?? 0);
-                        dia.Producido = (dia.Producido ?? 0) + (d.Dia_Producido ?? 0);
-
-                        if (d.Dia_Fecha.HasValue) dia.FechaDia = d.Dia_Fecha;
-                        if (!string.IsNullOrWhiteSpace(d.Dia_Nombre)) dia.NombreDia = d.Dia_Nombre;
-
-                        dia.DistribucionFrio = d.Dia_DistribucionFrio ?? dia.DistribucionFrio;
-                        dia.DistribucionPacking = d.Dia_DistribucionPacking ?? dia.DistribucionPacking;
-                    }
-                }
-
-                est.Semanas!.Bisemanal = expectedRows
-                    .Select(s => byKey[$"{s.AnioBase:D4}-{ToWeek2(s.SemanaBase)}"])
-                    .ToList();
-
-                item.Estimacion = est;
-                root.Items!.Add(item);
-            }
-
-            return root;
-        }
-
         //HELPERS
 
         private static readonly string[] _diasEs = new[] { "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO" };
 
-        private static int MapDayOfWeekToIndex(DayOfWeek dow)
-        {
-          
-            return ((int)dow + 6) % 7;
-        }
+
 
         private static string StripDiacritics(string text)
         {
@@ -506,31 +315,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
         }
 
-        private static int MapNombreADiaIndex(string? nombreDia)
-        {
-            if (string.IsNullOrWhiteSpace(nombreDia)) return -1;
 
-            var raw = StripDiacritics(nombreDia.Trim().ToUpperInvariant());
-            // Acepta largos y abreviaturas de 3+ letras
-            // Normalizamos a las claves completas del arreglo base
-            // Ej.: "MIE", "MIER", "MIERCOLES" -> "MIERCOLES"
-            string canon = raw switch
-            {
-                var s when s.StartsWith("LUN") => "LUNES",
-                var s when s.StartsWith("MAR") => "MARTES",
-                var s when s.StartsWith("MIE") => "MIERCOLES",
-                var s when s.StartsWith("JUE") => "JUEVES",
-                var s when s.StartsWith("VIE") => "VIERNES",
-                var s when s.StartsWith("SAB") => "SABADO",
-                var s when s.StartsWith("DOM") => "DOMINGO",
-                _ => raw
-            };
-
-            for (int i = 0; i < _diasEs.Length; i++)
-                if (_diasEs[i] == canon) return i;
-
-            return -1;
-        }
 
         private static string ToWeek2(string s)
         { 
@@ -540,82 +325,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
        
 
-        // Construye una semana (BisemanalNode) con 7 días en null usando INICIO..TERMINO
-        private static BisemanalNode BuildEmptyFromSemanaRow(SemanaVigenteRow m)
-        {
-            
-            var monday = m.Inicio.Date;
-
-            var dias = new List<DiaValorNode>(7);
-            for (int i = 0; i < 7; i++)
-            {
-                dias.Add(new DiaValorNode
-                {
-                    IdBisemanal = null,
-                    NombreDia = _diasEs[i],
-                    FechaDia = monday.AddDays(i),
-                    Estimado = null,
-                    Producido = null,
-                    DistribucionFrio = null, 
-                    DistribucionPacking = null
-                });
-            }
-
-            return new BisemanalNode
-            {
-               
-                AnioBase = m.AnioBase,
-                SemanaBase = ToWeek2(m.SemanaBase), // siempre 2 dígitos             
-                Dias = dias
-            };
-        }
-
-        private static List<SemanaVigenteRow> PickWeeks(
-    IEnumerable<SemanaVigenteRow> all,
-    int? reqAnioBase,
-    string? reqSemanaBase,
-    IEnumerable<RowFlat> grupoFilas, // por si quieres tomar la menor del grupo
-    int weeksPerPage
-)
-        {
-            var ordered = all
-                .OrderBy(x => x.AnioBase)
-                .ThenBy(x => int.Parse(ToWeek2(x.SemanaBase)))
-                .ToList();
-
-           
-            if (reqAnioBase.HasValue && !string.IsNullOrWhiteSpace(reqSemanaBase))
-            {
-                var ww = ToWeek2(reqSemanaBase!);
-                var idx = ordered.FindIndex(s => s.AnioBase == reqAnioBase.Value && ToWeek2(s.SemanaBase) == ww);
-                if (idx >= 0) return ordered.Skip(idx).Take(weeksPerPage).ToList();
-            }
-
-           
-            var cand = grupoFilas
-                .Where(r => r.Bis_AnioBase.HasValue && !string.IsNullOrWhiteSpace(r.Bis_SemanaBase))
-                .Select(r => new { Anio = r.Bis_AnioBase!.Value, Semana = ToWeek2(r.Bis_SemanaBase!) })
-                .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
-                .FirstOrDefault();
-
-            if (cand is not null)
-            {
-                var idx2 = ordered.FindIndex(s => s.AnioBase == cand.Anio && ToWeek2(s.SemanaBase) == cand.Semana);
-                if (idx2 >= 0) return ordered.Skip(idx2).Take(weeksPerPage).ToList();
-            }
-
-            
-            var today = DateTime.Today;
-            var vigente = ordered.FirstOrDefault(s => s.Inicio.Date <= today && today <= s.Termino.Date);
-            if (vigente is not null)
-            {
-                var idx3 = ordered.IndexOf(vigente);
-                return ordered.Skip(idx3).Take(weeksPerPage).ToList();
-            }
-
-            
-            return ordered.Take(weeksPerPage).ToList();
-        }
+       
 
         //Helper distribución packing / frigorifico
 
