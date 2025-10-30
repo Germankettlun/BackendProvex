@@ -201,7 +201,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     }
 
                     // ====== NODOS: Distribución por CATEGORÍA (por semana) ======
-                    // Reemplaza XXX_XXX por tus columnas reales
+                   
                     var categorias = rdr.Get<string?>("CATEGORIAS_SEMANAS");
 
 
@@ -241,8 +241,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             }
             catch (Exception ex)
             {
-                // Manejo mínimo; si ya tienes middleware/log, propaga o registra:
-                // _logger.LogError(ex, "Error en GetResumenSemanalAsync");
+               
                 throw;
             }
 
@@ -345,7 +344,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         private static EstructuraDistribucionDto BuildTree(
      List<RowFlat> rows,
      EstimacionBisemanalQueryDto req,
-     IReadOnlyList<SemanaVigenteRow> semanasProvider // ← lista resuelta
+     IReadOnlyList<SemanaVigenteRow> semanasProvider 
  )
         {
             var root = new EstructuraDistribucionDto
@@ -398,7 +397,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     }
                 };
 
-                // Semanas esperadas + placeholders desde provider (igual que ya lo tienes)
+               
                 int n = req.WeeksPerPage <= 0 ? 2 : req.WeeksPerPage;
                 var expectedRows = PickWeeks(semanasProvider, req.AnioBase, req.SemanaBase, g, n);
 
@@ -407,7 +406,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     s => BuildEmptyFromSemanaRow(s)
                 );
 
-                // Grupos por semana y “pisada” de placeholders (igual que ya lo tienes)
+                
                 var bisGroups = g.Where(r => r.Bis_ID.HasValue
                                           || (r.Bis_AnioBase.HasValue && !string.IsNullOrWhiteSpace(r.Bis_SemanaBase)))
                                  .GroupBy(r => new
@@ -430,7 +429,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     {
                         if (bis.Dias is null || bis.Dias.Count != 7) continue;
 
-                        // 1) Intento por FECHA (más confiable si tus placeholders traen FechaDia)
+                        
                         int idx = -1;
                         if (d.Dia_Fecha.HasValue)
                         {
@@ -442,25 +441,25 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                             if (idx < 0) idx = MapDayOfWeekToIndex(d.Dia_Fecha.Value.DayOfWeek);
                         }
 
-                        // 2) Si no hay fecha o no se pudo, usa el NOMBRE robusto (quita acentos / acepta abreviaturas)
+                        
                         if (idx < 0 && !string.IsNullOrWhiteSpace(d.Dia_Nombre))
                         {
                             idx = MapNombreADiaIndex(d.Dia_Nombre);
                         }
 
-                        // 3) Fallback: intenta otra vez por fecha si hay (por si placeholders sí tenían fechas)
+                        
                         if (idx < 0 && d.Dia_Fecha.HasValue)
                         {
                             idx = bis.Dias.FindIndex(x => x.FechaDia.HasValue &&
                                                           x.FechaDia.Value.Date == d.Dia_Fecha.Value.Date);
                         }
 
-                        // 4) Validación de rango
+                       
                         if (idx < 0 || idx >= bis.Dias.Count) continue;
 
                         var dia = bis.Dias[idx];
 
-                        // Si tienes múltiples filas por el mismo día, conviene ACUMULAR:
+                     
                         dia.IdBisemanal = d.Bis_ID ?? dia.IdBisemanal;
                         dia.Estimado = (dia.Estimado ?? 0) + (d.Dia_Estimado ?? 0);
                         dia.Producido = (dia.Producido ?? 0) + (d.Dia_Producido ?? 0);
@@ -490,9 +489,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
         private static int MapDayOfWeekToIndex(DayOfWeek dow)
         {
-            // DayOfWeek: Sunday=0 ... Saturday=6
-            // Queremos:  LUNES=0 ... DOMINGO=6
-            // Fórmula: (dow + 6) % 7
+          
             return ((int)dow + 6) % 7;
         }
 
@@ -536,7 +533,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         }
 
         private static string ToWeek2(string s)
-        {
+        { 
             s = (s ?? "").Trim();
             return s.Length == 1 ? "0" + s : s;
         }
@@ -546,8 +543,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         // Construye una semana (BisemanalNode) con 7 días en null usando INICIO..TERMINO
         private static BisemanalNode BuildEmptyFromSemanaRow(SemanaVigenteRow m)
         {
-            // Si INICIO no fuera lunes, puedes alinear así:
-            // var monday = m.Inicio.Date.AddDays((7 + (int)DayOfWeek.Monday - (int)m.Inicio.DayOfWeek) % 7);
+            
             var monday = m.Inicio.Date;
 
             var dias = new List<DiaValorNode>(7);
@@ -587,7 +583,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 .ThenBy(x => int.Parse(ToWeek2(x.SemanaBase)))
                 .ToList();
 
-            // 1) Semilla desde request
+           
             if (reqAnioBase.HasValue && !string.IsNullOrWhiteSpace(reqSemanaBase))
             {
                 var ww = ToWeek2(reqSemanaBase!);
@@ -595,7 +591,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 if (idx >= 0) return ordered.Skip(idx).Take(weeksPerPage).ToList();
             }
 
-            // 2) Semilla desde los datos del grupo (la menor año/semana que exista en provider)
+           
             var cand = grupoFilas
                 .Where(r => r.Bis_AnioBase.HasValue && !string.IsNullOrWhiteSpace(r.Bis_SemanaBase))
                 .Select(r => new { Anio = r.Bis_AnioBase!.Value, Semana = ToWeek2(r.Bis_SemanaBase!) })
@@ -608,7 +604,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 if (idx2 >= 0) return ordered.Skip(idx2).Take(weeksPerPage).ToList();
             }
 
-            // 3) Semilla por semana vigente (hoy ∈ [Inicio, Termino])
+            
             var today = DateTime.Today;
             var vigente = ordered.FirstOrDefault(s => s.Inicio.Date <= today && today <= s.Termino.Date);
             if (vigente is not null)
@@ -617,7 +613,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 return ordered.Skip(idx3).Take(weeksPerPage).ToList();
             }
 
-            // 4) Fallback: primeras N de la temporada
+            
             return ordered.Take(weeksPerPage).ToList();
         }
 
@@ -657,23 +653,18 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 .ToList();
         }
         public static List<(string Day, string Name, string PercentText, double? PercentValue)>
-          ParseDayNamePercentList(
-              string? raw,
-              char[]? daySeps = null,          // separadores entre días (fuera de paréntesis)
-              char[]? innerPairSeps = null,    // separadores entre pares dentro del paréntesis
-              char[]? innerKvSeps = null)      // separadores nombre:porcentaje
+        ParseDayNamePercentList(string? raw,char[]? daySeps = null, char[]? innerPairSeps = null, char[]? innerKvSeps = null)      
         {
             var result = new List<(string Day, string Name, string PercentText, double? PercentValue)>();
             if (string.IsNullOrWhiteSpace(raw)) return result;
 
-            daySeps ??= new[] { ';', ',' };
-            innerPairSeps ??= new[] { ';', ',' };
+            
+            daySeps ??= new[] { '|', ';', ',' };
+            innerPairSeps ??= new[] { ',', ';' };
             innerKvSeps ??= new[] { ':', '=' };
 
-            // 1) separar en "bloques de día" solamente por separadores FUERA de paréntesis
             var dayChunks = SplitOutsideParentheses(raw, daySeps);
 
-            // 2) regex para capturar Día y el contenido entre paréntesis
             var dayAndInnerRegex = new Regex(
                 @"^\s*([^(]+?)\s*\(\s*(.*?)\s*\)\s*$",
                 RegexOptions.CultureInvariant | RegexOptions.IgnoreCase
@@ -687,13 +678,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 var m = dayAndInnerRegex.Match(part);
                 if (!m.Success)
                 {
-                    // Si no matchea, devolvemos el texto como "día" sin items (fallback suave)
                     result.Add((part, "", "", null));
                     continue;
                 }
 
-                var day = m.Groups[1].Value.Trim();    // "viernes"
-                var inner = m.Groups[2].Value.Trim();  // "La Providencia:60%, Packing Test:40%"
+                var day = m.Groups[1].Value.Trim();
+                var inner = m.Groups[2].Value.Trim();
 
                 var pairs = ParseNamePercentPairs(inner, innerPairSeps, innerKvSeps);
                 if (pairs.Count == 0)
@@ -772,7 +762,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
                 if (idx < 0)
                 {
-                    // No hay separador clave-valor → guarda el nombre y porcentaje vacío
+                   
                     pairs.Add((part, "", null));
                     continue;
                 }
@@ -780,9 +770,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 var name = part[..idx].Trim();
                 var rawVal = part[(idx + 1)..].Trim();
 
-                var percentText = rawVal; // conserva "60%" tal cual
+                var percentText = rawVal; 
 
-                // Limpieza para número (si te sirve PercentValue)
+              
                 var cleaned = rawVal.Replace("%", "").Trim().Replace(',', '.');
                 if (double.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out var val))
                     pairs.Add((name, percentText, val));
