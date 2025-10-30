@@ -12,6 +12,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 
         Task<List<DistribucionPackingDto>> GetDistribucionPackingAsync(DistribucionPackingQueryDto req);
 
+        Task<List<DistribucionPackingDiaDto>> GetDistribucionPackingAgrupadoAsync(DistribucionPackingQueryDto req);
+
         Task<List<DistribucionFrigorificoDto>> GetDistribucionFrigorificoAsync(DistribucionPackingQueryDto req);
+
+        Task<List<DistribucionFrigorificoDiaDto>> GetDistribucionFrigorificoAgrupadoAsync(DistribucionPackingQueryDto req);
     }
 }

@@ -298,33 +298,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
         //HELPERS
 
-        private static readonly string[] _diasEs = new[] { "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO" };
-
-
-
-        private static string StripDiacritics(string text)
-        {
-            if (string.IsNullOrEmpty(text)) return text ?? "";
-            var norm = text.Normalize(System.Text.NormalizationForm.FormD);
-            var sb = new System.Text.StringBuilder(capacity: norm.Length);
-            foreach (var ch in norm)
-            {
-                var uc = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch);
-                if (uc != System.Globalization.UnicodeCategory.NonSpacingMark) sb.Append(ch);
-            }
-            return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
-        }
-
-
-
-        private static string ToWeek2(string s)
-        { 
-            s = (s ?? "").Trim();
-            return s.Length == 1 ? "0" + s : s;
-        }
-
-       
-
        
 
         //Helper distribución packing / frigorifico

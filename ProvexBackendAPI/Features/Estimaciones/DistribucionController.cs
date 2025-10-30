@@ -112,5 +112,33 @@ namespace ProvexBackendAPI.Features.Estimaciones
             var data = await _service.GetDistribucionFrigorificoAsync(q);
             return Ok(data);
         }
+
+        // GET api/v{version}/distribucion/frigorifico
+        [HttpGet("frigorificoAgrupado", Name = "GetFrigorificoAgrupado")]
+        [ProducesResponseType(typeof(List<DistribucionFrigorificoDiaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetFrigorificoAgrupado(
+            [FromQuery] DistribucionPackingQueryDto q
+    )
+        {
+
+            var data = await _service.GetDistribucionFrigorificoAgrupadoAsync(q);
+            return Ok(data);
+        }
+
+        // GET api/v{version}/distribucion/packing
+        [HttpGet("packingAgrupado", Name = "GetPackingAgrupado")]
+        [ProducesResponseType(typeof(List<DistribucionPackingDiaDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetFrigoriGetPackingAgrupadoficoAgrupado(
+            [FromQuery] DistribucionPackingQueryDto q
+    )
+        {
+
+            var data = await _service.GetDistribucionPackingAgrupadoAsync(q);
+            return Ok(data);
+        }
     }
 }

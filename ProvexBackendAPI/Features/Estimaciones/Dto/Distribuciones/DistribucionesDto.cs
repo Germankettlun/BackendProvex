@@ -127,6 +127,73 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
     }
 
+    //FRIGORIFICO AGRUPADO
+    public class FrigorificoItemDto
+    {
+        public string? IdDistribucionFrigorifico { get; set; } // puede venir vacío => null
+        public string IdFrigorifico { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;     // from FrigorificoNombre
+        public int Porcentaje { get; set; }                    // 0..100 (numérico)
+    }
+
+    public class DistribucionFrigorificoDiaDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string IdEspecie { get; set; } = string.Empty;
+        public string IdEstimacionBisemanal { get; set; } = string.Empty;
+        public int Anio { get; set; }
+        public string Semana { get; set; } = string.Empty;
+        public DateTime? FechaDia { get; set; }
+        public string? DiaNombre { get; set; }
+        public int TotalCajasBisemanal { get; set; }
+        public bool SumaPorcentajeEs100 { get; set; }
+
+        public List<FrigorificoItemDto> FrigorificoPorDia { get; set; } = new();
+    }
+
+    //PACKING AGRUPADO
+    public class PackingItemDto
+    {
+        public string? IdDistribucionPacking { get; set; } // puede venir vacío => null
+        public string IdPacking { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;     // from FrigorificoNombre
+        public int Porcentaje { get; set; }                    // 0..100 (numérico)
+    }
+
+    public class DistribucionPackingDiaDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string IdEspecie { get; set; } = string.Empty;
+        public string IdEstimacionBisemanal { get; set; } = string.Empty;
+        public int Anio { get; set; }
+        public string Semana { get; set; } = string.Empty;
+        public DateTime? FechaDia { get; set; }
+        public string? DiaNombre { get; set; }
+        public int TotalCajasBisemanal { get; set; }
+        public bool SumaPorcentajeEs100 { get; set; }
+
+        public List<PackingItemDto> PackingPorDia { get; set; } = new();
+    }
+
+    //ANTIGUO
+
+    public class DistribucionFrigorificoDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty; 
+        public string IdEspecie { get; set; } = string.Empty; 
+       public string IdEstimacionBisemanal { get; set; } = string.Empty; 
+        public int Anio { get; set; } 
+        public string Semana { get; set; } = string.Empty; 
+        public DateTime? FechaDia { get; set; } 
+        public String? DiaNombre { get; set; } 
+        public int TotalCajasBisemanal { get; set; } 
+        public string IdDistribucionFrigorifico { get; set; } = string.Empty; 
+        public string IdFrigorifico { get; set; } = string.Empty; 
+        public int Porcentaje { get; set; } 
+        public string FrigorificoNombre { get; set; } = string.Empty;
+        public bool SumaPorcentajeEs100 { get; set; } 
+    }
+
     public class DistribucionPackingDto
     {
         public string IdEstimacion { get; set; } = string.Empty;            // IDESTIMACION
@@ -141,23 +208,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public string IdPacking { get; set; } = string.Empty;               // IDPACKING
         public int Porcentaje { get; set; }                             // PORCENTAJE
         public string PackingNombre { get; set; } = string.Empty;           // PACKING
-        public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
-    }
-
-    public class DistribucionFrigorificoDto
-    {
-        public string IdEstimacion { get; set; } = string.Empty;            // IDESTIMACION
-        public string IdEspecie { get; set; } = string.Empty;               // IDESPECIE
-        public string IdEstimacionBisemanal { get; set; } = string.Empty;   // IDESTIMACIONBISEMANAL
-        public int Anio { get; set; }                                       // BISEMANALANIO
-        public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
-        public DateTime? FechaDia { get; set; }
-        public String? DiaNombre { get; set; }
-        public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
-        public string IdDistribucionFrigorifico { get; set; } = string.Empty;   // IDDISTRUBUCIONFRIGORIFICO
-        public string IdFrigorifico { get; set; } = string.Empty;               // IDFRIGORIFICO
-        public int Porcentaje { get; set; }                             // PORCENTAJE
-        public string FrigorificoNombre { get; set; } = string.Empty;           // FRIGORIFICO
         public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
     }
 
