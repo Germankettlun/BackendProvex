@@ -5,11 +5,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 {
     public interface IDistribucionRepository
     {
-        Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(
-       string codigoEmpresa,
-       string codigoEspecie,
-       string codigoTemporada,
-       string? idCategoria);
+        Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
 
 
         Task<List<DistribucionCalibreEspecieRow>> GetRowsDistribucionCalibreAsync(

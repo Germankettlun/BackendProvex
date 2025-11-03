@@ -29,28 +29,17 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetCategoria(
-        [FromQuery] string codEmpresa,
-        [FromQuery] string codEspecie,
-        [FromQuery] string codTemporada,
-        [FromQuery] string? categoriaId
+        [FromQuery] int idEstimacion,
+        [FromQuery] int? semanasAntes,
+        [FromQuery] int? semanasDespues
     )
         {
-            if (string.IsNullOrWhiteSpace(codEmpresa) ||
-                string.IsNullOrWhiteSpace(codEspecie) ||
-                string.IsNullOrWhiteSpace(codTemporada))
-            {
-                return BadRequest("el código de empresa, código de especie y código de temporada son requeridos.");
-            }
+            if (idEstimacion <= 0)
+                return BadRequest("El idEstimacion debe ser mayor que cero.");
 
-            var req = new DistribucionCategoriaEspecieRequestDto
-            {
-                CodigoEmpresa = codEmpresa,
-                CodigoEspecie = codEspecie,
-                CodigoTemporada = codTemporada,
-                IdCategoria = categoriaId
-            };
 
-            var data = await _service.GetDistribucionCategoriaAsync(req);
+
+            var data = await _service.GetDistribucionCategoriaAsync(idEstimacion, semanasAntes, semanasDespues);
             return Ok(data);
         }
 

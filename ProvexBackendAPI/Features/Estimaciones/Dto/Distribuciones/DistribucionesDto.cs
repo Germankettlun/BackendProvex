@@ -32,14 +32,20 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
     public class DistribucionCategoriaEspecieRow
     {
-        public string IdEstimacion { get; set; } = string.Empty;                   // ID_ESTIMACION
-        public string IdCategoria { get; set; } = string.Empty;                 // IDCATEGORIA
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+        public string IdCategoria { get; set; } = string.Empty;                
         public string CategoriaNombre { get; set; } = "";
-        public int? PorcDefectoCategoria { get; set; }      // PORCENTAJEPORDEFECTOCATEGORIA
-        public int SemanaAnio { get; set; }                     // SEMANAANO
-        public string SemanaNumero { get; set; } = string.Empty;                // SEMANANUMERO
-        public int? PorcentajeSemana { get; set; }          // PORCENTAJEPORSEMANA
-        public bool EsSemanaActual { get; set; } //true or false SEMANAACTUAL
+
+        public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+
+        public int? IdDistribucionDefecto { get; set; }
+        public int? PorcDefectoCategoria { get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }          
+        public bool EsSemanaActual { get; set; } 
     }
 
     public class DistribucionCalibreEspecieRow
@@ -58,6 +64,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
     {
         [JsonPropertyName("idestimacion")]
         public string IdEstimacion { get; set; } = string.Empty;
+
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
 
         [JsonPropertyName("categoriaid")]
         public string CategoriaId { get; set; } = string.Empty;
@@ -98,8 +110,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("semana")]
         public string Semana { get; set; } = string.Empty;
 
-        [JsonPropertyName("porcentaje")]
-        public int? Porcentaje { get; set; }
+        [JsonPropertyName("porcentajePorSemana")]
+        public int? PorcentajePorSemana { get; set; }
 
         [JsonPropertyName("actual")]
         public bool EsSemanaActual { get; set; }

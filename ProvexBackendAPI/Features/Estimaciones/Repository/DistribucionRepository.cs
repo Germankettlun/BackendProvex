@@ -13,7 +13,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(string codigoEmpresa, string codigoEspecie, string codigoTemporada, string? idCategoria)
+        public async Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
             var list = new List<DistribucionCategoriaEspecieRow>();
 
@@ -25,10 +25,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 CommandType = CommandType.StoredProcedure
             };
 
-            cmd.Parameters.Add(new SqlParameter("@CODIGOEMPRESA", SqlDbType.VarChar, 10) { Value = codigoEmpresa });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOESPECIE", SqlDbType.VarChar, 10) { Value = codigoEspecie });
-            cmd.Parameters.Add(new SqlParameter("@CODIGOTEMPORADA", SqlDbType.VarChar, 10) { Value = codigoTemporada });
-            cmd.Parameters.Add(new SqlParameter("@ID_CATEGORIA", SqlDbType.VarChar, 10) { Value = (object?)idCategoria ?? DBNull.Value });
+            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
+            //cmd.Parameters.Add(new SqlParameter("@SEM_ANT", SqlDbType.Int) { Value = (object?)semanasAntes ?? DBNull.Value });
+            //cmd.Parameters.Add(new SqlParameter("@SEM_SIG", SqlDbType.Int) { Value = (object?)semanasDespues ?? DBNull.Value });
 
             await using var rdr = await cmd.ExecuteReaderAsync();
 
@@ -37,12 +36,17 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 list.Add(new DistribucionCategoriaEspecieRow
                 {
                     IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
+                    CodEspecie = rdr.Get<string?>("CODESPECIE") ?? "",
+                    Especie = rdr.Get<string?>("ESPECIE") ?? "",
                     IdCategoria = rdr.Get<string?>("IDCATEGORIA") ?? "",
-                    CategoriaNombre = rdr.FirstExistingAsString("CATEGORIA"), // fallback a "" si no existe o es null
-                    PorcDefectoCategoria = rdr.Get<int?>("PORCENTAJEPORDEFECTOCATEGORIA"),
+                    CategoriaNombre = rdr.FirstExistingAsString("CATEGORIA"), 
                     SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
                     SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
-                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJEPORSEMANA"),
+                    IdDistribucionDefecto = rdr.Get<int?>("IDDISTRIBUCIONDEFECTO"),
+                    PorcDefectoCategoria = rdr.Get<int?>("PORCENTAJE_POR_DEFECTO_CATEGORIA"),
+                    IdDistribucionPorSemana = rdr.Get<int?>("DISTRIBUCIONPORSEMANAID"),
+                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJE_POR_SEMANA_CATEGORIA"),
+                   
                     EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false   
                 });
             }
