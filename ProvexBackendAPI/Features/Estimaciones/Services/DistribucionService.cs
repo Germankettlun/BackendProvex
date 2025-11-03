@@ -17,33 +17,38 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             _repo = repo;
         }
 
-        public async Task<List<DistribucionCategoriaEspecieResponseDto>> GetDistribucionCategoriaAsync(DistribucionCategoriaEspecieRequestDto req)
+        public async Task<List<DistribucionCategoriaEspecieResponseDto>> GetDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
-            var rows = await _repo.GetRowsDistribucionCategoriaAsync(
-           req.CodigoEmpresa,
-           req.CodigoEspecie,
-           req.CodigoTemporada,
-           req.IdCategoria
-       );
+
+            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
+
+            if (idEstimacion < 0)
+                throw new ValidationException("idEstimacion inválido");
+
+            var rows = await _repo.GetRowsDistribucionCategoriaAsync(idEstimacion, semanasAntes, semanasDespues);
 
             // Grouping por (IdEstimacion, IdCategoria)
             var grouped = rows
-                .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CategoriaNombre, r.PorcDefectoCategoria })
+                .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CodEspecie, r.Especie, r.CategoriaNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
                 .Select(g => new DistribucionCategoriaEspecieResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
                     CategoriaId = g.Key.IdCategoria,
                     CategoriaNombre = g.Key.CategoriaNombre,
-                    Predeterminado = g.Key.PorcDefectoCategoria,
+                    CodigoEspecie = g.Key.CodEspecie,
+                    Especie = g.Key.Especie, 
+                    IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
+                    PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
                     Semanas = g
                         .Select(r => new SemanaPorcentajeDto
                         {
                             Anio = r.SemanaAnio,
                             Semana = r.SemanaNumero,
-                            Porcentaje = r.PorcentajeSemana,
+                            IdPorcentajePorSemana = r.IdDistribucionPorSemana,
+                            PorcentajePorSemana = r.PorcentajeSemana,
                             EsSemanaActual = r.EsSemanaActual
                         })
-                        .DistinctBy(x => new { x.Anio, x.Semana }) // por si viniera repetido
+                        .DistinctBy(x => new { x.Anio, x.Semana }) 
                         .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
                         .ToList()
                 })
@@ -55,33 +60,38 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
         }
 
 
-        public async Task<List<DistribucionCalibreEspecieResponseDto>> GetDistribucionCalibreAsync(DistribucionCalibreEspecieRequestDto req)
+        public async Task<List<DistribucionCalibreEspecieResponseDto>> GetDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
-            var rows = await _repo.GetRowsDistribucionCalibreAsync(
-           req.CodigoEmpresa,
-           req.CodigoEspecie,
-           req.CodigoTemporada,
-           req.IdCalibre
-       );
+            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
+
+            if (idEstimacion < 0)
+                throw new ValidationException("idEstimacion inválido");
+
+
+            var rows = await _repo.GetRowsDistribucionCalibreAsync(idEstimacion, semanasAntes, semanasDespues);
 
             // Grouping por (IdEstimacion, IdCategoria)
             var grouped = rows
-                .GroupBy(r => new { r.IdEstimacion, r.IdCalibre, r.CalibreNombre, r.PorcDefectoCalibre })
+                .GroupBy(r => new { r.IdEstimacion, r.IdCalibre, r.CodEspecie, r.Especie, r.CalibreNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
                 .Select(g => new DistribucionCalibreEspecieResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
                     CalibreId = g.Key.IdCalibre,
                     CalibreNombre = g.Key.CalibreNombre,
-                    Predeterminado = g.Key.PorcDefectoCalibre,
+                    CodigoEspecie = g.Key.CodEspecie,
+                    Especie = g.Key.Especie,
+                    IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
+                    PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
                     Semanas = g
                         .Select(r => new SemanaPorcentajeDto
                         {
                             Anio = r.SemanaAnio,
                             Semana = r.SemanaNumero,
-                            Porcentaje = r.PorcentajeSemana,
+                            IdPorcentajePorSemana = r.IdDistribucionPorSemana,
+                            PorcentajePorSemana = r.PorcentajeSemana,
                             EsSemanaActual = r.EsSemanaActual
                         })
-                        .DistinctBy(x => new { x.Anio, x.Semana }) // por si viniera repetido
+                        .DistinctBy(x => new { x.Anio, x.Semana }) 
                         .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
                         .ToList()
                 })
