@@ -29,20 +29,22 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
             // Grouping por (IdEstimacion, IdCategoria)
             var grouped = rows
-                .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CodEspecie, r.Especie, r.CategoriaNombre, r.PorcDefectoCategoria })
+                .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CodEspecie, r.Especie, r.CategoriaNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
                 .Select(g => new DistribucionCategoriaEspecieResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
                     CategoriaId = g.Key.IdCategoria,
                     CategoriaNombre = g.Key.CategoriaNombre,
                     CodigoEspecie = g.Key.CodEspecie,
-                    Especie = g.Key.Especie,                    
-                    Predeterminado = g.Key.PorcDefectoCategoria,
+                    Especie = g.Key.Especie, 
+                    IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
+                    PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
                     Semanas = g
                         .Select(r => new SemanaPorcentajeDto
                         {
                             Anio = r.SemanaAnio,
                             Semana = r.SemanaNumero,
+                            IdPorcentajePorSemana = r.IdDistribucionPorSemana,
                             PorcentajePorSemana = r.PorcentajeSemana,
                             EsSemanaActual = r.EsSemanaActual
                         })
@@ -58,33 +60,38 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
         }
 
 
-        public async Task<List<DistribucionCalibreEspecieResponseDto>> GetDistribucionCalibreAsync(DistribucionCalibreEspecieRequestDto req)
+        public async Task<List<DistribucionCalibreEspecieResponseDto>> GetDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
-            var rows = await _repo.GetRowsDistribucionCalibreAsync(
-           req.CodigoEmpresa,
-           req.CodigoEspecie,
-           req.CodigoTemporada,
-           req.IdCalibre
-       );
+            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
+
+            if (idEstimacion < 0)
+                throw new ValidationException("idEstimacion inválido");
+
+
+            var rows = await _repo.GetRowsDistribucionCalibreAsync(idEstimacion, semanasAntes, semanasDespues);
 
             // Grouping por (IdEstimacion, IdCategoria)
             var grouped = rows
-                .GroupBy(r => new { r.IdEstimacion, r.IdCalibre, r.CalibreNombre, r.PorcDefectoCalibre })
+                .GroupBy(r => new { r.IdEstimacion, r.IdCalibre, r.CodEspecie, r.Especie, r.CalibreNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
                 .Select(g => new DistribucionCalibreEspecieResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
                     CalibreId = g.Key.IdCalibre,
                     CalibreNombre = g.Key.CalibreNombre,
-                    Predeterminado = g.Key.PorcDefectoCalibre,
+                    CodigoEspecie = g.Key.CodEspecie,
+                    Especie = g.Key.Especie,
+                    IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
+                    PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
                     Semanas = g
                         .Select(r => new SemanaPorcentajeDto
                         {
                             Anio = r.SemanaAnio,
                             Semana = r.SemanaNumero,
+                            IdPorcentajePorSemana = r.IdDistribucionPorSemana,
                             PorcentajePorSemana = r.PorcentajeSemana,
                             EsSemanaActual = r.EsSemanaActual
                         })
-                        .DistinctBy(x => new { x.Anio, x.Semana }) // por si viniera repetido
+                        .DistinctBy(x => new { x.Anio, x.Semana }) 
                         .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
                         .ToList()
                 })

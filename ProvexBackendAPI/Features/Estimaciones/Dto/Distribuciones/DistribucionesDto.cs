@@ -50,14 +50,18 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
     public class DistribucionCalibreEspecieRow
     {
-        public string IdEstimacion { get; set; } = string.Empty;                   // ID_ESTIMACION
-        public string IdCalibre { get; set; } = string.Empty;                 // IDCALIBRE
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+        public string IdCalibre { get; set; } = string.Empty;      
         public string CalibreNombre { get; set; } = "";
-        public int? PorcDefectoCalibre { get; set; }      // PORCENTAJEPORDEFECTOCALIBRE
-        public int SemanaAnio { get; set; }                     // SEMANAANO
-        public string SemanaNumero { get; set; } = string.Empty;                // SEMANANUMERO
-        public int? PorcentajeSemana { get; set; }          // PORCENTAJEPORSEMANA
-        public bool EsSemanaActual { get; set; } //true or false SEMANAACTUAL
+        public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+        public int? IdDistribucionDefecto { get; set; }
+        public int? PorcDefectoCategoria { get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }
+        public bool EsSemanaActual { get; set; }
     }
 
     public  class DistribucionCategoriaEspecieResponseDto
@@ -77,8 +81,11 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("categorianombre")]
         public string CategoriaNombre { get; set; } = "";
 
-        [JsonPropertyName("predeterminado")]
-        public int? Predeterminado { get; set; }
+        [JsonPropertyName("idPredeterminado")]
+        public int? IdPorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
 
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
@@ -89,14 +96,23 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("idestimacion")]
         public string IdEstimacion { get; set; } = string.Empty;
 
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
+
         [JsonPropertyName("calibreid")]
         public string CalibreId { get; set; } = string.Empty;
 
         [JsonPropertyName("calibrenombre")]
         public string CalibreNombre { get; set; } = "";
 
-        [JsonPropertyName("predeterminado")]
-        public int? Predeterminado { get; set; }
+        [JsonPropertyName("idPredeterminado")]
+        public int? IdPorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
 
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
@@ -110,6 +126,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("semana")]
         public string Semana { get; set; } = string.Empty;
 
+        [JsonPropertyName("idporcentajePorSemana")]
+        public int? IdPorcentajePorSemana { get; set; }
+
         [JsonPropertyName("porcentajePorSemana")]
         public int? PorcentajePorSemana { get; set; }
 
@@ -117,27 +136,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public bool EsSemanaActual { get; set; }
     }
 
-    public class DistribucionPackingQueryDto
-    {
-        [Required]
-        public string CodigoEmpresa { get; set; } = default!;     // @CODIGOEMPRESA
 
-        [Required]
-        public string CodigoEspecie { get; set; } = default!;     // @CODIGOESPECIE
-
-        [Required]
-        public string CodigoTemporada { get; set; } = default!;   // @CODIGOTEMPORADA
-
-        [Range(2000, 2100)]
-        public int? Anio { get; set; }                              // @ANIO
-
-        
-        [WeekIsoString(ErrorMessage = "Semana inválida. Usa '01' a '53'.")]
-        public string? Semana { get; set; } = default!;          // @SEMANA (varchar en BD)
-
-        public DateTime? FechaDia { get; set; }
-
-    }
 
     //FRIGORIFICO AGRUPADO
     public class FrigorificoItemDto
