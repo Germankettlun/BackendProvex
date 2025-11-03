@@ -222,4 +222,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
     }
 
+    public record PorcentajePorSemanaGuardarDto(int Anio, string Semana, int? Porcentaje);
+    public record DistribucionCategoriaPredeterminadoGuardarDto(string IdCategoria, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
+    public record DistribucionCategoriaGuardarRequest(int IdEstimacion, List<DistribucionCategoriaPredeterminadoGuardarDto> Categorias, int IdUsuario = 1);
+
 }

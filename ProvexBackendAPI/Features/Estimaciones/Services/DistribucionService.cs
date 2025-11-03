@@ -1,4 +1,5 @@
-﻿using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
+﻿using Microsoft.Data.SqlClient;
+using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Helpers.Validation;
@@ -130,5 +131,37 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             return await _repo.GetRowsDistribucionPackingAgrupadoAsync(idBisemanal);
         }
 
+        public async Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req)
+        {
+            if (req is null || req.IdEstimacion <= 0)
+                throw new ArgumentException("Parámetros inválidos.");
+
+            // Guardar predeterminados + semanas, usando tu repo actual (cada método abre su conexión)
+            foreach (var cat in req.Categorias ?? Enumerable.Empty<DistribucionCategoriaPredeterminadoGuardarDto>())
+            {
+                // Predeterminado
+                await _repo.InsertUpdateDistribucionCategoriaPredeterminadoAsync(
+                    req.IdEstimacion,
+                    cat.IdCategoria,
+                    cat.PorcentajePredeterminado,
+                    req.IdUsuario 
+                );
+
+                // Semanas
+                foreach (var s in cat.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
+                {
+                   
+
+                    await _repo.InsertUpdateDistribucionCategoriaPorSemanaAsync(
+                        req.IdEstimacion,
+                        cat.IdCategoria,
+                        s.Anio,
+                        s.Semana,
+                        s.Porcentaje ?? 0,
+                        req.IdUsuario 
+                    );
+                }
+            }
+        }
     }
 }
