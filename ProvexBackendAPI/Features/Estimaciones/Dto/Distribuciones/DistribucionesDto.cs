@@ -245,5 +245,36 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public int? Porcentaje { get; set; }
     }
 
+    public class DistribucionExportacionEstimacionRow
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+         public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+        public int? PorcDefecto{ get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }
+        public bool EsSemanaActual { get; set; }
+    }
+
+    public class DistribucionExportacionEstimacionResponseDto
+    {
+        [JsonPropertyName("idestimacion")]
+        public string IdEstimacion { get; set; } = string.Empty;
+
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("%semanas")]
+        public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
+    }
+
 
 }
