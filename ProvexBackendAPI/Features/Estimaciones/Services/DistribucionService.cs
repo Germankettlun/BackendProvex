@@ -163,5 +163,38 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
                 }
             }
         }
+
+        public async Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req)
+        {
+            if (req is null || req.IdEstimacion <= 0)
+                throw new ArgumentException("Parámetros inválidos.");
+
+            // Guardar predeterminados + semanas, usando tu repo actual (cada método abre su conexión)
+            foreach (var cal in req.Calibres ?? Enumerable.Empty<DistribucionCalibrePredeterminadoGuardarDto>())
+            {
+                // Predeterminado
+                await _repo.InsertUpdateDistribucionCalibrePredeterminadoAsync(
+                    req.IdEstimacion,
+                    cal.IdCalibre,
+                    cal.PorcentajePredeterminado,
+                    req.IdUsuario
+                );
+
+                // Semanas
+                foreach (var s in cal.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
+                {
+
+
+                    await _repo.InsertUpdateDistribucionCalibrePorSemanaAsync(
+                        req.IdEstimacion,
+                        cal.IdCalibre,
+                        s.Anio,
+                        s.Semana,
+                        s.Porcentaje ?? 0,
+                        req.IdUsuario
+                    );
+                }
+            }
+        }
     }
 }

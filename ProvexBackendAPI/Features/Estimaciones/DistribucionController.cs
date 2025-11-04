@@ -109,5 +109,23 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return NoContent();
 
         }
+
+        // POST api/v{version}/distribucion/calibre
+        [HttpPost("calibre", Name = "SaveDistribucionCalibre")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
+        {
+
+            if (req is null || req.IdEstimacion <= 0)
+                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+
+            await _service.DistribucionCalibreGuardarAsync(req);
+
+            return NoContent();
+
+        }
     }
 }

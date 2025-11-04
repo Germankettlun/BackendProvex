@@ -15,6 +15,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 
         Task<List<DistribucionFrigorificoDiaDto>> GetDistribucionFrigorificoAgrupadoAsync(int idBisemanal);
         Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req);
-        
+
+        Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req);
+
     }
 }
