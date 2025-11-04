@@ -229,4 +229,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
     public record DistribucionCalibrePredeterminadoGuardarDto(string IdCalibre, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
     public record DistribucionCalibreGuardarRequest(int IdEstimacion, List<DistribucionCalibrePredeterminadoGuardarDto> Calibres, int IdUsuario = 1);
 
+    public record DistribucionFrigorificoGuardarRequest(int IdEstimacionBisemanal, List<DistribucionFrigorificoItemDto> Frigorificos, int IdUsuario = 1);
+
+    public class DistribucionFrigorificoItemDto
+    {
+        public int IdFrigorifico { get; set; }
+        public int? Porcentaje { get; set; } 
+    }
+
+
 }
