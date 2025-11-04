@@ -275,6 +275,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
     }
+    public record DistribucionPorcentajeExportacionGuardarRequest(int IdEstimacion, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas, int IdUsuario = 1);
+
 
 
 }

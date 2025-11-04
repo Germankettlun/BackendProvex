@@ -265,5 +265,32 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
             await _repo.InsertUpdateDistribucionPackingAsync(req);
         }
+
+        public async Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req)
+        {
+            if (req is null || req.IdEstimacion <= 0)
+                throw new ArgumentException("Parámetros inválidos.");
+
+            // Guardar predeterminados + semanas, usando tu repo actual (cada método abre su conexión)
+          
+                // Porcentaje predeterminado
+                await _repo.InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(req.IdEstimacion, req.PorcentajePredeterminado, req.IdUsuario);
+
+                // Semanas
+                foreach (var s in req.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
+                {
+
+
+                    await _repo.InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(
+                        req.IdEstimacion,
+                        s.Anio,
+                        s.Semana,
+                        s.Porcentaje ?? 0,
+                        req.IdUsuario
+                    );
+                }
+         
+        }
+
     }
 }

@@ -183,5 +183,23 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return NoContent();
 
         }
+
+        // POST api/v{version}/distribucion/porcentajeExportacion
+        [HttpPost("porcentajeExportacion", Name = "SaveDistribucionPorcentajeExportacion")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SavePorcentajeExportacion([FromBody] DistribucionPorcentajeExportacionGuardarRequest req)
+        {
+
+            if (req is null || req.IdEstimacion <= 0)
+                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+
+            await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
+
+            return NoContent();
+
+        }
     }
 }

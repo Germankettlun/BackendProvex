@@ -31,5 +31,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 
         Task InsertUpdateDistribucionFrigorificoAsync(DistribucionFrigorificoGuardarRequest req);
         Task InsertUpdateDistribucionPackingAsync(DistribucionPackingGuardarRequest req);
+
+        Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, int idUsuario);
+
+        Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, int idUsuario);
+
     }
 }
