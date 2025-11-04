@@ -196,5 +196,20 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
                 }
             }
         }
+
+        public async Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req)
+        {
+
+            if (req.IdEstimacionBisemanal <= 0) throw new ArgumentException("IdEstimacionBisemanal inválido.");
+            if (req.Frigorificos is null || req.Frigorificos.Count == 0) throw new ArgumentException("Debe enviar al menos un frigorífico.");
+            foreach (var it in req.Frigorificos)
+            {
+                if (it.IdFrigorifico <= 0) throw new ArgumentException("IdFrigorifico inválido.");
+                if ((it.Porcentaje < 0 || it.Porcentaje > 100))
+                    throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
+            }
+
+            await _repo.InsertUpdateDistribucionFrigorificoAsync(req);
+        }
     }
 }

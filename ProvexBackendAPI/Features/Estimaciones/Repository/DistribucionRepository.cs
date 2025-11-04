@@ -1,8 +1,9 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Azure.Core;
+using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
-using System.Data;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
+using System.Data;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {
@@ -342,5 +343,27 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task InsertUpdateDistribucionFrigorificoAsync(DistribucionFrigorificoGuardarRequest req)
+        {
+            using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            // Reutilizamos el SqlCommand para cada item
+            foreach (var it in req.Frigorificos)
+            {
+                using var cmd = new SqlCommand("[Estimaciones].[usp_INSERT_UPDATE_DistribucionFrigorifico_Dia]", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = req.IdEstimacionBisemanal });
+                cmd.Parameters.Add(new SqlParameter("@IdFrigorifico", SqlDbType.Int) { Value = it.IdFrigorifico });
+                cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
+                cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.Int) { Value = req.IdUsuario });
+
+               
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
     }
 }
