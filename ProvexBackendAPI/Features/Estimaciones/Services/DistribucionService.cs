@@ -131,6 +131,45 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             return await _repo.GetRowsDistribucionPackingAgrupadoAsync(idBisemanal);
         }
 
+        public async Task<List<DistribucionExportacionEstimacionResponseDto>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
+        {
+
+            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
+
+            if (idEstimacion < 0)
+                throw new ValidationException("idEstimacion inválido");
+
+            var rows = await _repo.GetRowsDistribucionPorcentajeExportacionAsync(idEstimacion, semanasAntes, semanasDespues);
+
+            // Grouping por (IdEstimacion, IdCategoria)
+            var grouped = rows
+                .GroupBy(r => new { r.IdEstimacion, r.CodEspecie, r.Especie, r.PorcDefecto })
+                .Select(g => new DistribucionExportacionEstimacionResponseDto
+                {
+                    IdEstimacion = g.Key.IdEstimacion,
+                    CodigoEspecie = g.Key.CodEspecie,
+                    Especie = g.Key.Especie,
+                    PorcentajePredeterminado = g.Key.PorcDefecto,
+                    Semanas = g
+                        .Select(r => new SemanaPorcentajeDto
+                        {
+                            Anio = r.SemanaAnio,
+                            Semana = r.SemanaNumero,
+                            IdPorcentajePorSemana = r.IdDistribucionPorSemana,
+                            PorcentajePorSemana = r.PorcentajeSemana,
+                            EsSemanaActual = r.EsSemanaActual
+                        })
+                        .DistinctBy(x => new { x.Anio, x.Semana })
+                        .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
+                        .ToList()
+                })
+                .OrderBy(x => x.IdEstimacion)
+                .ThenBy(x => x.CodigoEspecie)
+                .ToList();
+
+            return grouped;
+        }
+
         public async Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req)
         {
             if (req is null || req.IdEstimacion <= 0)

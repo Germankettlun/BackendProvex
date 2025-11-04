@@ -91,6 +91,26 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return Ok(data);
         }
 
+        // GET api/v{version}/distribucion/porcentajeExportacion
+        [HttpGet("porcentajeExportacion", Name = "GetDistribucionPorcentajeExportacion")]
+        [ProducesResponseType(typeof(List<DistribucionExportacionEstimacionResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetPorcentajeExportacion(
+        [FromQuery] int idEstimacion,
+        [FromQuery] int? semanasAntes,
+        [FromQuery] int? semanasDespues
+    )
+        {
+            if (idEstimacion <= 0)
+                return BadRequest("El idEstimacion debe ser mayor que cero.");
+
+
+
+            var data = await _service.GetRowsDistribucionPorcentajeExportacionAsync(idEstimacion, semanasAntes, semanasDespues);
+            return Ok(data);
+        }
+
 
         // POST api/v{version}/distribucion/categoria
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]

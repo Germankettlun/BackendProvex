@@ -267,6 +267,43 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 .ToList();
         }
 
+        public async Task<List<DistribucionExportacionEstimacionRow>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
+        {
+            var list = new List<DistribucionExportacionEstimacionRow>();
+
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_PORC_EXPORTACION", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
+            //cmd.Parameters.Add(new SqlParameter("@SEM_ANT", SqlDbType.Int) { Value = (object?)semanasAntes ?? DBNull.Value });
+            //cmd.Parameters.Add(new SqlParameter("@SEM_SIG", SqlDbType.Int) { Value = (object?)semanasDespues ?? DBNull.Value });
+
+            await using var rdr = await cmd.ExecuteReaderAsync();
+
+            while (await rdr.ReadAsync())
+            {
+                list.Add(new DistribucionExportacionEstimacionRow
+                {
+                    IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
+                    CodEspecie = rdr.Get<string?>("CODESPECIE") ?? "",
+                    Especie = rdr.Get<string?>("ESPECIE") ?? "",
+                    SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
+                    SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",                   
+                    PorcDefecto = rdr.Get<int?>("PORCENTAJE_POR_DEFECTO"),
+                    IdDistribucionPorSemana = rdr.Get<int?>("ID_DISTRIBUCION_PORCENTAJE_EXPORTACION"),
+                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJE_POR_SEMANA"),
+                    EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false
+                });
+            }
+
+            return list;
+        }
+
         public async Task InsertUpdateDistribucionCategoriaPredeterminadoAsync(int idEstimacion, string idCategoria, int? porcentaje, int idUsuario)
         {
             await using var conn = new SqlConnection(_connString);
