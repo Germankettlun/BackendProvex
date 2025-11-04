@@ -304,6 +304,43 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task InsertUpdateDistribucionCalibrePredeterminadoAsync(int idEstimacion, string idCalibre, int? porcentaje, int idUsuario)
+        {
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Predeterminado", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@IdEstimacion", idEstimacion);
+            cmd.Parameters.AddWithValue("@IdCalibre", idCalibre);
+            cmd.Parameters.AddWithValue("@PorcentajePredeterminado", (object?)porcentaje ?? DBNull.Value);
+            //cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task InsertUpdateDistribucionCalibrePorSemanaAsync(int idEstimacion, string idCalibre, int anio, string semana, int porcentaje, int idUsuario)
+        {
+            await using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            await using var cmd = new SqlCommand("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Semana", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.AddWithValue("@IdEstimacion", idEstimacion);
+            cmd.Parameters.AddWithValue("@IdCalibre", idCalibre);
+            cmd.Parameters.AddWithValue("@Anio", anio);
+            cmd.Parameters.AddWithValue("@Semana", semana);
+            cmd.Parameters.AddWithValue("@Porcentaje", porcentaje);
+            //cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+
+            await cmd.ExecuteNonQueryAsync();
+        }
 
     }
 }

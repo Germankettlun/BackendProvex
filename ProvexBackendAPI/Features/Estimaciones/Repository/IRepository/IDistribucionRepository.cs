@@ -22,5 +22,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
         Task InsertUpdateDistribucionCategoriaPredeterminadoAsync(int idEstimacion, string idCategoria, int? porcentaje, int idUsuario);
 
         Task InsertUpdateDistribucionCategoriaPorSemanaAsync(int idEstimacion, string idCategoria, int anio, string semana, int porcentaje, int idUsuario);
+
+        Task InsertUpdateDistribucionCalibrePredeterminadoAsync(int idEstimacion, string idCalibre, int? porcentaje, int idUsuario);
+
+        Task InsertUpdateDistribucionCalibrePorSemanaAsync(int idEstimacion, string idCalibre, int anio, string semana, int porcentaje, int idUsuario);
     }
 }
