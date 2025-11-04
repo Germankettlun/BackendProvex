@@ -13,8 +13,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
      
         Task<List<DistribucionPackingDiaDto>> GetDistribucionPackingAgrupadoAsync(int idBisemanal);
 
-
-
         Task<List<DistribucionFrigorificoDiaDto>> GetDistribucionFrigorificoAgrupadoAsync(int idBisemanal);
+        Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req);
+        
     }
 }

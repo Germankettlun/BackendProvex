@@ -90,5 +90,24 @@ namespace ProvexBackendAPI.Features.Estimaciones
             var data = await _service.GetDistribucionPackingAgrupadoAsync(idBisemanal);
             return Ok(data);
         }
+
+
+        // POST api/v{version}/distribucion/categoria
+        [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
+        {
+            
+            if (req is null || req.IdEstimacion <= 0)
+                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+
+            await _service.DistribucionCategoriaGuardarAsync(req);
+
+            return NoContent();
+
+        }
     }
 }
