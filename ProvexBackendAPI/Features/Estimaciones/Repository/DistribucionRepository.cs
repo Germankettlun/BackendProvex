@@ -365,5 +365,28 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 await cmd.ExecuteNonQueryAsync();
             }
         }
+
+        public async Task InsertUpdateDistribucionPackingAsync(DistribucionPackingGuardarRequest req)
+        {
+            using var conn = new SqlConnection(_connString);
+            await conn.OpenAsync();
+
+            // Reutilizamos el SqlCommand para cada item
+            foreach (var it in req.Packings)
+            {
+                using var cmd = new SqlCommand("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = req.IdEstimacionBisemanal });
+                cmd.Parameters.Add(new SqlParameter("@IdPacking", SqlDbType.Int) { Value = it.IdPacking });
+                cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
+                cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.Int) { Value = req.IdUsuario });
+
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
     }
 }
