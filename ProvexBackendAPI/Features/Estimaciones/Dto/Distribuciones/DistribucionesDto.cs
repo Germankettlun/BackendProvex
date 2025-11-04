@@ -237,5 +237,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public int? Porcentaje { get; set; } 
     }
 
+    public record DistribucionPackingGuardarRequest(int IdEstimacionBisemanal, List<DistribucionPackingItemDto> Packings, int IdUsuario = 1);
+
+    public class DistribucionPackingItemDto
+    {
+        public int IdPacking { get; set; }
+        public int? Porcentaje { get; set; }
+    }
+
 
 }

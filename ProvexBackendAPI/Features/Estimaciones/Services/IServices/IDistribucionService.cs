@@ -20,5 +20,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 
         Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req);
 
+        Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req);
+
     }
 }
