@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.Data.SqlClient;
+using System.Linq.Expressions;
 
 namespace ProvexBackendAPI.Repository.IRepository
 {
@@ -16,5 +17,6 @@ namespace ProvexBackendAPI.Repository.IRepository
         void Update(T entity);
         void Remove(T entity);
         void RemoveRange(IEnumerable<T> entities);
+        Task SpVoid(string query, SqlParameter[] parameters);
     }
 }

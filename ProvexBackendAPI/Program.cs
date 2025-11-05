@@ -43,7 +43,8 @@ builder.Services.AddScoped<IComboRepository, ComboRepository>();
 builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
 
 builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
-builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>();
+builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>()
+    .AddScoped<IEstimacionService, EstimacionService>();
 
 
 

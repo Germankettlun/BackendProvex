@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
@@ -17,8 +19,13 @@ namespace ProvexBackendAPI.Features.Estimaciones
     public class EstimacionesController : ControllerBase
     {
         private readonly IEstimacionesService _estimacionesService;
-        public EstimacionesController(IEstimacionesService estimacionesService) => _estimacionesService = estimacionesService;
+        private readonly IEstimacionService estimacion;
 
+        public EstimacionesController(IEstimacionesService estimacionesService, IEstimacionService estimacion)
+        {
+            _estimacionesService = estimacionesService;
+            this.estimacion = estimacion;
+        }
 
         //    // GET api/v{version}/estimacion/GetEstimacionBisemanal
         [HttpGet("GetEstimacionBisemanal", Name = "GetEstimacionBisemanal")]
@@ -71,6 +78,22 @@ namespace ProvexBackendAPI.Features.Estimaciones
             catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        [HttpPost("ingresarEstimacion")]
+        public async Task<ActionResult> IngresarEstimacion(IngresarEstimacionRequest request)
+        {
+            try
+            {
+                await estimacion.IngresarEstimacion(request);
+                return Ok();
+
+            }
+            catch (Exception e)
+            {
+
+                throw new Exception(e.Message);
             }
         }
     }
