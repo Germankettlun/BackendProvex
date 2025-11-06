@@ -248,6 +248,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
                     throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
             }
 
+            //Borrado para realizar una actualización completa
+
+            await _repo.EliminaDistribucionFrigorificoAsync(req.IdEstimacionBisemanal);
+
             await _repo.InsertUpdateDistribucionFrigorificoAsync(req);
         }
 
