@@ -486,7 +486,17 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
 
-            
+
+            using var cmd = new SqlCommand("[Estimaciones].[usp_delete_DistribucionPacking_Dia]", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = idBisemanal });
+
+            await cmd.ExecuteNonQueryAsync();
+
+
         }
 
     }
