@@ -55,7 +55,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     TempInicio = rd.Get<DateTime>("TEMPINICIO"),
                     TempOrden = rd.Get<int>("TEMPORDEN"),
                     TempVigente = rd.Get<int>("TEMPVIGENTE"),
-                    Semana = rd.Get<int>("SEMANA"),
+                    Semana = rd.Get<string>("SEMANA")!,
                     Ano = rd.Get<int>("ANO"),
                     SemanaInicio = rd.Get<DateTime>("SEMANAINICIO"),
                     SemanaTermino = rd.Get<DateTime>("SEMANATERMINO")

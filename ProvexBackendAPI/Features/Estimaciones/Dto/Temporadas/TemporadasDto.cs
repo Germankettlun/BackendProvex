@@ -29,7 +29,7 @@
         public int TempOrden { get; set; }
         public int TempVigente { get; set; }
 
-        public int Semana { get; set; }
+        public string Semana { get; set; }
         public int Ano { get; set; }
         public DateTime SemanaInicio { get; set; }
         public DateTime SemanaTermino { get; set; }
