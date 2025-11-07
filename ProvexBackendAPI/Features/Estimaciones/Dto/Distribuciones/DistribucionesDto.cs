@@ -222,4 +222,61 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
     }
 
+    public record PorcentajePorSemanaGuardarDto(int Anio, string Semana, int? Porcentaje);
+    public record DistribucionCategoriaPredeterminadoGuardarDto(string IdCategoria, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
+    public record DistribucionCategoriaGuardarRequest(int IdEstimacion, List<DistribucionCategoriaPredeterminadoGuardarDto> Categorias, int IdUsuario = 1);
+
+    public record DistribucionCalibrePredeterminadoGuardarDto(string IdCalibre, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
+    public record DistribucionCalibreGuardarRequest(int IdEstimacion, List<DistribucionCalibrePredeterminadoGuardarDto> Calibres, int IdUsuario = 1);
+
+    public record DistribucionFrigorificoGuardarRequest(int IdEstimacionBisemanal, List<DistribucionFrigorificoItemDto> Frigorificos, int IdUsuario = 1);
+
+    public class DistribucionFrigorificoItemDto
+    {
+        public int IdFrigorifico { get; set; }
+        public int? Porcentaje { get; set; } 
+    }
+
+    public record DistribucionPackingGuardarRequest(int IdEstimacionBisemanal, List<DistribucionPackingItemDto> Packings, int IdUsuario = 1);
+
+    public class DistribucionPackingItemDto
+    {
+        public int IdPacking { get; set; }
+        public int? Porcentaje { get; set; }
+    }
+
+    public class DistribucionExportacionEstimacionRow
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+         public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+        public int? PorcDefecto{ get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }
+        public bool EsSemanaActual { get; set; }
+    }
+
+    public class DistribucionExportacionEstimacionResponseDto
+    {
+        [JsonPropertyName("idestimacion")]
+        public string IdEstimacion { get; set; } = string.Empty;
+
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("%semanas")]
+        public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
+    }
+    public record DistribucionPorcentajeExportacionGuardarRequest(int IdEstimacion, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas, int IdUsuario = 1);
+
+
+
 }
