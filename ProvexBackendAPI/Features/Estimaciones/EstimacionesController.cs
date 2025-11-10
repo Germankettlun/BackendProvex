@@ -69,7 +69,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
             try
             {
                 _ = await _estimacionesService.UpsertDiaAsync(request, userId);
-                return Ok(); // 200, data:null
+                return Ok("OK"); // 200, data:null
             }
             catch (InvalidOperationException ex)
             {
