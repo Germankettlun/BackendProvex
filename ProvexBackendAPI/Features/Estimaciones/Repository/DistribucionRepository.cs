@@ -81,7 +81,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     CodEspecie = rdr.Get<string?>("CODESPECIE") ?? "",
                     Especie = rdr.Get<string?>("ESPECIE") ?? "",
                     IdCalibre = rdr.Get<string?>("IDCALIBRE") ?? "",
-                    CalibreNombre = rdr.FirstExistingAsString("CALIBRE"),
+                    CalibreNombre = rdr.FirstExistingAsString("IDCALIBRE"),
                     SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
                     SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
                     IdDistribucionDefecto = rdr.Get<int?>("IDDISTRIBUCIONDEFECTO"),
