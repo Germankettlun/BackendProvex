@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using ProvexBackendAPI.Dto.ApiResponse;
 
 namespace ProvexBackendAPI.Filters
@@ -26,11 +28,17 @@ namespace ProvexBackendAPI.Filters
             }
             else if (context.Result is EmptyResult)
             {
+               
+
+
                 context.Result = new ObjectResult(new ApiResponse<object>(null, 204, true, "Sin contenido"))
                 {
                     StatusCode = 204
                 };
             }
+          
+
         }
+
     }
 }

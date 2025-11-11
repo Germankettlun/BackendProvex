@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,9 +26,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/categoria
         [HttpGet("categoria", Name = "GetDistribucionCategoria")]
-        [ProducesResponseType(typeof(List<DistribucionCategoriaEspecieResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetCategoria(
         [FromQuery] int idEstimacion,
         [FromQuery] int? semanasAntes,
@@ -45,9 +43,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/calibre
         [HttpGet("calibre", Name = "GetDistribucionCalibre")]
-        [ProducesResponseType(typeof(List<DistribucionCalibreEspecieResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetCalibre(
         [FromQuery] int idEstimacion,
         [FromQuery] int? semanasAntes,
@@ -65,9 +60,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/frigorifico
         [HttpGet("frigorifico", Name = "GetFrigorificoAgrupado")]
-        [ProducesResponseType(typeof(List<DistribucionFrigorificoDiaDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetFrigorificoAgrupado(
             [FromQuery] int idBisemanal
     )
@@ -79,9 +71,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/packing
         [HttpGet("packing", Name = "GetPackingAgrupado")]
-        [ProducesResponseType(typeof(List<DistribucionPackingDiaDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetFrigoriGetPackingAgrupadoficoAgrupado(
             [FromQuery] int idBisemanal
     )
@@ -93,9 +82,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // GET api/v{version}/distribucion/porcentajeExportacion
         [HttpGet("porcentajeExportacion", Name = "GetDistribucionPorcentajeExportacion")]
-        [ProducesResponseType(typeof(List<DistribucionExportacionEstimacionResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetPorcentajeExportacion(
         [FromQuery] int idEstimacion,
         [FromQuery] int? semanasAntes,
@@ -114,91 +100,98 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // POST api/v{version}/distribucion/categoria
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
-        [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
+
+        public async Task SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
         {
             
-            if (req is null || req.IdEstimacion <= 0)
-                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+            try
+            {
+                await _service.DistribucionCategoriaGuardarAsync(req);
+      
 
-            await _service.DistribucionCategoriaGuardarAsync(req);
+            }
+            catch (Exception e)
+            {
 
-            return NoContent();
+                throw new Exception(e.Message);
+            }
 
         }
 
         // POST api/v{version}/distribucion/calibre
         [HttpPost("calibre", Name = "SaveDistribucionCalibre")]
-        [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
+        public async Task SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
         {
 
-            if (req is null || req.IdEstimacion <= 0)
-                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+            try
+            {
+                await _service.DistribucionCalibreGuardarAsync(req);
+   
 
-            await _service.DistribucionCalibreGuardarAsync(req);
+            }
+            catch (Exception e)
+            {
 
-            return NoContent();
+                throw new Exception(e.Message);
+            }
 
         }
 
         // POST api/v{version}/distribucion/frigorifico
         [HttpPost("frigorifico", Name = "SaveDistribucionFrigorifico")]
-        [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> SaveFrigorifico([FromBody] DistribucionFrigorificoGuardarRequest req)
+        public async Task SaveFrigorifico([FromBody] DistribucionFrigorificoGuardarRequest req)
         {
 
-            if (req is null || req.IdEstimacionBisemanal <= 0)
-                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+            try
+            {
+                await _service.DistribucionFrigorificoGuardarAsync(req);
+           
 
-            await _service.DistribucionFrigorificoGuardarAsync(req);
+            }
+            catch (Exception e)
+            {
 
-            return NoContent();
+                throw new Exception(e.Message);
+            }
 
         }
 
         // POST api/v{version}/distribucion/packing
         [HttpPost("packing", Name = "SaveDistribucionPacking")]
-        [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> SavePacking([FromBody] DistribucionPackingGuardarRequest req)
+        public async Task SavePacking([FromBody] DistribucionPackingGuardarRequest req)
         {
 
-            if (req is null || req.IdEstimacionBisemanal <= 0)
-                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+            try
+            {
+                await _service.DistribucionPackingGuardarAsync(req);
 
-            await _service.DistribucionPackingGuardarAsync(req);
+            }
+            catch (Exception e)
+            {
 
-            return NoContent();
+                throw new Exception(e.Message);
+            }
+
+
 
         }
 
         // POST api/v{version}/distribucion/porcentajeExportacion
         [HttpPost("porcentajeExportacion", Name = "SaveDistribucionPorcentajeExportacion")]
-        [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> SavePorcentajeExportacion([FromBody] DistribucionPorcentajeExportacionGuardarRequest req)
         {
 
-            if (req is null || req.IdEstimacion <= 0)
-                return BadRequest("El IdEstimacion debe ser mayor que cero.");
+           try
+            {
+                await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
+                return Ok();
 
-            await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
+            }
+            catch (Exception e)
+            {
 
-            return NoContent();
+                throw new Exception(e.Message);
+            }
 
         }
     }
