@@ -1,6 +1,7 @@
 # =========================
 # ERP Backend API - UNIFIED Dev/Prod
 # Estructura idéntica a ProvexApi exitoso
+# Configuración: Solo web.config (variables de entorno)
 # =========================
 trigger:
   branches:
@@ -73,7 +74,7 @@ stages:
         arguments: '--configuration $(configuration) --no-restore'
 
     - task: DotNetCoreCLI@2
-      displayName: 📤 Publish (sin comprimir)
+      displayName: 📤 Publish (framework-dependent)
       inputs:
         command: publish
         publishWebProjects: false
@@ -91,7 +92,7 @@ stages:
         modifyOutputPath: false
 
     - task: PowerShell@2
-      displayName: 🔍 Verificar y descomprimir si es necesario
+      displayName: 🔍 Verificar artefactos publicados
       inputs:
         targetType: inline
         script: |
@@ -104,6 +105,7 @@ stages:
           
           if ($dll) {
             Write-Host "✅ ProvexBackendAPI.dll encontrado: $($dll.FullName)"
+            Write-Host "Tamaño: $([math]::Round($dll.Length/1MB,2)) MB"
             exit 0
           }
           
@@ -191,6 +193,7 @@ stages:
                  Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $dll) { throw "❌ ProvexBackendAPI.dll no encontrado" }
           $src = $dll.DirectoryName
+          Write-Host "✅ Artifact path: $src"
           Write-Host "##vso[task.setvariable variable=artifactPath]$src"
 
           if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
@@ -220,17 +223,23 @@ stages:
       inputs:
         targetType: inline
         script: |
+          $ErrorActionPreference = 'Continue'
           $physPath = '$(resolvedPhysicalPath)'
+          
+          Write-Host "🔍 Buscando procesos dotnet.exe corriendo desde: $physPath"
+          
           Get-Process -Name 'dotnet' -ErrorAction SilentlyContinue | ForEach-Object {
             try {
               $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)" -ErrorAction SilentlyContinue).CommandLine
               if ($cmdLine -and $cmdLine -match [regex]::Escape($physPath)) {
-                Write-Host "💀 Matando PID $($_.Id)"
+                Write-Host "💀 Matando proceso zombie: PID $($_.Id)"
                 Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
               }
             } catch {}
           }
+          
           Start-Sleep -Seconds 3
+          Write-Host "✅ Limpieza de procesos completada"
 
     - task: PowerShell@2
       displayName: "⚡ Detener IIS"
@@ -242,17 +251,27 @@ stages:
           $pool = "$(resolvedAppPoolName)"
           $path = "$(resolvedPhysicalPath)"
 
-          [System.IO.File]::WriteAllText((Join-Path $path 'app_offline.htm'), '<!DOCTYPE html><html><body><h1>Mantenimiento</h1></body></html>')
+          [System.IO.File]::WriteAllText((Join-Path $path 'app_offline.htm'), '<!DOCTYPE html><html><body><h1>Mantenimiento</h1><p>Deploy en progreso...</p></body></html>')
+          Write-Host "✅ app_offline.htm creado"
 
           if (Test-Path "IIS:\Sites\$site") {
-            if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { Stop-Website -Name $site }
+            if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { 
+              Stop-Website -Name $site 
+              Write-Host "🛑 Sitio detenido"
+            }
           }
+          
           if (Test-Path "IIS:\AppPools\$pool") {
             if ((Get-WebAppPoolState -Name $pool).Value -ne 'Stopped') {
               Stop-WebAppPool -Name $pool
+              Write-Host "🛑 AppPool deteniendo..."
+              
               for ($i = 1; $i -le 30; $i++) {
                 Start-Sleep -Seconds 1
-                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { break }
+                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { 
+                  Write-Host "✅ AppPool detenido (${i}s)"
+                  break 
+                }
               }
             }
           }
@@ -273,6 +292,8 @@ stages:
 
           icacls "$path" /grant "${me}:(OI)(CI)M" /T /C | Out-Null
           icacls "$path" /grant "IIS AppPool\${pool}:(OI)(CI)M" /T /C | Out-Null
+          
+          Write-Host "✅ Permisos configurados para: $me y AppPool $pool"
 
     - task: PowerShell@2
       displayName: '📦 Copiar archivos'
@@ -282,88 +303,89 @@ stages:
           $src = '$(artifactPath)'
           $dst = '$(resolvedPhysicalPath)'
           
+          Write-Host "📂 Origen: $src"
+          Write-Host "📂 Destino: $dst"
+          
           robocopy $src $dst /MIR /MT:8 /R:2 /W:2 /FFT `
             /XD "logs" `
-            /XF "app_offline.htm" "appsettings.*.json" `
+            /XF "app_offline.htm" `
             /NFL /NDL /NJH /NJS /NP
 
-          if ($LASTEXITCODE -ge 8) { throw "Robocopy falló ($LASTEXITCODE)" }
+          if ($LASTEXITCODE -ge 8) { throw "Robocopy falló (código $LASTEXITCODE)" }
           $global:LASTEXITCODE = 0
+          Write-Host "✅ Archivos copiados exitosamente"
 
     - task: PowerShell@2
-      displayName: '📝 Crear appsettings.json con variables'
-      inputs:
-        targetType: inline
-        script: |
-          $cfg = [ordered]@{
-            ApiSettings = @{ SecretKey = "$(SecretKey)" }
-            ConnectionStrings = @{ DefaultConnection = "$(ConnectionStrings__DatabaseConnection)" }
-            Jwt = @{
-              Issuer = "$(Jwt__Issuer)"
-              Audience = "$(Jwt__Audience)"
-              Key = "$(Jwt__Key)"
-              AccessTokenMinutes = 60
-            }
-            AzureAd = @{
-              Instance = "$(AzureAd__Instance)"
-              Domain = "$(AzureAd__Domain)"
-              TenantId = "$(AzureAd__TenantId)"
-              ClientId = "$(AzureAd__ClientId)"
-            }
-            AllowedHosts = "*"
-            Logging = @{
-              LogLevel = @{
-                Default = "Information"
-                "Microsoft.AspNetCore" = "Warning"
-              }
-            }
-          }
-          $json = $cfg | ConvertTo-Json -Depth 10
-          $dst = '$(resolvedPhysicalPath)'
-          $base = Join-Path $dst "appsettings.json"
-          $prod = Join-Path $dst "appsettings.$(ASPNETCORE_ENVIRONMENT).json"
-          
-          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-          [System.IO.File]::WriteAllText($base, $json, $utf8NoBom)
-          [System.IO.File]::WriteAllText($prod, $json, $utf8NoBom)
-          
-          Write-Host "✅ appsettings escritos"
-
-    - task: PowerShell@2
-      displayName: '🔧 Crear web.config con variables de entorno'
+      displayName: '🔧 Crear web.config completo (variables + secretos)'
       inputs:
         targetType: inline
         script: |
           $path = '$(resolvedPhysicalPath)'
           
-          $webConfigContent = @'
-            <?xml version="1.0" encoding="utf-8"?>
-            <configuration>
-              <system.webServer>
-                <handlers>
-                  <clear />
-                  <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
-                </handlers>
-                <aspNetCore processPath="dotnet"
-                            arguments=".\ProvexBackendAPI.dll"
-                            hostingModel="OutOfProcess"
-                            stdoutLogEnabled="true"
-                            stdoutLogFile=".\logs\stdout">
-                  <environmentVariables>
-                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$(ASPNETCORE_ENVIRONMENT)" />
-                    <environmentVariable name="ASPNETCORE_URLS" value="http://*:0" />
-                    <environmentVariable name="ASPNETCORE_FORWARDEDHEADERS_ENABLED" value="true" />
-                  </environmentVariables>
-                </aspNetCore>
-                <httpErrors existingResponse="PassThrough" />
-              </system.webServer>
-            </configuration>
-            '@
+          # Función para escapar XML y prevenir injection
+          function Escape-Xml([string]$text) {
+            if ([string]::IsNullOrWhiteSpace($text)) { return "" }
+            return [System.Security.SecurityElement]::Escape($text)
+          }
+          
+          # Escapar todas las variables
+          $env = Escape-Xml "$(ASPNETCORE_ENVIRONMENT)"
+          $connStr = Escape-Xml "$(ConnectionStrings__DatabaseConnection)"
+          $jwtIssuer = Escape-Xml "$(Jwt__Issuer)"
+          $jwtAudience = Escape-Xml "$(Jwt__Audience)"
+          $jwtKey = Escape-Xml "$(Jwt__Key)"
+          $secretKey = Escape-Xml "$(SecretKey)"
+          $azInstance = Escape-Xml "$(AzureAd__Instance)"
+          $azDomain = Escape-Xml "$(AzureAd__Domain)"
+          $azTenant = Escape-Xml "$(AzureAd__TenantId)"
+          $azClient = Escape-Xml "$(AzureAd__ClientId)"
+          
+          $webConfigContent = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <clear />
+                <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+              </handlers>
+              <aspNetCore processPath="dotnet"
+                          arguments=".\ProvexBackendAPI.dll"
+                          hostingModel="OutOfProcess"
+                          stdoutLogEnabled="true"
+                          stdoutLogFile=".\logs\stdout">
+                <environmentVariables>
+                  <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$env" />
+                  <environmentVariable name="ASPNETCORE_URLS" value="http://*:0" />
+                  <environmentVariable name="ASPNETCORE_FORWARDEDHEADERS_ENABLED" value="true" />
+                  <environmentVariable name="ConnectionStrings__DefaultConnection" value="$connStr" />
+                  <environmentVariable name="Jwt__Issuer" value="$jwtIssuer" />
+                  <environmentVariable name="Jwt__Audience" value="$jwtAudience" />
+                  <environmentVariable name="Jwt__Key" value="$jwtKey" />
+                  <environmentVariable name="Jwt__AccessTokenMinutes" value="60" />
+                  <environmentVariable name="ApiSettings__SecretKey" value="$secretKey" />
+                  <environmentVariable name="AzureAd__Instance" value="$azInstance" />
+                  <environmentVariable name="AzureAd__Domain" value="$azDomain" />
+                  <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
+                  <environmentVariable name="AzureAd__ClientId" value="$azClient" />
+                  <environmentVariable name="AllowedHosts" value="*" />
+                </environmentVariables>
+              </aspNetCore>
+              <httpErrors existingResponse="PassThrough" />
+            </system.webServer>
+          </configuration>
+          "@
           
           $webConfigPath = Join-Path $path 'web.config'
           $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
           [System.IO.File]::WriteAllText($webConfigPath, $webConfigContent, $utf8NoBom)
-          Write-Host "✅ web.config creado"
+          
+          Write-Host "✅ web.config creado con TODAS las variables de configuración"
+          Write-Host "Variables configuradas:"
+          Write-Host "  - ASPNETCORE_ENVIRONMENT: $env"
+          Write-Host "  - ConnectionString: [REDACTED]"
+          Write-Host "  - Jwt__Issuer: $jwtIssuer"
+          Write-Host "  - Jwt__Audience: $jwtAudience"
+          Write-Host "  - AzureAd configurado ✓"
 
     - task: PowerShell@2
       displayName: "▶ Iniciar IIS"
@@ -375,20 +397,27 @@ stages:
           $site = '$(siteName)'
           $path = '$(resolvedPhysicalPath)'
           
+          # Quitar app_offline
           Remove-Item (Join-Path $path 'app_offline.htm') -Force -ErrorAction SilentlyContinue
+          Write-Host "✅ app_offline.htm eliminado"
 
+          # Iniciar AppPool
           Start-WebAppPool -Name $pool
+          Write-Host "▶️ AppPool '$pool' iniciando..."
+          
           for ($i = 1; $i -le 30; $i++) {
             Start-Sleep -Seconds 1
             if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') { 
-              Write-Host "✅ AppPool iniciado (${i}s)"
+              Write-Host "✅ AppPool en estado 'Started' (${i}s)"
               break 
             }
-            if ($i -eq 30) { throw "AppPool no arrancó" }
+            if ($i -eq 30) { throw "❌ AppPool no arrancó en 30 segundos" }
           }
           
+          # Iniciar Sitio
           Start-Website -Name $site
-          Write-Host "✅ IIS iniciado"
+          Write-Host "✅ Sitio '$site' iniciado"
+          Write-Host "🌐 Aplicación disponible en http://10.115.1.252:8082"
 
     - task: PowerShell@2
       displayName: '🔍 Ver logs de arranque'
@@ -402,10 +431,15 @@ stages:
             Sort-Object LastWriteTime -Descending | Select-Object -First 1
           
           if ($latestLog) {
-            Write-Host "📜 Últimas 100 líneas de $($latestLog.Name):"
+            Write-Host "📜 Log más reciente: $($latestLog.Name)"
+            Write-Host "📜 Últimas 100 líneas:"
+            Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             Get-Content $latestLog.FullName -Tail 100 -ErrorAction SilentlyContinue
+            Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           } else {
-            Write-Host "⚠️ No hay logs de stdout"
+            Write-Host "⚠️ No hay logs de stdout en: $logsPath"
+            Write-Host "Archivos en logs:"
+            Get-ChildItem $logsPath -ErrorAction SilentlyContinue | Format-Table -Auto
           }
 
     - task: PowerShell@2
@@ -415,19 +449,28 @@ stages:
         targetType: inline
         script: |
           $url = '$(VerifyUrl)'
+          Write-Host "🏥 Testing health endpoint: $url"
+          Write-Host "Esperando 5s para warm-up..."
+          Start-Sleep -Seconds 5
+          
           for ($i = 1; $i -le 10; $i++) {
             try {
-              $resp = Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 10
-              if ($resp.StatusCode -lt 400) {
-                Write-Host "✅ Health OK: HTTP $($resp.StatusCode)"
+              Write-Host "⏳ Intento $i/10..."
+              $resp = Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+              
+              if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 400) {
+                Write-Host "✅ Health check OK: HTTP $($resp.StatusCode)"
+                Write-Host "Response: $($resp.Content.Substring(0, [Math]::Min(200, $resp.Content.Length)))"
                 exit 0
               }
             } catch {
-              Write-Host "⏳ Intento $i/10: $($_.Exception.Message)"
-              Start-Sleep -Seconds 3
+              Write-Host "❌ Error: $($_.Exception.Message)"
+              if ($i -lt 10) { Start-Sleep -Seconds 3 }
             }
           }
-          Write-Warning "⚠️ Health check falló - revisa logs arriba"
+          
+          Write-Warning "⚠️ Health check falló después de 10 intentos"
+          Write-Warning "Revisa los logs de stdout arriba para más detalles"
 
 # =========================
 # STAGE: DEPLOY (PROD)
@@ -538,51 +581,35 @@ stages:
           
           robocopy $src $dst /MIR /MT:8 /R:2 /W:2 `
             /XD "logs" `
-            /XF "app_offline.htm" "appsettings.*.json" `
+            /XF "app_offline.htm" `
             /NFL /NDL /NJH /NJS /NP
 
           if ($LASTEXITCODE -ge 8) { throw "Robocopy falló" }
           $global:LASTEXITCODE = 0
 
     - task: PowerShell@2
-      displayName: '📝 Crear appsettings.json'
+      displayName: '🔧 Crear web.config completo (Production)'
       inputs:
         targetType: inline
         script: |
-          $cfg = [ordered]@{
-            ApiSettings = @{ SecretKey = "$(SecretKey)" }
-            ConnectionStrings = @{ DefaultConnection = "$(ConnectionStrings__DatabaseConnection)" }
-            Jwt = @{
-              Issuer = "$(Jwt__Issuer)"
-              Audience = "$(Jwt__Audience)"
-              Key = "$(Jwt__Key)"
-              AccessTokenMinutes = 60
-            }
-            AzureAd = @{
-              Instance = "$(AzureAd__Instance)"
-              Domain = "$(AzureAd__Domain)"
-              TenantId = "$(AzureAd__TenantId)"
-              ClientId = "$(AzureAd__ClientId)"
-            }
-            AllowedHosts = "*"
-            Logging = @{
-              LogLevel = @{
-                Default = "Information"
-                "Microsoft.AspNetCore" = "Warning"
-              }
-            }
+          $path = '$(physicalPath)'
+          
+          function Escape-Xml([string]$text) {
+            if ([string]::IsNullOrWhiteSpace($text)) { return "" }
+            return [System.Security.SecurityElement]::Escape($text)
           }
-          $json = $cfg | ConvertTo-Json -Depth 10
-          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-          [System.IO.File]::WriteAllText((Join-Path '$(physicalPath)' "appsettings.json"), $json, $utf8NoBom)
-          [System.IO.File]::WriteAllText((Join-Path '$(physicalPath)' "appsettings.Production.json"), $json, $utf8NoBom)
-
-    - task: PowerShell@2
-      displayName: '🔧 Crear web.config'
-      inputs:
-        targetType: inline
-        script: |
-          $webConfigContent = @'
+          
+          $connStr = Escape-Xml "$(ConnectionStrings__DatabaseConnection)"
+          $jwtIssuer = Escape-Xml "$(Jwt__Issuer)"
+          $jwtAudience = Escape-Xml "$(Jwt__Audience)"
+          $jwtKey = Escape-Xml "$(Jwt__Key)"
+          $secretKey = Escape-Xml "$(SecretKey)"
+          $azInstance = Escape-Xml "$(AzureAd__Instance)"
+          $azDomain = Escape-Xml "$(AzureAd__Domain)"
+          $azTenant = Escape-Xml "$(AzureAd__TenantId)"
+          $azClient = Escape-Xml "$(AzureAd__ClientId)"
+          
+          $webConfigContent = @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
             <system.webServer>
@@ -596,13 +623,25 @@ stages:
                   <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
                   <environmentVariable name="ASPNETCORE_URLS" value="http://*:0" />
                   <environmentVariable name="ASPNETCORE_FORWARDEDHEADERS_ENABLED" value="true" />
+                  <environmentVariable name="ConnectionStrings__DefaultConnection" value="$connStr" />
+                  <environmentVariable name="Jwt__Issuer" value="$jwtIssuer" />
+                  <environmentVariable name="Jwt__Audience" value="$jwtAudience" />
+                  <environmentVariable name="Jwt__Key" value="$jwtKey" />
+                  <environmentVariable name="Jwt__AccessTokenMinutes" value="60" />
+                  <environmentVariable name="ApiSettings__SecretKey" value="$secretKey" />
+                  <environmentVariable name="AzureAd__Instance" value="$azInstance" />
+                  <environmentVariable name="AzureAd__Domain" value="$azDomain" />
+                  <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
+                  <environmentVariable name="AzureAd__ClientId" value="$azClient" />
+                  <environmentVariable name="AllowedHosts" value="*" />
                 </environmentVariables>
               </aspNetCore>
               <httpErrors existingResponse="PassThrough" />
             </system.webServer>
           </configuration>
-          '@
-          [System.IO.File]::WriteAllText((Join-Path '$(physicalPath)' 'web.config'), $webConfigContent, [System.Text.UTF8Encoding]::new($false))
+          "@
+          [System.IO.File]::WriteAllText((Join-Path $path 'web.config'), $webConfigContent, [System.Text.UTF8Encoding]::new($false))
+          Write-Host "✅ web.config Production creado"
 
     - task: PowerShell@2
       displayName: "▶ Iniciar IIS"
@@ -635,7 +674,7 @@ stages:
           if ($latestLog) { Get-Content $latestLog.FullName -Tail 100 }
 
     - task: PowerShell@2
-      displayName: '✅ Health check'
+      displayName: '✅ Health check Production'
       inputs:
         targetType: inline
         script: |
@@ -644,6 +683,9 @@ stages:
             try {
               $resp = Invoke-WebRequest '$(VerifyUrl)' -UseBasicParsing -TimeoutSec 10
               if ($resp.StatusCode -lt 400) { Write-Host "✅ OK"; exit 0 }
-            } catch { Start-Sleep -Seconds 3 }
+            } catch { 
+              Write-Host "Intento $i/10 falló"
+              Start-Sleep -Seconds 3 
+            }
           }
           throw "Health check falló"
