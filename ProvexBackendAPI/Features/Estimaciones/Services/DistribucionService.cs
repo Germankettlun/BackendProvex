@@ -269,7 +269,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
             //Borrado para realizar una actualización completa
 
-            await _repo.EliminaDistribucionPackingAsync(req.IdEstimacionBisemanal);
+            await _repo.EliminaDistribucionPackingAsync(req.IdEstimacionBisemanal, req.ReplicarASemana);
 
             await _repo.InsertUpdateDistribucionPackingAsync(req);
         }
