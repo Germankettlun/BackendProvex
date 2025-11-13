@@ -32,26 +32,36 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
     public class DistribucionCategoriaEspecieRow
     {
-        public string IdEstimacion { get; set; } = string.Empty;                   // ID_ESTIMACION
-        public string IdCategoria { get; set; } = string.Empty;                 // IDCATEGORIA
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+        public string IdCategoria { get; set; } = string.Empty;                
         public string CategoriaNombre { get; set; } = "";
-        public int? PorcDefectoCategoria { get; set; }      // PORCENTAJEPORDEFECTOCATEGORIA
-        public int SemanaAnio { get; set; }                     // SEMANAANO
-        public string SemanaNumero { get; set; } = string.Empty;                // SEMANANUMERO
-        public int? PorcentajeSemana { get; set; }          // PORCENTAJEPORSEMANA
-        public bool EsSemanaActual { get; set; } //true or false SEMANAACTUAL
+
+        public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+
+        public int? IdDistribucionDefecto { get; set; }
+        public int? PorcDefectoCategoria { get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }          
+        public bool EsSemanaActual { get; set; } 
     }
 
     public class DistribucionCalibreEspecieRow
     {
-        public string IdEstimacion { get; set; } = string.Empty;                   // ID_ESTIMACION
-        public string IdCalibre { get; set; } = string.Empty;                 // IDCALIBRE
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+        public string IdCalibre { get; set; } = string.Empty;      
         public string CalibreNombre { get; set; } = "";
-        public int? PorcDefectoCalibre { get; set; }      // PORCENTAJEPORDEFECTOCALIBRE
-        public int SemanaAnio { get; set; }                     // SEMANAANO
-        public string SemanaNumero { get; set; } = string.Empty;                // SEMANANUMERO
-        public int? PorcentajeSemana { get; set; }          // PORCENTAJEPORSEMANA
-        public bool EsSemanaActual { get; set; } //true or false SEMANAACTUAL
+        public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+        public int? IdDistribucionDefecto { get; set; }
+        public int? PorcDefectoCategoria { get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }
+        public bool EsSemanaActual { get; set; }
     }
 
     public  class DistribucionCategoriaEspecieResponseDto
@@ -59,14 +69,23 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("idestimacion")]
         public string IdEstimacion { get; set; } = string.Empty;
 
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
+
         [JsonPropertyName("categoriaid")]
         public string CategoriaId { get; set; } = string.Empty;
 
         [JsonPropertyName("categorianombre")]
         public string CategoriaNombre { get; set; } = "";
 
-        [JsonPropertyName("predeterminado")]
-        public int? Predeterminado { get; set; }
+        [JsonPropertyName("idPredeterminado")]
+        public int? IdPorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
 
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
@@ -77,14 +96,23 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("idestimacion")]
         public string IdEstimacion { get; set; } = string.Empty;
 
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
+
         [JsonPropertyName("calibreid")]
         public string CalibreId { get; set; } = string.Empty;
 
         [JsonPropertyName("calibrenombre")]
         public string CalibreNombre { get; set; } = "";
 
-        [JsonPropertyName("predeterminado")]
-        public int? Predeterminado { get; set; }
+        [JsonPropertyName("idPredeterminado")]
+        public int? IdPorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
 
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
@@ -98,33 +126,83 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         [JsonPropertyName("semana")]
         public string Semana { get; set; } = string.Empty;
 
-        [JsonPropertyName("porcentaje")]
-        public int? Porcentaje { get; set; }
+        [JsonPropertyName("idporcentajePorSemana")]
+        public int? IdPorcentajePorSemana { get; set; }
+
+        [JsonPropertyName("porcentajePorSemana")]
+        public int? PorcentajePorSemana { get; set; }
 
         [JsonPropertyName("actual")]
         public bool EsSemanaActual { get; set; }
     }
 
-    public class DistribucionPackingQueryDto
+
+
+    //FRIGORIFICO AGRUPADO
+    public class FrigorificoItemDto
     {
-        [Required]
-        public string CodigoEmpresa { get; set; } = default!;     // @CODIGOEMPRESA
+        public string? IdDistribucionFrigorifico { get; set; } // puede venir vacío => null
+        public string IdFrigorifico { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;     // from FrigorificoNombre
+        public int Porcentaje { get; set; }                    // 0..100 (numérico)
+    }
 
-        [Required]
-        public string CodigoEspecie { get; set; } = default!;     // @CODIGOESPECIE
-
-        [Required]
-        public string CodigoTemporada { get; set; } = default!;   // @CODIGOTEMPORADA
-
-        [Range(2000, 2100)]
-        public int? Anio { get; set; }                              // @ANIO
-
-        
-        [WeekIsoString(ErrorMessage = "Semana inválida. Usa '01' a '53'.")]
-        public string? Semana { get; set; } = default!;          // @SEMANA (varchar en BD)
-
+    public class DistribucionFrigorificoDiaDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string IdEspecie { get; set; } = string.Empty;
+        public string IdEstimacionBisemanal { get; set; } = string.Empty;
+        public int Anio { get; set; }
+        public string Semana { get; set; } = string.Empty;
         public DateTime? FechaDia { get; set; }
+        public string? DiaNombre { get; set; }
+        public int TotalCajasBisemanal { get; set; }
+        public bool SumaPorcentajeEs100 { get; set; }
 
+        public List<FrigorificoItemDto> FrigorificoPorDia { get; set; } = new();
+    }
+
+    //PACKING AGRUPADO
+    public class PackingItemDto
+    {
+        public string? IdDistribucionPacking { get; set; } // puede venir vacío => null
+        public string IdPacking { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;     // from FrigorificoNombre
+        public int Porcentaje { get; set; }                    // 0..100 (numérico)
+    }
+
+    public class DistribucionPackingDiaDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string IdEspecie { get; set; } = string.Empty;
+        public string IdEstimacionBisemanal { get; set; } = string.Empty;
+        public int Anio { get; set; }
+        public string Semana { get; set; } = string.Empty;
+        public DateTime? FechaDia { get; set; }
+        public string? DiaNombre { get; set; }
+        public int TotalCajasBisemanal { get; set; }
+        public bool SumaPorcentajeEs100 { get; set; }
+
+        public List<PackingItemDto> PackingPorDia { get; set; } = new();
+    }
+
+    //ANTIGUO
+
+    public class DistribucionFrigorificoDto
+    {
+        public string IdEstimacion { get; set; } = string.Empty; 
+        public string IdEspecie { get; set; } = string.Empty; 
+       public string IdEstimacionBisemanal { get; set; } = string.Empty; 
+        public int Anio { get; set; } 
+        public string Semana { get; set; } = string.Empty; 
+        public DateTime? FechaDia { get; set; } 
+        public String? DiaNombre { get; set; } 
+        public int TotalCajasBisemanal { get; set; } 
+        public string IdDistribucionFrigorifico { get; set; } = string.Empty; 
+        public string IdFrigorifico { get; set; } = string.Empty; 
+        public int Porcentaje { get; set; } 
+        public string FrigorificoNombre { get; set; } = string.Empty;
+        public bool SumaPorcentajeEs100 { get; set; } 
     }
 
     public class DistribucionPackingDto
@@ -144,21 +222,61 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
     }
 
-    public class DistribucionFrigorificoDto
+    public record PorcentajePorSemanaGuardarDto(int Anio, string Semana, int? Porcentaje);
+    public record DistribucionCategoriaPredeterminadoGuardarDto(string IdCategoria, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
+    public record DistribucionCategoriaGuardarRequest(int IdEstimacion, List<DistribucionCategoriaPredeterminadoGuardarDto> Categorias, int IdUsuario = 1);
+
+    public record DistribucionCalibrePredeterminadoGuardarDto(string IdCalibre, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
+    public record DistribucionCalibreGuardarRequest(int IdEstimacion, List<DistribucionCalibrePredeterminadoGuardarDto> Calibres, int IdUsuario = 1);
+
+    public record DistribucionFrigorificoGuardarRequest(int IdEstimacionBisemanal, List<DistribucionFrigorificoItemDto> Frigorificos, int IdUsuario = 1);
+
+    public class DistribucionFrigorificoItemDto
     {
-        public string IdEstimacion { get; set; } = string.Empty;            // IDESTIMACION
-        public string IdEspecie { get; set; } = string.Empty;               // IDESPECIE
-        public string IdEstimacionBisemanal { get; set; } = string.Empty;   // IDESTIMACIONBISEMANAL
-        public int Anio { get; set; }                                       // BISEMANALANIO
-        public string Semana { get; set; } = string.Empty;                  // BISEMANALSEMANA
-        public DateTime? FechaDia { get; set; }
-        public String? DiaNombre { get; set; }
-        public int TotalCajasBisemanal { get; set; }                        // TOTALCAJASBISEMANAL
-        public string IdDistribucionFrigorifico { get; set; } = string.Empty;   // IDDISTRUBUCIONFRIGORIFICO
-        public string IdFrigorifico { get; set; } = string.Empty;               // IDFRIGORIFICO
-        public int Porcentaje { get; set; }                             // PORCENTAJE
-        public string FrigorificoNombre { get; set; } = string.Empty;           // FRIGORIFICO
-        public bool SumaPorcentajeEs100 { get; set; }                        // SumaPorcentajeEs100
+        public int IdFrigorifico { get; set; }
+        public int? Porcentaje { get; set; } 
     }
+
+    public record DistribucionPackingGuardarRequest(int IdEstimacionBisemanal, List<DistribucionPackingItemDto> Packings, int IdUsuario = 1);
+
+    public class DistribucionPackingItemDto
+    {
+        public int IdPacking { get; set; }
+        public int? Porcentaje { get; set; }
+    }
+
+    public class DistribucionExportacionEstimacionRow
+    {
+        public string IdEstimacion { get; set; } = string.Empty;
+        public string CodEspecie { get; set; } = string.Empty;
+        public string Especie { get; set; } = string.Empty;
+         public int SemanaAnio { get; set; }
+        public string SemanaNumero { get; set; } = string.Empty;
+        public int? PorcDefecto{ get; set; }
+        public int? IdDistribucionPorSemana { get; set; }
+        public int? PorcentajeSemana { get; set; }
+        public bool EsSemanaActual { get; set; }
+    }
+
+    public class DistribucionExportacionEstimacionResponseDto
+    {
+        [JsonPropertyName("idestimacion")]
+        public string IdEstimacion { get; set; } = string.Empty;
+
+        [JsonPropertyName("codEspecie")]
+        public string CodigoEspecie { get; set; } = string.Empty;
+
+        [JsonPropertyName("Especie")]
+        public string Especie { get; set; } = string.Empty;
+
+        [JsonPropertyName("porcentajePredeterminado")]
+        public int? PorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("%semanas")]
+        public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
+    }
+    public record DistribucionPorcentajeExportacionGuardarRequest(int IdEstimacion, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas, int IdUsuario = 1);
+
+
 
 }
