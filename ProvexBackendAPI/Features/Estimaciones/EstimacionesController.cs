@@ -96,5 +96,19 @@ namespace ProvexBackendAPI.Features.Estimaciones
                 throw new Exception(e.Message);
             }
         }
+
+        [HttpPost("ActualizarExportacionSemanal")]
+        public async Task ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
+        {
+            await estimacion.IngresarPorcentajeExportacionSemanal(input);
+            return;
+        }
+
+        [HttpGet("ObtenerZonas/{codEmpresa}")]
+        public async Task<ZonaDTO> ObtenerZonas(string codEmpresa)
+        {
+            var res = await estimacion.ObtenerZonas(codEmpresa);
+            return res;
+        }
     }
 }
