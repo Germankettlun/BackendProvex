@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ProvexBackendAPI.Services
@@ -24,7 +25,7 @@ namespace ProvexBackendAPI.Services
             _signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
         }
 
-        public async Task<AccessTokenResult> GenerateAsync<T>(
+        public async Task<AccessTokenResult> GenerateTokenRobustoAsync<T>(
         T subject,
         Func<T, Task<IEnumerable<string>>>? rolesProvider = null,
         IEnumerable<ClaimMap<T>>? maps = null,
@@ -34,13 +35,13 @@ namespace ProvexBackendAPI.Services
 
             var claims = new List<Claim>();
 
-            // 1) Atributos
+            //Atributos
             claims.AddRange(BuildClaimsFromAttributes(subject));
 
-            // 2) Convención: Id, Email, UserName/Username/Name/Login
+            
             claims.AddRange(BuildClaimsByConvention(subject));
 
-            // 3) Map fluido
+            //Map fluido
             if (maps is not null)
             {
                 foreach (var map in maps)
@@ -51,10 +52,10 @@ namespace ProvexBackendAPI.Services
                 }
             }
 
-            // 4) Extras explícitos
+            //Extras explícitos
             if (extraClaims is not null) claims.AddRange(extraClaims);
 
-            // 5) Roles
+            //Roles
             if (rolesProvider is not null)
             {
                 var roles = await rolesProvider(subject);
@@ -64,7 +65,7 @@ namespace ProvexBackendAPI.Services
                 }
             }
 
-            // 6) sub/jti si faltan
+            //sub/jti si faltan
             EnsureStandardClaims(subject, claims);
 
             var creds = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
@@ -75,12 +76,67 @@ namespace ProvexBackendAPI.Services
             {
                 Subject = new ClaimsIdentity(claims.Distinct(new ClaimEq())),
                 Expires = expiresAtUtc,
-                Issuer = _jwt.Issuer,
-                Audience = _jwt.Audience,
+                // Issuer = _jwt.Issuer,
+                // Audience = _jwt.Audience,
                 SigningCredentials = creds
             };
 
-            var handler = new JwtSecurityTokenHandler();
+            var handler = new JwtSecurityTokenHandler
+            {
+                SetDefaultTimesOnTokenCreation = false
+            };
+            var token = handler.CreateToken(descriptor);
+            var tokenString = handler.WriteToken(token);
+
+            return new AccessTokenResult(
+                Token: tokenString,
+                ExpiresAtUtc: expiresAtUtc,
+                ExpiresAtUnix: new DateTimeOffset(expiresAtUtc).ToUnixTimeSeconds()
+            );
+        }
+
+        public async Task<AccessTokenResult> GenerateTokenAsync(string username, List<string> roles)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("Username requerido", nameof(username));
+
+            if (roles == null || roles.Count == 0)
+                throw new ArgumentException("Al menos un rol es requerido", nameof(roles));
+
+            // Validación roles vacío
+            var rolesLimpios = roles
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .ToList();
+
+            if (rolesLimpios.Count == 0)
+                throw new ArgumentException("Todos los roles están vacíos o en blanco", nameof(roles));
+
+
+            // Claims de negocio
+            var claims = new List<Claim>
+            {
+                new Claim("username", username),
+                new Claim("roles", JsonSerializer.Serialize(rolesLimpios))
+            };
+
+            
+            var creds = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
+            var minutes = _jwt.AccessTokenMinutes <= 0 ? 120 : _jwt.AccessTokenMinutes;
+            var expiresAtUtc = DateTime.UtcNow.AddMinutes(minutes);
+
+            var descriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = expiresAtUtc,
+                SigningCredentials = creds                
+            };
+
+            //Para NO agregar datos innecesarios como iat/nbf automáticamente
+            var handler = new JwtSecurityTokenHandler
+            {
+                SetDefaultTimesOnTokenCreation = false
+            };
+
             var token = handler.CreateToken(descriptor);
             var tokenString = handler.WriteToken(token);
 
@@ -150,7 +206,7 @@ namespace ProvexBackendAPI.Services
 
         private sealed class ClaimEq : IEqualityComparer<Claim>
         {
-            public bool Equals(Claim? x, Claim? y) => x?.Type == y?.Type && x?.Value == y?.Value;
+           public bool Equals(Claim? x, Claim? y) => x?.Type == y?.Type && x?.Value == y?.Value;
             public int GetHashCode(Claim obj) => HashCode.Combine(obj.Type, obj.Value);
         }
     }
