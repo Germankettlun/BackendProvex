@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using ProvexBackendAPI.Infrastructure.Auth;
+using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
 using ProvexBackendAPI.Services.IServices.Contracts;
 using System.IdentityModel.Tokens.Jwt;
@@ -16,13 +17,15 @@ namespace ProvexBackendAPI.Services
     {
         private readonly JwtSettings _jwt;
         private readonly SymmetricSecurityKey _signingKey;
+        private readonly IUserRepository _userRepository;
 
-        public TokenService(IOptions<JwtSettings> jwtOptions)
+        public TokenService(IOptions<JwtSettings> jwtOptions, IUserRepository userRepository)
         {
             _jwt = jwtOptions.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
             if (string.IsNullOrWhiteSpace(_jwt.Key))
                 throw new InvalidOperationException("Jwt:Key no está configurado");
             _signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
+            _userRepository = userRepository;
         }
 
         public async Task<AccessTokenResult> GenerateTokenRobustoAsync<T>(
@@ -145,6 +148,51 @@ namespace ProvexBackendAPI.Services
                 ExpiresAtUtc: expiresAtUtc,
                 ExpiresAtUnix: new DateTimeOffset(expiresAtUtc).ToUnixTimeSeconds()
             );
+        }
+
+        public async Task<Guid?> GetUserIdFromClaimsAsync(ClaimsPrincipal user)
+        {
+            if (user == null || !user.Identity?.IsAuthenticated == true)
+                return null;
+
+            var username = user.FindFirst("username")?.Value ?? user.FindFirst(ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrWhiteSpace(username))
+                return null;
+
+            var appUser = await _userRepository.GetUserByUsername(username);
+            return appUser?.Id;
+        }
+
+        public async Task<Guid?> GetUserIdFromTokenAsync2(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ArgumentException("Token requerido", nameof(token));
+
+            if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                token = token.Substring("Bearer ".Length).Trim();
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+
+            JwtSecurityToken jwt;
+            try
+            {
+                jwt = tokenHandler.ReadJwtToken(token);
+            }
+            catch
+            {
+                return null;
+            }
+
+            var username =
+                jwt.Claims.FirstOrDefault(c => c.Type == "username")?.Value ??
+                jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrWhiteSpace(username))
+                return null;
+
+            var user = await _userRepository.GetUserByUsername(username);
+            return user?.Id;
         }
 
         private static IEnumerable<Claim> BuildClaimsFromAttributes<T>(T subject)

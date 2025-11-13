@@ -7,6 +7,7 @@ namespace ProvexBackendAPI.Repository.IRepository
     {
         Task<List<ApplicationUser>> GetUsers();
         Task<ApplicationUser?> GetUser(Guid id);
+        Task<ApplicationUser?> GetUserByUsername(string username);
         Task<bool> IsUniqueUser(string username);
         Task<int> SaveChangesAsync();
 

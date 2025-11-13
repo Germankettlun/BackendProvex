@@ -17,7 +17,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 
         Task<List<DistribucionExportacionEstimacionResponseDto>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
 
-        Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req);
+        Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId);
 
         Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req);
 

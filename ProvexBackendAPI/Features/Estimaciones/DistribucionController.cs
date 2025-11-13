@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Services;
+using ProvexBackendAPI.Services.IServices;
+using System.Security.Claims;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
@@ -18,10 +21,12 @@ namespace ProvexBackendAPI.Features.Estimaciones
     public class DistribucionController : ControllerBase
     {
         private readonly IDistribucionService _service;
+        private readonly ITokenService _tokenService;
 
-        public DistribucionController(IDistribucionService service)
+        public DistribucionController(IDistribucionService service, ITokenService tokenService)
         {
             _service = service;
+            _tokenService = tokenService;
         }
 
         // GET api/v{version}/distribucion/categoria
@@ -99,21 +104,23 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
 
         // POST api/v{version}/distribucion/categoria
+        [Authorize]
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
 
         public async Task SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
         {
-            
+
             try
             {
-                await _service.DistribucionCategoriaGuardarAsync(req);
-      
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
+                await _service.DistribucionCategoriaGuardarAsync(req, userId.Value);
             }
-            catch (Exception e)
+            catch
             {
-
-                throw new Exception(e.Message);
+                throw;
             }
 
         }

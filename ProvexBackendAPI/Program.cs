@@ -121,15 +121,11 @@ builder.Services.AddAuthentication(options =>
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        //ValidateIssuerSigningKey = true,
-        ////IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-        //IssuerSigningKey = signingKey,
-        //ValidateIssuer = false,
-        //ValidateAudience = false
-        ValidateIssuer = true,
-        ValidIssuer = jwt["Issuer"],
-        ValidateAudience = true,
-        ValidAudience = jwt["Audience"],
+       
+        ValidateIssuer = false,
+        //ValidIssuer = jwt["Issuer"],
+        ValidateAudience = false,            
+        // ValidAudience = jwt["Audience"],   
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = signingKey,
         ValidateLifetime = true,

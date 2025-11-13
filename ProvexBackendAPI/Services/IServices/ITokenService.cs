@@ -12,5 +12,6 @@ namespace ProvexBackendAPI.Services.IServices
          IEnumerable<Claim>? extraClaims = null);
 
         Task<AccessTokenResult> GenerateTokenAsync(string username, List<string> roles);
+        Task<Guid?> GetUserIdFromClaimsAsync(ClaimsPrincipal user);
     }
 }
