@@ -41,8 +41,7 @@ builder.Services.AddScoped<IComboRepository, ComboRepository>();
 builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
 
 builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
-builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>()
-    .AddScoped<IEstimacionService, EstimacionService>();
+builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>();
 
 
 
@@ -74,7 +73,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Controllers 
 builder.Services.AddControllers(options =>
-{ 
+{
     //Filtro del middleware
     options.Filters.Add<ApiResponseWrapperFilter>();
 }
@@ -84,7 +83,7 @@ builder.Services.AddControllers(options =>
 
 
 
-//:NET Identity con GUID
+//.NET Identity con GUID
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole<Guid>>(o =>
     {
@@ -172,7 +171,7 @@ builder.Services.AddSwaggerGen(
           Version = "v1",
           Title = "API Provex Back",
           Description = "API para gestionar back",
-         // TermsOfService = new Uri("http://example.com/terms"),
+          // TermsOfService = new Uri("http://example.com/terms"),
           //Contact = new OpenApiContact
           //{
           //    Name = "Provex",
@@ -187,7 +186,7 @@ builder.Services.AddSwaggerGen(
 
        );
 
-      
+
   }
 );
 //Versionamiento API
@@ -196,7 +195,7 @@ var apiVersioningBuilder = builder.Services.AddApiVersioning(option =>
     option.AssumeDefaultVersionWhenUnspecified = true;
     option.DefaultApiVersion = new ApiVersion(1, 0);
     option.ReportApiVersions = true;
-   
+
 }
 );
 //Versionamiento API Swagger
@@ -208,17 +207,59 @@ apiVersioningBuilder.AddApiExplorer(option =>
 }
 );
 
-//CORS 
+// ===== CORS - Configuración Flexible por Entorno =====
 builder.Services.AddCors(o =>
 {
-    o.AddDefaultPolicy(p => p
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .WithOrigins("http://localhost:3000", "http://localhost:5173", "http://10.115.1.252:3002"));
+    o.AddDefaultPolicy(p =>
+    {
+        if (builder.Environment.IsDevelopment() ||
+            builder.Environment.EnvironmentName == "Staging")
+        {
+            // En Development/Staging: Permitir todo (súper permisivo)
+            Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
+            p.AllowAnyOrigin()
+             .AllowAnyHeader()
+             .AllowAnyMethod();
+        }
+        else
+        {
+            // En Production: Solo orígenes específicos
+            Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
+            p.SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+
+                try
+                {
+                    var uri = new Uri(origin);
+                    var host = uri.Host;
+
+                    // Permitir red interna 10.115.x.x
+                    if (host.StartsWith("10.115.")) return true;
+
+                    // Permitir dominios de producción específicos
+                    if (host.EndsWith(".provex.com") || host == "provex.com") return true;
+
+                    // Agregar más dominios según necesites
+                    return false;
+                }
+                catch
+                {
+                    return false;
+                }
+            })
+             .AllowAnyHeader()
+             .AllowAnyMethod()
+             .AllowCredentials(); // Permite cookies/auth headers
+        }
+    });
 });
 
 
 var app = builder.Build();
+
+// Mostrar entorno actual en los logs
+Console.WriteLine($"🚀 Iniciando API en entorno: {app.Environment.EnvironmentName}");
 
 if (app.Environment.IsDevelopment())
 {
@@ -226,16 +267,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-       // options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
+        // options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
     });
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
+
+// ⚠️ IMPORTANTE: UseCors() debe ir ANTES de UseAuthentication() y UseAuthorization()
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers(); 
+app.MapControllers();
 
 app.Run();

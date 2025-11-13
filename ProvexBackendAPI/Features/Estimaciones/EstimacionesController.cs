@@ -29,9 +29,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         //    // GET api/v{version}/estimacion/GetEstimacionBisemanal
         [HttpGet("GetEstimacionBisemanal", Name = "GetEstimacionBisemanal")]
-        [ProducesResponseType(typeof(List<EstructuraDistribucionDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetEstimacionBisemanal(
             [FromQuery] EstimacionesDto.EstimacionBisemanalQueryDto q
     )
@@ -43,9 +40,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         //    // GET api/v{version}/estimacion/GetResumenSemanal
         [HttpGet("GetResumenSemanal", Name = "GetResumenSemanal")]
-        [ProducesResponseType(typeof(List<EstimacionSemanalDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetResumenSemanal(
             [FromQuery] string codigoEmpresa,
             [FromQuery] string idTemporada,
@@ -59,10 +53,8 @@ namespace ProvexBackendAPI.Features.Estimaciones
         // POST api/v{version}/estimaciones/bisemanal/dia
         [HttpPost("dia", Name = "UpdateInsertBisemanalDia")]
         //[Authorize] 
-        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateInsertBisemanalDia(
-        [FromBody] UpdateEstimacionBisemanalRequest request)
+
+        public async Task<IActionResult> UpdateInsertBisemanalDia([FromBody] UpdateEstimacionBisemanalRequest request)
         {
             var userId = 1;      
 

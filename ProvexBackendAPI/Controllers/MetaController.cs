@@ -47,8 +47,23 @@ namespace ProvexBackendAPI.Controllers
                 _environment?.EnvironmentName
                 ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
                 ?? "Production";
-            var isLocal = string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase)
-                          || string.Equals(environmentName, "Local", StringComparison.OrdinalIgnoreCase);
+
+            // Prefer an explicit flag if provided (env var or config), else consider only 'Local' as local.
+            bool isLocal = false;
+            var isLocalEnv = Environment.GetEnvironmentVariable("IS_LOCAL");
+            if (!string.IsNullOrWhiteSpace(isLocalEnv) && bool.TryParse(isLocalEnv, out var isLocalParsed))
+            {
+                isLocal = isLocalParsed;
+            }
+            else if (bool.TryParse(_configuration["Deployment:IsLocal"], out var isLocalCfg))
+            {
+                isLocal = isLocalCfg;
+            }
+            else
+            {
+                // By default do NOT treat 'Development' as local (to allow dev servers). Only 'Local'.
+                isLocal = string.Equals(environmentName, "Local", StringComparison.OrdinalIgnoreCase);
+            }
 
             var response = new
             {
