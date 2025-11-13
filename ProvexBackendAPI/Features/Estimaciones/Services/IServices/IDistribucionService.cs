@@ -21,9 +21,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 
         Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req);
+        Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req);
+        Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId);
 
         Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req);
 

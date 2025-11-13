@@ -236,7 +236,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             }
         }
 
-        public async Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req)
+        public async Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId)
         {
 
             if (req.IdEstimacionBisemanal <= 0) throw new ArgumentException("IdEstimacionBisemanal inválido.");
@@ -252,10 +252,10 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
             await _repo.EliminaDistribucionFrigorificoAsync(req.IdEstimacionBisemanal, req.ReplicarASemana);
 
-            await _repo.InsertUpdateDistribucionFrigorificoAsync(req);
+            await _repo.InsertUpdateDistribucionFrigorificoAsync(req, usuarioId);
         }
 
-        public async Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req)
+        public async Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
         {
 
             if (req.IdEstimacionBisemanal <= 0) throw new ArgumentException("IdEstimacionBisemanal inválido.");
@@ -271,7 +271,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
 
             await _repo.EliminaDistribucionPackingAsync(req.IdEstimacionBisemanal, req.ReplicarASemana);
 
-            await _repo.InsertUpdateDistribucionPackingAsync(req);
+            await _repo.InsertUpdateDistribucionPackingAsync(req, usuarioId);
         }
 
         public async Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req)

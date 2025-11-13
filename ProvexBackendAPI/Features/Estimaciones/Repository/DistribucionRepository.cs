@@ -382,7 +382,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task InsertUpdateDistribucionFrigorificoAsync(DistribucionFrigorificoGuardarRequest req)
+        public async Task InsertUpdateDistribucionFrigorificoAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId)
         {
            
 
@@ -402,7 +402,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = req.IdEstimacionBisemanal });
                     cmd.Parameters.Add(new SqlParameter("@IdFrigorifico", SqlDbType.Int) { Value = it.IdFrigorifico });
                     cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
-                    cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.Int) { Value = req.IdUsuario });
+                    cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.UniqueIdentifier) { Value = usuarioId });
 
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -455,7 +455,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                             cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = idSemana });
                             cmd.Parameters.Add(new SqlParameter("@IdFrigorifico", SqlDbType.Int) { Value = it.IdFrigorifico });
                             cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
-                            cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.Int) { Value = req.IdUsuario });
+                            cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.UniqueIdentifier) { Value = usuarioId });
 
                             await cmd.ExecuteNonQueryAsync();
                         }
@@ -466,7 +466,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                 
         }
 
-        public async Task InsertUpdateDistribucionPackingAsync(DistribucionPackingGuardarRequest req)
+        public async Task InsertUpdateDistribucionPackingAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
         {
             // Si no se debe replicar a toda la semana
             if (req.ReplicarASemana == null || req.ReplicarASemana == false)
@@ -485,7 +485,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                     cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = req.IdEstimacionBisemanal });
                     cmd.Parameters.Add(new SqlParameter("@IdPacking", SqlDbType.Int) { Value = it.IdPacking });
                     cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
-                    cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.Int) { Value = req.IdUsuario });
+                    cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.UniqueIdentifier) { Value = usuarioId });
 
 
                     await cmd.ExecuteNonQueryAsync();
@@ -537,7 +537,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                             cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = idSemana });
                             cmd.Parameters.Add(new SqlParameter("@IdPacking", SqlDbType.Int) { Value = it.IdPacking });
                             cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
-                            cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.Int) { Value = req.IdUsuario });
+                            cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.UniqueIdentifier) { Value = usuarioId });
 
                             await cmd.ExecuteNonQueryAsync();
                         }

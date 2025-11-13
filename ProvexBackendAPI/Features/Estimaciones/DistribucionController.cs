@@ -151,14 +151,15 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
             try
             {
-                await _service.DistribucionFrigorificoGuardarAsync(req);
-           
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
+                await _service.DistribucionFrigorificoGuardarAsync(req, userId.Value);
             }
-            catch (Exception e)
+            catch
             {
-
-                throw new Exception(e.Message);
+                throw;
             }
 
         }
@@ -170,13 +171,15 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
             try
             {
-                await _service.DistribucionPackingGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
+                await _service.DistribucionPackingGuardarAsync(req, userId.Value);
             }
-            catch (Exception e)
+            catch
             {
-
-                throw new Exception(e.Message);
+                throw;
             }
 
 

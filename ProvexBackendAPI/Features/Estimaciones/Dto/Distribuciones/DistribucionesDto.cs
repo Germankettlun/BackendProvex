@@ -232,7 +232,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
     public record class DistribucionFrigorificoGuardarRequest(
     int IdEstimacionBisemanal,
     IReadOnlyList<DistribucionFrigorificoItemDto> Frigorificos,
-    int IdUsuario = 1,
     bool? ReplicarASemana = null
     );
 
@@ -245,7 +244,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
     public record class DistribucionPackingGuardarRequest(
     int IdEstimacionBisemanal,
     IReadOnlyList<DistribucionPackingItemDto> Packings,
-    int IdUsuario = 1,
+
     bool? ReplicarASemana = null
     );
 
