@@ -100,99 +100,77 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
         // POST api/v{version}/distribucion/categoria
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
-
-        public async Task SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
+        public async Task<IActionResult> SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
         {
-            
             try
             {
                 await _service.DistribucionCategoriaGuardarAsync(req);
-      
-
+                return Ok();
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.Message);
             }
-
         }
 
         // POST api/v{version}/distribucion/calibre
         [HttpPost("calibre", Name = "SaveDistribucionCalibre")]
-        public async Task SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
+        public async Task<IActionResult> SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
         {
-
             try
             {
                 await _service.DistribucionCalibreGuardarAsync(req);
-   
-
+                return Ok();
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.Message);
             }
-
         }
 
         // POST api/v{version}/distribucion/frigorifico
         [HttpPost("frigorifico", Name = "SaveDistribucionFrigorifico")]
-        public async Task SaveFrigorifico([FromBody] DistribucionFrigorificoGuardarRequest req)
+        public async Task<IActionResult> SaveFrigorifico([FromBody] DistribucionFrigorificoGuardarRequest req)
         {
-
             try
             {
                 await _service.DistribucionFrigorificoGuardarAsync(req);
-           
-
+                return Ok();
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.Message);
             }
-
         }
 
         // POST api/v{version}/distribucion/packing
         [HttpPost("packing", Name = "SaveDistribucionPacking")]
-        public async Task SavePacking([FromBody] DistribucionPackingGuardarRequest req)
+        public async Task<IActionResult> SavePacking([FromBody] DistribucionPackingGuardarRequest req)
         {
-
             try
             {
                 await _service.DistribucionPackingGuardarAsync(req);
-
+                return Ok();
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.Message);
             }
-
-
-
         }
 
         // POST api/v{version}/distribucion/porcentajeExportacion
         [HttpPost("porcentajeExportacion", Name = "SaveDistribucionPorcentajeExportacion")]
         public async Task<IActionResult> SavePorcentajeExportacion([FromBody] DistribucionPorcentajeExportacionGuardarRequest req)
         {
-
-           try
+            try
             {
                 await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
                 return Ok();
-
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.Message);
             }
-
         }
     }
 }
