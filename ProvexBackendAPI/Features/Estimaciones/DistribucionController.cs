@@ -17,7 +17,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
     [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]
     [ApiVersionNeutral]
-    //[Authorize]
+    [Authorize]
     public class DistribucionController : ControllerBase
     {
         private readonly IDistribucionService _service;
@@ -104,7 +104,6 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
 
         // POST api/v{version}/distribucion/categoria
-        [Authorize]
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
 
         public async Task SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
@@ -132,14 +131,15 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
             try
             {
-                await _service.DistribucionCalibreGuardarAsync(req);
-   
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
+                await _service.DistribucionCalibreGuardarAsync(req, userId.Value);
             }
-            catch (Exception e)
+            catch
             {
-
-                throw new Exception(e.Message);
+                throw;
             }
 
         }

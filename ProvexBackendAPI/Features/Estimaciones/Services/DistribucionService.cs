@@ -203,7 +203,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             }
         }
 
-        public async Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req)
+        public async Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId)
         {
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
@@ -216,7 +216,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
                     req.IdEstimacion,
                     cal.IdCalibre,
                     cal.PorcentajePredeterminado,
-                    req.IdUsuario
+                    usuarioId
                 );
 
                 // Semanas
@@ -230,7 +230,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
                         s.Anio,
                         s.Semana,
                         s.Porcentaje ?? 0,
-                        req.IdUsuario
+                        usuarioId
                     );
                 }
             }
