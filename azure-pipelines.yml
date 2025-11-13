@@ -340,6 +340,14 @@ stages:
           $azTenant = Escape-Xml "$(AzureAd__TenantId)"
           $azClient = Escape-Xml "$(AzureAd__ClientId)"
           
+          # Variables de versión del build
+          $buildNumber = Escape-Xml "$(Build.BuildNumber)"
+          $buildId = Escape-Xml "$(Build.BuildId)"
+          $sourceVersion = "$(Build.SourceVersion)"
+          $commitHash = if ($sourceVersion.Length -ge 8) { $sourceVersion.Substring(0, 8) } else { $sourceVersion }
+          $sourceBranch = Escape-Xml "$(Build.SourceBranchName)"
+          $buildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss UTC")
+          
           $webConfigContent = @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -368,6 +376,13 @@ stages:
                   <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
                   <environmentVariable name="AzureAd__ClientId" value="$azClient" />
                   <environmentVariable name="AllowedHosts" value="*" />
+                  
+                  <!-- ⚡ Variables de versión del build ⚡ -->
+                  <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
+                  <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
+                  <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
+                  <environmentVariable name="BuildInfo__Branch" value="$sourceBranch" />
+                  <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
                 </environmentVariables>
               </aspNetCore>
               <httpErrors existingResponse="PassThrough" />
@@ -386,6 +401,13 @@ stages:
           Write-Host "  - Jwt__Issuer: $jwtIssuer"
           Write-Host "  - Jwt__Audience: $jwtAudience"
           Write-Host "  - AzureAd configurado ✓"
+          Write-Host ""
+          Write-Host "📦 Build Info:"
+          Write-Host "  - Build Number: $buildNumber"
+          Write-Host "  - Build ID: $buildId"
+          Write-Host "  - Commit Hash: $commitHash"
+          Write-Host "  - Branch: $sourceBranch"
+          Write-Host "  - Build Date: $buildDate"
 
     - task: PowerShell@2
       displayName: "▶ Iniciar IIS"
@@ -609,6 +631,14 @@ stages:
           $azTenant = Escape-Xml "$(AzureAd__TenantId)"
           $azClient = Escape-Xml "$(AzureAd__ClientId)"
           
+          # Variables de versión
+          $buildNumber = Escape-Xml "$(Build.BuildNumber)"
+          $buildId = Escape-Xml "$(Build.BuildId)"
+          $sourceVersion = "$(Build.SourceVersion)"
+          $commitHash = if ($sourceVersion.Length -ge 8) { $sourceVersion.Substring(0, 8) } else { $sourceVersion }
+          $sourceBranch = Escape-Xml "$(Build.SourceBranchName)"
+          $buildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss UTC")
+          
           $webConfigContent = @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -634,15 +664,25 @@ stages:
                   <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
                   <environmentVariable name="AzureAd__ClientId" value="$azClient" />
                   <environmentVariable name="AllowedHosts" value="*" />
+                  
+                  <!-- ⚡ Variables de versión del build ⚡ -->
+                  <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
+                  <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
+                  <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
+                  <environmentVariable name="BuildInfo__Branch" value="$sourceBranch" />
+                  <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
                 </environmentVariables>
               </aspNetCore>
               <httpErrors existingResponse="PassThrough" />
             </system.webServer>
           </configuration>
           "@
+          
           [System.IO.File]::WriteAllText((Join-Path $path 'web.config'), $webConfigContent, [System.Text.UTF8Encoding]::new($false))
+          
           Write-Host "✅ web.config Production creado"
-
+          Write-Host "📦 Build Info: $buildNumber (Commit: $commitHash, Branch: $sourceBranch)"
+        
     - task: PowerShell@2
       displayName: "▶ Iniciar IIS"
       inputs:
