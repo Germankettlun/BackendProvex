@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Services;
+using ProvexBackendAPI.Services.IServices;
+using System.Security.Claims;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
@@ -14,14 +17,16 @@ namespace ProvexBackendAPI.Features.Estimaciones
     [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]
     [ApiVersionNeutral]
-    //[Authorize]
+    [Authorize]
     public class DistribucionController : ControllerBase
     {
         private readonly IDistribucionService _service;
+        private readonly ITokenService _tokenService;
 
-        public DistribucionController(IDistribucionService service)
+        public DistribucionController(IDistribucionService service, ITokenService tokenService)
         {
             _service = service;
+            _tokenService = tokenService;
         }
 
         // GET api/v{version}/distribucion/categoria
@@ -104,10 +109,14 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
-                await _service.DistribucionCategoriaGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+
+                await _service.DistribucionCategoriaGuardarAsync(req, userId.Value);
                 return Ok();
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 throw new Exception(e.Message);
             }
@@ -119,7 +128,11 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
-                await _service.DistribucionCalibreGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+
+                await _service.DistribucionCalibreGuardarAsync(req, userId.Value);
                 return Ok();
             }
             catch (Exception e)
@@ -134,7 +147,11 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
-                await _service.DistribucionFrigorificoGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+
+                await _service.DistribucionFrigorificoGuardarAsync(req, userId.Value);
                 return Ok();
             }
             catch (Exception e)
@@ -149,7 +166,11 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
-                await _service.DistribucionPackingGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+
+                await _service.DistribucionPackingGuardarAsync(req, userId.Value);
                 return Ok();
             }
             catch (Exception e)

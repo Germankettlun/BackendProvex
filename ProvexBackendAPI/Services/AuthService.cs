@@ -72,18 +72,16 @@ namespace ProvexBackendAPI.Services
             if (!check.Succeeded)
                 throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
-            var token = await _tokenService.GenerateAsync(
-            user,
-            rolesProvider: async u => await _userManager.GetRolesAsync(u)
-            );
+            var roles = await _userManager.GetRolesAsync(user);
 
-            
+            var token = await _tokenService.GenerateTokenAsync(user.UserName!,roles.ToList());
+
+
             //var userDto = _mapper.Map<UserDataDto>(user);
             var userDto = user.ToUserDataDto();
 
             return new LoginResponseDto
             {
-                //Token = handler.WriteToken(token),
                 Token = token.Token,
                 User = userDto,
                 ExpiresAt = token.ExpiresAtUtc,
