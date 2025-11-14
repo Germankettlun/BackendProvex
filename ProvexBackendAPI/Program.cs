@@ -58,7 +58,8 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
-builder.Services.AddScoped<IEstimacionesService, EstimacionesService>();
+builder.Services.AddScoped<IEstimacionesService, EstimacionesService>()
+    .AddScoped<IEstimacionService, EstimacionService>();
 
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

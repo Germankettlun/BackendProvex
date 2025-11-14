@@ -6,6 +6,6 @@ namespace ProvexBackendAPI.Services.IServices
     {
         Task IngresarEstimacion(IngresarEstimacionRequest request);
         Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input);
-        Task<ZonaDTO> ObtenerZonas(string codEmpresa);
+        Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa);
     }
 }

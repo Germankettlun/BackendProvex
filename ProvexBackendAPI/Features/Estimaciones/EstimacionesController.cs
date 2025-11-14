@@ -1,13 +1,9 @@
 ﻿using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Dto;
-using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services.IServices;
-using static ProvexBackendAPI.Dto.Users.UsersDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones
@@ -97,10 +93,10 @@ namespace ProvexBackendAPI.Features.Estimaciones
         }
 
         [HttpGet("ObtenerZonas/{codEmpresa}")]
-        public async Task<ZonaDTO> ObtenerZonas(string codEmpresa)
+        public async Task<ActionResult<List<ZonaDTO>>> ObtenerZonas(string codEmpresa)
         {
             var res = await estimacion.ObtenerZonas(codEmpresa);
-            return res;
+            return Ok(res);
         }
     }
 }

@@ -71,19 +71,21 @@ namespace ProvexBackendAPI.Services
             }
         }
 
-        public async Task<ZonaDTO> ObtenerZonas(string codEmpresa)
+        public async Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa)
         {
             try
             {
-                var res = await repository.GetFirst<Zona>(z => z.idEmpresa == codEmpresa);
+                var res = await repository.GetList<Zona>(z => z.idEmpresa == codEmpresa);
 
-                ZonaDTO zonaDTO = new()
+                List<ZonaDTO> zonas = new List<ZonaDTO>();
+                
+                zonas = [.. res.Select(item => new ZonaDTO
                 {
-                    nombre = res.nombre,
-                    idEmpresa = res.idEmpresa
-                };
+                    idEmpresa = item.idEmpresa,
+                    nombre = item.nombre
+                })];
 
-                return zonaDTO;
+                return zonas;
             }
             catch (Exception e)
             {
