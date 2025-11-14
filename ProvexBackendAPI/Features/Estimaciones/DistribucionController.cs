@@ -114,8 +114,9 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionCategoriaGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch(Exception e)
             {
                 throw new Exception(e.Message);
             }
@@ -132,8 +133,9 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionCalibreGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch (Exception e)
             {
                 throw new Exception(e.Message);
             }
@@ -150,8 +152,9 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionFrigorificoGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch (Exception e)
             {
                 throw new Exception(e.Message);
             }
@@ -168,8 +171,9 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionPackingGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch (Exception e)
             {
                 throw new Exception(e.Message);
             }
