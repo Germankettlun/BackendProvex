@@ -224,12 +224,16 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
     public record PorcentajePorSemanaGuardarDto(int Anio, string Semana, int? Porcentaje);
     public record DistribucionCategoriaPredeterminadoGuardarDto(string IdCategoria, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
-    public record DistribucionCategoriaGuardarRequest(int IdEstimacion, List<DistribucionCategoriaPredeterminadoGuardarDto> Categorias, int IdUsuario = 1);
+    public record DistribucionCategoriaGuardarRequest(int IdEstimacion, List<DistribucionCategoriaPredeterminadoGuardarDto> Categorias);
 
     public record DistribucionCalibrePredeterminadoGuardarDto(string IdCalibre, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
-    public record DistribucionCalibreGuardarRequest(int IdEstimacion, List<DistribucionCalibrePredeterminadoGuardarDto> Calibres, int IdUsuario = 1);
+    public record DistribucionCalibreGuardarRequest(int IdEstimacion, List<DistribucionCalibrePredeterminadoGuardarDto> Calibres);
 
-    public record DistribucionFrigorificoGuardarRequest(int IdEstimacionBisemanal, List<DistribucionFrigorificoItemDto> Frigorificos, int IdUsuario = 1);
+    public record class DistribucionFrigorificoGuardarRequest(
+    int IdEstimacionBisemanal,
+    IReadOnlyList<DistribucionFrigorificoItemDto> Frigorificos,
+    bool? ReplicarASemana = null
+    );
 
     public class DistribucionFrigorificoItemDto
     {
@@ -237,7 +241,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public int? Porcentaje { get; set; } 
     }
 
-    public record DistribucionPackingGuardarRequest(int IdEstimacionBisemanal, List<DistribucionPackingItemDto> Packings, int IdUsuario = 1);
+    public record class DistribucionPackingGuardarRequest(
+    int IdEstimacionBisemanal,
+    IReadOnlyList<DistribucionPackingItemDto> Packings,
+
+    bool? ReplicarASemana = null
+    );
 
     public class DistribucionPackingItemDto
     {

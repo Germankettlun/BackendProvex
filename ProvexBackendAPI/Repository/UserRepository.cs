@@ -30,6 +30,18 @@ namespace ProvexBackendAPI.Repository
             return await _db.Users.OrderBy(u => u.UserName).AsNoTracking().ToListAsync();
         }
 
+        public async Task<ApplicationUser?> GetUserByUsername(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                return null;
+
+            var normalized = username.Trim().ToUpperInvariant();
+
+            return await _db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.NormalizedUserName == normalized);
+        }
+
         public async Task<bool> IsUniqueUser(string username)
         {
             if (string.IsNullOrWhiteSpace(username))
