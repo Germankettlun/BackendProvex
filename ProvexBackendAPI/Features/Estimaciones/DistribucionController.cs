@@ -105,10 +105,8 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [Authorize]
         // POST api/v{version}/distribucion/categoria
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
-
-        public async Task SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
+        public async Task<IActionResult> SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
         {
-
             try
             {
                 var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
@@ -116,19 +114,18 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionCategoriaGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch(Exception e)
             {
-                throw;
+                throw new Exception(e.Message);
             }
-
         }
         [Authorize]
         // POST api/v{version}/distribucion/calibre
         [HttpPost("calibre", Name = "SaveDistribucionCalibre")]
-        public async Task SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
+        public async Task<IActionResult> SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
         {
-
             try
             {
                 var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
@@ -136,19 +133,18 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionCalibreGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch (Exception e)
             {
-                throw;
+                throw new Exception(e.Message);
             }
-
         }
 
         // POST api/v{version}/distribucion/frigorifico
         [HttpPost("frigorifico", Name = "SaveDistribucionFrigorifico")]
-        public async Task SaveFrigorifico([FromBody] DistribucionFrigorificoGuardarRequest req)
+        public async Task<IActionResult> SaveFrigorifico([FromBody] DistribucionFrigorificoGuardarRequest req)
         {
-
             try
             {
                 var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
@@ -156,19 +152,18 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionFrigorificoGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch (Exception e)
             {
-                throw;
+                throw new Exception(e.Message);
             }
-
         }
         [Authorize]
         // POST api/v{version}/distribucion/packing
         [HttpPost("packing", Name = "SaveDistribucionPacking")]
-        public async Task SavePacking([FromBody] DistribucionPackingGuardarRequest req)
+        public async Task<IActionResult> SavePacking([FromBody] DistribucionPackingGuardarRequest req)
         {
-
             try
             {
                 var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
@@ -176,33 +171,27 @@ namespace ProvexBackendAPI.Features.Estimaciones
                     throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
                 await _service.DistribucionPackingGuardarAsync(req, userId.Value);
+                return Ok();
             }
-            catch
+            catch (Exception e)
             {
-                throw;
+                throw new Exception(e.Message);
             }
-
-
-
         }
 
         // POST api/v{version}/distribucion/porcentajeExportacion
         [HttpPost("porcentajeExportacion", Name = "SaveDistribucionPorcentajeExportacion")]
         public async Task<IActionResult> SavePorcentajeExportacion([FromBody] DistribucionPorcentajeExportacionGuardarRequest req)
         {
-
-           try
+            try
             {
                 await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
                 return Ok();
-
             }
             catch (Exception e)
             {
-
                 throw new Exception(e.Message);
             }
-
         }
     }
 }

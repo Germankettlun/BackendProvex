@@ -1,288 +1,731 @@
+# =========================
+# ERP Backend API - UNIFIED Dev/Prod
+# Estructura idéntica a ProvexApi exitoso
+# Configuración: Solo web.config (variables de entorno)
+# =========================
 trigger:
-  branches: { include: [ dev ] }
+  branches:
+    include: [dev, prod]
 
 pr:
-  branches: { include: [ dev ] }
+  branches:
+    include: [dev, prod]
 
 pool:
   name: PoolPrxSII
   demands:
-    - agent.name -equals IISDev
     - agent.os -equals Windows_NT
 
 variables:
-  - group: ERP-Backend-Development
   - name: configuration
     value: Release
   - name: dotnetVersion
     value: 9.0.203
   - name: publishFolder
-    value: $(Build.ArtifactStagingDirectory)
-  - name: deploySource
-    value: $(Pipeline.Workspace)\drop
-  - name: siteName
-    value: ERPApiSite
-  - name: appPoolName
-    value: ERPApiPool
-  - name: physicalPath
-    value: C:\inetpub\wwwroot\ERPApi
-  - name: bindingPort
-    value: 8082
+    value: $(Build.ArtifactStagingDirectory)\publish
+  - name: artifactName
+    value: ERPBackendAPI
 
+# =========================
+# STAGE: BUILD & PUBLISH
+# =========================
 stages:
 - stage: Build
   displayName: Build & Publish
+  condition: or(eq(variables['Build.SourceBranchName'],'dev'),
+                eq(variables['Build.SourceBranchName'],'prod'))
   jobs:
   - job: BuildAndPublish
+    displayName: Build API
     steps:
+    - task: NuGetAuthenticate@1
+      displayName: 🔐 NuGet Authenticate
+      condition: false
+
     - task: UseDotNet@2
-      displayName: Install .NET SDK
+      displayName: 🧰 Install .NET SDK $(dotnetVersion)
       inputs:
         packageType: sdk
         version: $(dotnetVersion)
 
-    - task: DotNetCoreCLI@2
-      displayName: Restore
+    - task: PowerShell@2
+      displayName: 🧹 Clean obj/bin
       inputs:
-        command: restore
-        projects: '**/*.sln'
+        targetType: inline
+        script: |
+          $ErrorActionPreference = 'Continue'
+          Get-ChildItem -LiteralPath '$(Build.SourcesDirectory)' -Recurse -Directory |
+            Where-Object { $_.Name -in @('obj','bin') } |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "✅ Limpieza completada"
 
     - task: DotNetCoreCLI@2
-      displayName: Build
+      displayName: 📦 Restore
+      inputs:
+        command: restore
+        projects: '**/ProvexBackendAPI.csproj'
+        verbosity: Minimal
+
+    - task: DotNetCoreCLI@2
+      displayName: 🔨 Build
       inputs:
         command: build
-        projects: '**/*.sln'
+        projects: '**/ProvexBackendAPI.csproj'
         arguments: '--configuration $(configuration) --no-restore'
 
     - task: DotNetCoreCLI@2
-      displayName: Publish (self-contained win-x64)
+      displayName: 📤 Publish (framework-dependent)
       inputs:
         command: publish
         publishWebProjects: false
         projects: '**/ProvexBackendAPI.csproj'
         arguments: >-
           --configuration $(configuration)
-          --output $(publishFolder)
-          --runtime win-x64
+          --no-restore
+          --output "$(publishFolder)"
+          /p:SelfContained=false
           /p:PublishTrimmed=false
-          /p:SelfContained=true
-          --verbosity minimal
+          /p:PublishSingleFile=false
+          /p:UseAppHost=false
+          /p:PublishReadyToRun=false
+        zipAfterPublish: false
+        modifyOutputPath: false
 
     - task: PowerShell@2
-      displayName: Build appsettings.json (+Production)
+      displayName: 🔍 Verificar artefactos publicados
       inputs:
         targetType: inline
         script: |
-          $cfg = [ordered]@{
-            ApiSettings       = @{ SecretKey = "$(SecretKey)" }
-            ConnectionStrings = @{ DefaultConnection = "$(ConnectionBD)" }
-            Jwt = @{
-              Issuer             = "$(Jwt.Issuer)"
-              Audience           = "$(Jwt.Audience)"
-              Key                = "$(Jwt.Key)"
-              AccessTokenMinutes = [int]"$(Jwt.AccessTokenMinutes)"
-            }
-            AzureAd = @{
-              Instance = "$(AzureAd.Instance)"
-              Domain   = "$(AzureAd.Domain)"
-              TenantId = "$(AzureAd.TenantId)"
-              ClientId = "$(AzureAd.ClientId)"
-            }
-            AllowedHosts = "*"
+          $ErrorActionPreference = 'Stop'
+          $publishDir = '$(publishFolder)'
+          
+          Write-Host "📂 Revisando: $publishDir"
+          
+          $dll = Get-ChildItem $publishDir -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+          
+          if ($dll) {
+            Write-Host "✅ ProvexBackendAPI.dll encontrado: $($dll.FullName)"
+            Write-Host "Tamaño: $([math]::Round($dll.Length/1MB,2)) MB"
+            exit 0
           }
-          $json = $cfg | ConvertTo-Json -Depth 8
-          $base = Join-Path "$(publishFolder)" "appsettings.json"
-          $prod = Join-Path "$(publishFolder)" "appsettings.Production.json"
-          $json | Out-File -FilePath $base -Encoding utf8 -Force
-          Copy-Item $base $prod -Force
-          Write-Host "Escritos: $base y $prod"
+          
+          Write-Host "⚠️ ProvexBackendAPI.dll no encontrado directamente. Buscando ZIP..."
+          $zip = Get-ChildItem $publishDir -Filter '*.zip' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+          
+          if ($zip) {
+            Write-Host "📦 ZIP encontrado: $($zip.FullName). Descomprimiendo..."
+            $extractPath = Join-Path $publishDir 'extracted'
+            
+            if (Test-Path $extractPath) { Remove-Item $extractPath -Recurse -Force }
+            
+            Expand-Archive -Path $zip.FullName -DestinationPath $extractPath -Force
+            
+            Get-ChildItem $extractPath -Recurse | ForEach-Object {
+              $target = $_.FullName.Replace($extractPath, $publishDir)
+              if ($_.PSIsContainer) {
+                if (-not (Test-Path $target)) { New-Item -ItemType Directory -Path $target -Force | Out-Null }
+              } else {
+                Copy-Item $_.FullName -Destination $target -Force
+              }
+            }
+            
+            Remove-Item $extractPath -Recurse -Force
+            Remove-Item $zip.FullName -Force
+            
+            $dll = Get-ChildItem $publishDir -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $dll) { throw "❌ ProvexBackendAPI.dll no encontrado después de descomprimir" }
+            
+            Write-Host "✅ Descompresión exitosa. DLL: $($dll.FullName)"
+            exit 0
+          }
+          
+          Write-Host "❌ Contenido de $(publishFolder):"
+          Get-ChildItem $publishDir -Recurse | Select-Object FullName, Length | Format-Table -Auto
+          throw "No se encontró ProvexBackendAPI.dll ni archivo ZIP"
 
     - task: PublishPipelineArtifact@1
-      displayName: Publish Artifact
+      displayName: 📤 Publish Artifact
       inputs:
         targetPath: '$(publishFolder)'
-        artifact: ERPApi
+        artifact: '$(artifactName)'
+        publishLocation: 'pipeline'
 
-- stage: Deploy
-  displayName: Deploy to IIS (port $(bindingPort))
+# =========================
+# STAGE: DEPLOY (DEV)
+# =========================
+- stage: Deploy_Dev
+  displayName: '🚀 Deploy to IIS (Dev)'
   dependsOn: Build
-  condition: succeeded()
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'],'dev'))
   jobs:
-  - job: DeployToIIS
+  - job: DeployToIISDev
+    displayName: 'Deploy API to IIS (Dev)'
+    pool:
+      name: PoolPrxSII
+      demands:
+        - agent.name -equals IISDev
+        - agent.os -equals Windows_NT
+    variables:
+      - group: ERP-Backend-Development
+      - name: siteName
+        value: 'ERPApiSite'
+      - name: appPoolName
+        value: 'ERPApiPool'
+      - name: physicalPath
+        value: 'C:\inetpub\wwwroot\ERPApi'
+      - name: VerifyUrl
+        value: 'http://10.115.1.252:8082/api/v1/health'
     steps:
     - task: DownloadPipelineArtifact@2
-      displayName: Download Artifacts
+      displayName: '⬇️ Download Artifact'
       inputs:
-        artifact: ERPApi
-        path: '$(deploySource)'
+        artifact: 'ERPBackendAPI'
+        path: '$(Pipeline.Workspace)\drop'
 
     - task: PowerShell@2
-      displayName: 'DEBUG: list artifact'
+      name: resolveDev
+      displayName: '🔎 Resolver paths'
       inputs:
         targetType: inline
         script: |
-          Write-Host "deploySource: $(deploySource)"
-          Get-ChildItem -Recurse -Path "$(deploySource)" |
-            Select FullName,Length,LastWriteTime | Format-Table -AutoSize
+          $root = '$(Pipeline.Workspace)\drop'
+          $dll = Get-ChildItem -Path $root -Recurse -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue |
+                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $dll) { throw "❌ ProvexBackendAPI.dll no encontrado" }
+          $src = $dll.DirectoryName
+          Write-Host "✅ Artifact path: $src"
+          Write-Host "##vso[task.setvariable variable=artifactPath]$src"
 
-    - task: PowerShell@2
-      displayName: Prepare target folder
-      inputs:
-        targetType: inline
-        script: |
-          if (-not (Test-Path '$(physicalPath)')) { New-Item -Path '$(physicalPath)' -ItemType Directory | Out-Null }
-          if (-not (Test-Path '$(physicalPath)\logs')) { New-Item -Path '$(physicalPath)\logs' -ItemType Directory | Out-Null }
-
-    - task: PowerShell@2
-      displayName: Stop App Pool if exists
-      inputs:
-        targetType: inline
-        script: |
-          Import-Module WebAdministration
-          if (Test-Path "IIS:\AppPools\$(appPoolName)") {
-            $state = (Get-WebAppPoolState -Name '$(appPoolName)').Value
-            if ($state -ne 'Stopped') { Stop-WebAppPool -Name '$(appPoolName)' }
-          }
-
-    - task: PowerShell@2
-      displayName: Robocopy to IIS folder
-      inputs:
-        targetType: inline
-        script: |
-          $root = "$(deploySource)"
-          $exe = Get-ChildItem -Path $root -Recurse -File -Filter *.exe -ErrorAction SilentlyContinue |
-                 Where-Object { $_.FullName -notmatch '\\unzipped\\' } |
-                 Select-Object -First 1
-          if (-not $exe) {
-            $zip = Get-ChildItem -Path $root -Recurse -File -Filter *.zip -ErrorAction SilentlyContinue | Select-Object -First 1
-            if (-not $zip) { throw "No se encontró .exe ni .zip en '$root'." }
-            $unz = Join-Path $root "unzipped"
-            if (Test-Path $unz) { Remove-Item -Recurse -Force $unz }
-            Expand-Archive -Path $zip.FullName -DestinationPath $unz -Force
-            $exe = Get-ChildItem -Path $unz -Recurse -File -Filter *.exe | Select-Object -First 1
-            if (-not $exe) { throw "El ZIP no contiene .exe publicable." }
-          }
-          $src = $exe.DirectoryName
-          $dst = '$(physicalPath)'
-          if (-not (Test-Path "$dst\logs")) { New-Item -Path "$dst\logs" -ItemType Directory | Out-Null }
-          robocopy "$src" "$dst" /MIR /XD "$dst\logs" /XF *.pdb /NFL /NDL /NJH /NJS /R:2 /W:1
-          $rc = $LASTEXITCODE
-          if ($rc -ge 8) { throw "Robocopy falló (RC $rc)." }
-          $global:LASTEXITCODE = 0; $host.SetShouldExit(0); exit 0
-
-    - task: PowerShell@2
-      displayName: Copy appsettings*.json to target
-      inputs:
-        targetType: inline
-        script: |
-          $src = '$(deploySource)'
-          $dst = '$(physicalPath)'
-          foreach ($f in 'appsettings.json','appsettings.Production.json') {
-            $p = Join-Path $src $f
-            if (Test-Path $p) { Copy-Item $p $dst -Force; Write-Host "Copiado: $f" }
-          }
-
-    - task: PowerShell@2
-      displayName: Create/Configure IIS Site and Binding
-      inputs:
-        targetType: inline
-        script: |
-          Import-Module WebAdministration
-          if (-not (Test-Path "IIS:\AppPools\$(appPoolName)")) {
-            New-WebAppPool -Name '$(appPoolName)' | Out-Null
-            Set-ItemProperty "IIS:\AppPools\$(appPoolName)" -Name processModel.identityType -Value "ApplicationPoolIdentity"
-          }
-          if (-not (Test-Path "IIS:\Sites\$(siteName)")) {
-            New-Website -Name '$(siteName)' -PhysicalPath '$(physicalPath)' -Port $(bindingPort) -ApplicationPool '$(appPoolName)' -Force | Out-Null
+          if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
+          $site = '$(siteName)'
+          $siteObj = Get-Website -Name $site -ErrorAction SilentlyContinue
+          
+          if (-not $siteObj) {
+            Write-Host "⚠️ Site '$site' no existe en IIS, usando variables del pipeline"
+            $phys = '$(physicalPath)'
+            $pool = '$(appPoolName)'
           } else {
-            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name applicationPool -Value '$(appPoolName)'
-            Set-ItemProperty "IIS:\Sites\$(siteName)" -Name physicalPath -Value '$(physicalPath)'
+            $phys = if ([string]::IsNullOrWhiteSpace('$(physicalPath)')) { $siteObj.PhysicalPath } else { '$(physicalPath)' }
+            $pool = if ([string]::IsNullOrWhiteSpace('$(appPoolName)')) { $siteObj.ApplicationPool } else { '$(appPoolName)' }
           }
-          $b = (Get-WebBinding -Name '$(siteName)' -ErrorAction SilentlyContinue | Where-Object { $_.bindingInformation -eq "*:$(bindingPort):" })
-          if (-not $b) { New-WebBinding -Name '$(siteName)' -Protocol http -Port $(bindingPort) -IPAddress "*" -HostHeader "" }
+
+          if (-not (Test-Path $phys)) { New-Item -ItemType Directory -Path $phys -Force | Out-Null }
+          $logs = Join-Path $phys 'logs'
+          if (-not (Test-Path $logs)) { New-Item -ItemType Directory -Path $logs -Force | Out-Null }
+
+          Write-Host "✅ PhysicalPath: $phys"
+          Write-Host "✅ AppPool: $pool"
+          Write-Host "##vso[task.setvariable variable=resolvedPhysicalPath]$phys"
+          Write-Host "##vso[task.setvariable variable=resolvedAppPoolName]$pool"
 
     - task: PowerShell@2
-      displayName: Fix web.config (dedupe + env)
+      displayName: "🔥 Limpiar procesos zombie"
       inputs:
         targetType: inline
         script: |
-          $dst = '$(physicalPath)'
-          $exe = Get-ChildItem -Path $dst -Filter *.exe -File |
-                Where-Object { $_.Name -ne 'app_offline.exe' } |
-                Sort-Object Length -Descending | Select-Object -First 1
-          if (-not $exe) { throw "No .exe en $dst" }
+          $ErrorActionPreference = 'Continue'
+          $physPath = '$(resolvedPhysicalPath)'
+          
+          Write-Host "🔍 Buscando procesos dotnet.exe corriendo desde: $physPath"
+          
+          Get-Process -Name 'dotnet' -ErrorAction SilentlyContinue | ForEach-Object {
+            try {
+              $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)" -ErrorAction SilentlyContinue).CommandLine
+              if ($cmdLine -and $cmdLine -match [regex]::Escape($physPath)) {
+                Write-Host "💀 Matando proceso zombie: PID $($_.Id)"
+                Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+              }
+            } catch {}
+          }
+          
+          Start-Sleep -Seconds 3
+          Write-Host "✅ Limpieza de procesos completada"
 
-          # Valores
-          $envName   = "$(Environment)"
-          $jwt       = "$(Jwt.Key)"
-          $deployId  = "$(Build.BuildId)"
-          $sha       = "$(Build.SourceVersion)"
-          if ($sha.Length -ge 7) { $sha = $sha.Substring(0,7) }
+    - task: PowerShell@2
+      displayName: "⚡ Detener IIS"
+      inputs:
+        targetType: inline
+        script: |
+          if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
+          $site = "$(siteName)"
+          $pool = "$(resolvedAppPoolName)"
+          $path = "$(resolvedPhysicalPath)"
 
-          # Escapar para XML
-          $envNameEsc = [System.Security.SecurityElement]::Escape($envName)
-          $jwtEsc     = [System.Security.SecurityElement]::Escape($jwt)
-          $deployEsc  = [System.Security.SecurityElement]::Escape($deployId)
-          $shaEsc     = [System.Security.SecurityElement]::Escape($sha)
+          [System.IO.File]::WriteAllText((Join-Path $path 'app_offline.htm'), '<!DOCTYPE html><html><body><h1>Mantenimiento</h1><p>Deploy en progreso...</p></body></html>')
+          Write-Host "✅ app_offline.htm creado"
 
-          $wc = @"
+          if (Test-Path "IIS:\Sites\$site") {
+            if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { 
+              Stop-Website -Name $site 
+              Write-Host "🛑 Sitio detenido"
+            }
+          }
+          
+          if (Test-Path "IIS:\AppPools\$pool") {
+            if ((Get-WebAppPoolState -Name $pool).Value -ne 'Stopped') {
+              Stop-WebAppPool -Name $pool
+              Write-Host "🛑 AppPool deteniendo..."
+              
+              for ($i = 1; $i -le 30; $i++) {
+                Start-Sleep -Seconds 1
+                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { 
+                  Write-Host "✅ AppPool detenido (${i}s)"
+                  break 
+                }
+              }
+            }
+          }
+          Start-Sleep -Seconds 5
+
+    - task: PowerShell@2
+      displayName: '🔐 Configurar permisos'
+      inputs:
+        targetType: inline
+        script: |
+          $path = '$(resolvedPhysicalPath)'
+          $pool = '$(resolvedAppPoolName)'
+          $me = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+          
+          Get-ChildItem -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.Attributes -band [IO.FileAttributes]::ReadOnly } |
+            ForEach-Object { $_.Attributes = $_.Attributes -bxor [IO.FileAttributes]::ReadOnly }
+
+          icacls "$path" /grant "${me}:(OI)(CI)M" /T /C | Out-Null
+          icacls "$path" /grant "IIS AppPool\${pool}:(OI)(CI)M" /T /C | Out-Null
+          
+          Write-Host "✅ Permisos configurados para: $me y AppPool $pool"
+
+    - task: PowerShell@2
+      displayName: '📦 Copiar archivos'
+      inputs:
+        targetType: inline
+        script: |
+          $src = '$(artifactPath)'
+          $dst = '$(resolvedPhysicalPath)'
+          
+          Write-Host "📂 Origen: $src"
+          Write-Host "📂 Destino: $dst"
+          
+          robocopy $src $dst /MIR /MT:8 /R:2 /W:2 /FFT `
+            /XD "logs" `
+            /XF "app_offline.htm" `
+            /NFL /NDL /NJH /NJS /NP
+
+          if ($LASTEXITCODE -ge 8) { throw "Robocopy falló (código $LASTEXITCODE)" }
+          $global:LASTEXITCODE = 0
+          Write-Host "✅ Archivos copiados exitosamente"
+
+    - task: PowerShell@2
+      displayName: '🔧 Crear web.config completo (variables + secretos)'
+      inputs:
+        targetType: inline
+        script: |
+          $path = '$(resolvedPhysicalPath)'
+          
+          # Función para escapar XML y prevenir injection
+          function Escape-Xml([string]$text) {
+            if ([string]::IsNullOrWhiteSpace($text)) { return "" }
+            return [System.Security.SecurityElement]::Escape($text)
+          }
+          
+          # Escapar todas las variables
+          $env = Escape-Xml "$(ASPNETCORE_ENVIRONMENT)"
+          $connStr = Escape-Xml "$(ConnectionStrings__DatabaseConnection)"
+          $jwtIssuer = Escape-Xml "$(Jwt__Issuer)"
+          $jwtAudience = Escape-Xml "$(Jwt__Audience)"
+          $jwtKey = Escape-Xml "$(Jwt__Key)"
+          $secretKey = Escape-Xml "$(SecretKey)"
+          $azInstance = Escape-Xml "$(AzureAd__Instance)"
+          $azDomain = Escape-Xml "$(AzureAd__Domain)"
+          $azTenant = Escape-Xml "$(AzureAd__TenantId)"
+          $azClient = Escape-Xml "$(AzureAd__ClientId)"
+          
+          # Variables de versión del build
+          $buildNumber = Escape-Xml "$(Build.BuildNumber)"
+          $buildId = Escape-Xml "$(Build.BuildId)"
+          $sourceVersion = "$(Build.SourceVersion)"
+          $commitHash = if ($sourceVersion.Length -ge 8) { $sourceVersion.Substring(0, 8) } else { $sourceVersion }
+          $sourceBranch = Escape-Xml "$(Build.SourceBranchName)"
+          $buildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss UTC")
+          
+          $webConfigContent = @"
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
-            <location path="." inheritInChildApplications="false">
-              <system.webServer>
-                <handlers>
-                  <clear/>
-                  <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
-                </handlers>
-                <aspNetCore processPath=".\$($exe.Name)" hostingModel="inprocess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
-                  <environmentVariables>
-                    <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$envNameEsc" />
-                    <environmentVariable name="Jwt__Key" value="$jwtEsc" />
-                    <environmentVariable name="DEPLOY_VERSION" value="$deployEsc" />
-                    <environmentVariable name="GIT_SHA_SHORT"  value="$shaEsc" />
-                  </environmentVariables>
-                </aspNetCore>
-              </system.webServer>
-            </location>
+            <system.webServer>
+              <handlers>
+                <clear />
+                <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+              </handlers>
+              <aspNetCore processPath="dotnet"
+                          arguments=".\ProvexBackendAPI.dll"
+                          hostingModel="OutOfProcess"
+                          stdoutLogEnabled="true"
+                          stdoutLogFile=".\logs\stdout">
+                <environmentVariables>
+                  <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$env" />
+                  <environmentVariable name="ASPNETCORE_URLS" value="http://*:0" />
+                  <environmentVariable name="ASPNETCORE_FORWARDEDHEADERS_ENABLED" value="true" />
+                  <environmentVariable name="ConnectionStrings__DefaultConnection" value="$connStr" />
+                  <environmentVariable name="Jwt__Issuer" value="$jwtIssuer" />
+                  <environmentVariable name="Jwt__Audience" value="$jwtAudience" />
+                  <environmentVariable name="Jwt__Key" value="$jwtKey" />
+                  <environmentVariable name="Jwt__AccessTokenMinutes" value="60" />
+                  <environmentVariable name="ApiSettings__SecretKey" value="$secretKey" />
+                  <environmentVariable name="AzureAd__Instance" value="$azInstance" />
+                  <environmentVariable name="AzureAd__Domain" value="$azDomain" />
+                  <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
+                  <environmentVariable name="AzureAd__ClientId" value="$azClient" />
+                  <environmentVariable name="AllowedHosts" value="*" />
+                  
+                  <!-- ⚡ Variables de versión del build ⚡ -->
+                  <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
+                  <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
+                  <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
+                  <environmentVariable name="BuildInfo__Branch" value="$sourceBranch" />
+                  <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
+                </environmentVariables>
+              </aspNetCore>
+              <httpErrors existingResponse="PassThrough" />
+            </system.webServer>
           </configuration>
           "@
-          $wc | Out-File -FilePath (Join-Path $dst 'web.config') -Encoding utf8 -Force
-          Write-Host "web.config actualizado con DEPLOY_VERSION y GIT_SHA_SHORT"
+          
+          $webConfigPath = Join-Path $path 'web.config'
+          $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::WriteAllText($webConfigPath, $webConfigContent, $utf8NoBom)
+          
+          Write-Host "✅ web.config creado con TODAS las variables de configuración"
+          Write-Host "Variables configuradas:"
+          Write-Host "  - ASPNETCORE_ENVIRONMENT: $env"
+          Write-Host "  - ConnectionString: [REDACTED]"
+          Write-Host "  - Jwt__Issuer: $jwtIssuer"
+          Write-Host "  - Jwt__Audience: $jwtAudience"
+          Write-Host "  - AzureAd configurado ✓"
+          Write-Host ""
+          Write-Host "📦 Build Info:"
+          Write-Host "  - Build Number: $buildNumber"
+          Write-Host "  - Build ID: $buildId"
+          Write-Host "  - Commit Hash: $commitHash"
+          Write-Host "  - Branch: $sourceBranch"
+          Write-Host "  - Build Date: $buildDate"
 
     - task: PowerShell@2
-      displayName: 'Sanity: Jwt.Key bytes'
+      displayName: "▶ Iniciar IIS"
       inputs:
         targetType: inline
-        errorActionPreference: 'stop'
         script: |
-          $p = '$(physicalPath)\appsettings.Production.json'
-          if (-not (Test-Path $p)) { $p = '$(physicalPath)\appsettings.json' }
-          $raw = Get-Content $p -Raw -Encoding UTF8
-          $lines = $raw -split "`r?`n"
-          $rawNoLineComments = ($lines | Where-Object { $_ -notmatch '^\s*//' }) -join "`n"
-          $rawClean = [regex]::Replace($rawNoLineComments, '/\*.*?\*/', '', 'Singleline')
-          $cfg = $rawClean | ConvertFrom-Json
-          $val = $cfg.Jwt.Key
-          try { $bytes = [Convert]::FromBase64String($val); $mode='Base64' } catch { $bytes=[Text.Encoding]::UTF8.GetBytes($val); $mode='UTF8' }
-          Write-Host "Jwt.Key mode=$mode bytes=$($bytes.Length) bits=$($bytes.Length*8)"
-          if ($bytes.Length -lt 16) { throw "Jwt.Key demasiado corta; usa ≥16 bytes (128 bits). Recomendado 32 bytes Base64." }
+          if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
+          $pool = '$(resolvedAppPoolName)'
+          $site = '$(siteName)'
+          $path = '$(resolvedPhysicalPath)'
+          
+          # Quitar app_offline
+          Remove-Item (Join-Path $path 'app_offline.htm') -Force -ErrorAction SilentlyContinue
+          Write-Host "✅ app_offline.htm eliminado"
+
+          # Iniciar AppPool
+          Start-WebAppPool -Name $pool
+          Write-Host "▶️ AppPool '$pool' iniciando..."
+          
+          for ($i = 1; $i -le 30; $i++) {
+            Start-Sleep -Seconds 1
+            if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') { 
+              Write-Host "✅ AppPool en estado 'Started' (${i}s)"
+              break 
+            }
+            if ($i -eq 30) { throw "❌ AppPool no arrancó en 30 segundos" }
+          }
+          
+          # Iniciar Sitio
+          Start-Website -Name $site
+          Write-Host "✅ Sitio '$site' iniciado"
+          Write-Host "🌐 Aplicación disponible en http://10.115.1.252:8082"
 
     - task: PowerShell@2
-      displayName: Open Windows Firewall port
+      displayName: '🔍 Ver logs de arranque'
+      condition: always()
       inputs:
         targetType: inline
         script: |
-          $rule = Get-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -ErrorAction SilentlyContinue
-          if (-not $rule) {
-            New-NetFirewallRule -DisplayName "ERPApi $(bindingPort)" -Direction Inbound -Protocol TCP -LocalPort $(bindingPort) -Action Allow | Out-Null
+          Start-Sleep -Seconds 5
+          $logsPath = Join-Path '$(resolvedPhysicalPath)' 'logs'
+          $latestLog = Get-ChildItem $logsPath -Filter 'stdout*.log' -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          
+          if ($latestLog) {
+            Write-Host "📜 Log más reciente: $($latestLog.Name)"
+            Write-Host "📜 Últimas 100 líneas:"
+            Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            Get-Content $latestLog.FullName -Tail 100 -ErrorAction SilentlyContinue
+            Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          } else {
+            Write-Host "⚠️ No hay logs de stdout en: $logsPath"
+            Write-Host "Archivos en logs:"
+            Get-ChildItem $logsPath -ErrorAction SilentlyContinue | Format-Table -Auto
           }
 
     - task: PowerShell@2
-      displayName: Start App Pool and Site
+      displayName: '✅ Health check'
+      condition: ne(variables['VerifyUrl'], '')
       inputs:
         targetType: inline
         script: |
-          Import-Module WebAdministration
-          Start-WebAppPool -Name '$(appPoolName)'
-          Start-Website -Name '$(siteName)'
-          Write-Host "Publicado en http://$env:COMPUTERNAME:$(bindingPort)/"
+          $url = '$(VerifyUrl)'
+          Write-Host "🏥 Testing health endpoint: $url"
+          Write-Host "Esperando 5s para warm-up..."
+          Start-Sleep -Seconds 5
+          
+          for ($i = 1; $i -le 10; $i++) {
+            try {
+              Write-Host "⏳ Intento $i/10..."
+              $resp = Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 10 -ErrorAction Stop
+              
+              if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 400) {
+                Write-Host "✅ Health check OK: HTTP $($resp.StatusCode)"
+                Write-Host "Response: $($resp.Content.Substring(0, [Math]::Min(200, $resp.Content.Length)))"
+                exit 0
+              }
+            } catch {
+              Write-Host "❌ Error: $($_.Exception.Message)"
+              if ($i -lt 10) { Start-Sleep -Seconds 3 }
+            }
+          }
+          
+          Write-Warning "⚠️ Health check falló después de 10 intentos"
+          Write-Warning "Revisa los logs de stdout arriba para más detalles"
+
+# =========================
+# STAGE: DEPLOY (PROD)
+# =========================
+- stage: Deploy_Prod
+  displayName: '🚀 Deploy to IIS (Prod)'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'],'prod'))
+  jobs:
+  - job: DeployToIISProd
+    displayName: 'Deploy API to IIS (Prod)'
+    pool:
+      name: PoolPrxSII
+      demands:
+        - agent.name -equals IISAgent01
+        - agent.os -equals Windows_NT
+    variables:
+      - group: ERP-Backend-Production
+      - name: siteName
+        value: 'ERPApiProdSite'
+      - name: appPoolName
+        value: 'ERPApiProdPool'
+      - name: physicalPath
+        value: 'C:\inetpub\wwwroot\ERPApiProd'
+      - name: VerifyUrl
+        value: 'https://erpapi.provexsa.cl/health'
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: '⬇️ Download Artifact'
+      inputs:
+        artifact: 'ERPBackendAPI'
+        path: '$(Pipeline.Workspace)\drop'
+
+    - task: PowerShell@2
+      displayName: '🔎 Resolver artifact path'
+      inputs:
+        targetType: inline
+        script: |
+          $root = '$(Pipeline.Workspace)\drop'
+          $dll = Get-ChildItem -Path $root -Recurse -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue |
+                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $dll) { throw "❌ ProvexBackendAPI.dll no encontrado" }
+          Write-Host "##vso[task.setvariable variable=artifactPath]$($dll.DirectoryName)"
+
+    - task: PowerShell@2
+      displayName: "🔥 Limpiar procesos zombie"
+      inputs:
+        targetType: inline
+        script: |
+          $physPath = '$(physicalPath)'
+          Get-Process -Name 'dotnet' -ErrorAction SilentlyContinue | ForEach-Object {
+            try {
+              $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)").CommandLine
+              if ($cmdLine -and $cmdLine -match [regex]::Escape($physPath)) {
+                Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+              }
+            } catch {}
+          }
+          Start-Sleep -Seconds 3
+
+    - task: PowerShell@2
+      displayName: "⚡ Detener IIS"
+      inputs:
+        targetType: inline
+        script: |
+          if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
+          $site = "$(siteName)"
+          $pool = "$(appPoolName)"
+          $path = "$(physicalPath)"
+
+          [System.IO.File]::WriteAllText((Join-Path $path 'app_offline.htm'), 'Offline')
+
+          if (Test-Path "IIS:\Sites\$site") { if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { Stop-Website -Name $site } }
+          if (Test-Path "IIS:\AppPools\$pool") {
+            if ((Get-WebAppPoolState -Name $pool).Value -ne 'Stopped') {
+              Stop-WebAppPool -Name $pool
+              for ($i = 1; $i -le 30; $i++) {
+                Start-Sleep -Seconds 1
+                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { break }
+              }
+            }
+          }
+          Start-Sleep -Seconds 5
+
+    - task: PowerShell@2
+      displayName: '🔐 Configurar permisos'
+      inputs:
+        targetType: inline
+        script: |
+          $path = '$(physicalPath)'
+          $pool = '$(appPoolName)'
+          $me = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+          
+          Get-ChildItem -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue |
+            Where-Object { $_.Attributes -band [IO.FileAttributes]::ReadOnly } |
+            ForEach-Object { $_.Attributes = $_.Attributes -bxor [IO.FileAttributes]::ReadOnly }
+
+          icacls "$path" /grant "${me}:(OI)(CI)M" /T /C | Out-Null
+          icacls "$path" /grant "IIS AppPool\${pool}:(OI)(CI)M" /T /C | Out-Null
+
+    - task: PowerShell@2
+      displayName: '📦 Copiar archivos'
+      inputs:
+        targetType: inline
+        script: |
+          $src = '$(artifactPath)'
+          $dst = '$(physicalPath)'
+          
+          robocopy $src $dst /MIR /MT:8 /R:2 /W:2 `
+            /XD "logs" `
+            /XF "app_offline.htm" `
+            /NFL /NDL /NJH /NJS /NP
+
+          if ($LASTEXITCODE -ge 8) { throw "Robocopy falló" }
+          $global:LASTEXITCODE = 0
+
+    - task: PowerShell@2
+      displayName: '🔧 Crear web.config completo (Production)'
+      inputs:
+        targetType: inline
+        script: |
+          $path = '$(physicalPath)'
+          
+          function Escape-Xml([string]$text) {
+            if ([string]::IsNullOrWhiteSpace($text)) { return "" }
+            return [System.Security.SecurityElement]::Escape($text)
+          }
+          
+          $connStr = Escape-Xml "$(ConnectionStrings__DatabaseConnection)"
+          $jwtIssuer = Escape-Xml "$(Jwt__Issuer)"
+          $jwtAudience = Escape-Xml "$(Jwt__Audience)"
+          $jwtKey = Escape-Xml "$(Jwt__Key)"
+          $secretKey = Escape-Xml "$(SecretKey)"
+          $azInstance = Escape-Xml "$(AzureAd__Instance)"
+          $azDomain = Escape-Xml "$(AzureAd__Domain)"
+          $azTenant = Escape-Xml "$(AzureAd__TenantId)"
+          $azClient = Escape-Xml "$(AzureAd__ClientId)"
+          
+          # Variables de versión
+          $buildNumber = Escape-Xml "$(Build.BuildNumber)"
+          $buildId = Escape-Xml "$(Build.BuildId)"
+          $sourceVersion = "$(Build.SourceVersion)"
+          $commitHash = if ($sourceVersion.Length -ge 8) { $sourceVersion.Substring(0, 8) } else { $sourceVersion }
+          $sourceBranch = Escape-Xml "$(Build.SourceBranchName)"
+          $buildDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss UTC")
+          
+          $webConfigContent = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <clear />
+                <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+              </handlers>
+              <aspNetCore processPath="dotnet" arguments=".\ProvexBackendAPI.dll"
+                          hostingModel="OutOfProcess" stdoutLogEnabled="true" stdoutLogFile=".\logs\stdout">
+                <environmentVariables>
+                  <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" />
+                  <environmentVariable name="ASPNETCORE_URLS" value="http://*:0" />
+                  <environmentVariable name="ASPNETCORE_FORWARDEDHEADERS_ENABLED" value="true" />
+                  <environmentVariable name="ConnectionStrings__DefaultConnection" value="$connStr" />
+                  <environmentVariable name="Jwt__Issuer" value="$jwtIssuer" />
+                  <environmentVariable name="Jwt__Audience" value="$jwtAudience" />
+                  <environmentVariable name="Jwt__Key" value="$jwtKey" />
+                  <environmentVariable name="Jwt__AccessTokenMinutes" value="60" />
+                  <environmentVariable name="ApiSettings__SecretKey" value="$secretKey" />
+                  <environmentVariable name="AzureAd__Instance" value="$azInstance" />
+                  <environmentVariable name="AzureAd__Domain" value="$azDomain" />
+                  <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
+                  <environmentVariable name="AzureAd__ClientId" value="$azClient" />
+                  <environmentVariable name="AllowedHosts" value="*" />
+                  
+                  <!-- ⚡ Variables de versión del build ⚡ -->
+                  <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
+                  <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
+                  <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
+                  <environmentVariable name="BuildInfo__Branch" value="$sourceBranch" />
+                  <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
+                </environmentVariables>
+              </aspNetCore>
+              <httpErrors existingResponse="PassThrough" />
+            </system.webServer>
+          </configuration>
+          "@
+          
+          [System.IO.File]::WriteAllText((Join-Path $path 'web.config'), $webConfigContent, [System.Text.UTF8Encoding]::new($false))
+          
+          Write-Host "✅ web.config Production creado"
+          Write-Host "📦 Build Info: $buildNumber (Commit: $commitHash, Branch: $sourceBranch)"
+        
+    - task: PowerShell@2
+      displayName: "▶ Iniciar IIS"
+      inputs:
+        targetType: inline
+        script: |
+          if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
+          $pool = '$(appPoolName)'
+          $site = '$(siteName)'
+          
+          Remove-Item (Join-Path '$(physicalPath)' 'app_offline.htm') -Force -ErrorAction SilentlyContinue
+
+          Start-WebAppPool -Name $pool
+          for ($i = 1; $i -le 30; $i++) {
+            Start-Sleep -Seconds 1
+            if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') { break }
+            if ($i -eq 30) { throw "AppPool no arrancó" }
+          }
+          Start-Website -Name $site
+
+    - task: PowerShell@2
+      displayName: '🔍 Ver logs'
+      condition: always()
+      inputs:
+        targetType: inline
+        script: |
+          Start-Sleep -Seconds 5
+          $latestLog = Get-ChildItem (Join-Path '$(physicalPath)' 'logs') -Filter 'stdout*.log' -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($latestLog) { Get-Content $latestLog.FullName -Tail 100 }
+
+    - task: PowerShell@2
+      displayName: '✅ Health check Production'
+      inputs:
+        targetType: inline
+        script: |
+          Start-Sleep -Seconds 5
+          for ($i = 1; $i -le 10; $i++) {
+            try {
+              $resp = Invoke-WebRequest '$(VerifyUrl)' -UseBasicParsing -TimeoutSec 10
+              if ($resp.StatusCode -lt 400) { Write-Host "✅ OK"; exit 0 }
+            } catch { 
+              Write-Host "Intento $i/10 falló"
+              Start-Sleep -Seconds 3 
+            }
+          }
+          throw "Health check falló"
