@@ -17,7 +17,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
     [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]
     [ApiVersionNeutral]
-    [Authorize]
+    //[Authorize]
     public class DistribucionController : ControllerBase
     {
         private readonly IDistribucionService _service;
@@ -102,7 +102,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return Ok(data);
         }
 
-
+        [Authorize]
         // POST api/v{version}/distribucion/categoria
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
 
@@ -123,7 +123,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
             }
 
         }
-
+        [Authorize]
         // POST api/v{version}/distribucion/calibre
         [HttpPost("calibre", Name = "SaveDistribucionCalibre")]
         public async Task SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
@@ -163,7 +163,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
             }
 
         }
-
+        [Authorize]
         // POST api/v{version}/distribucion/packing
         [HttpPost("packing", Name = "SaveDistribucionPacking")]
         public async Task SavePacking([FromBody] DistribucionPackingGuardarRequest req)
