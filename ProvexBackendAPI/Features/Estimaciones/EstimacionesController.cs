@@ -98,5 +98,11 @@ namespace ProvexBackendAPI.Features.Estimaciones
             var res = await estimacion.ObtenerZonas(codEmpresa);
             return Ok(res);
         }
+
+        [HttpPost("Publicar")]
+        public async Task<ActionResult> Publicar(PublicacionDTO publicacion)
+        {
+            return Ok();
+        }
     }
 }
