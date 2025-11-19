@@ -86,6 +86,8 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
+
+               
                 await estimacion.IngresarEstimacion(request);
                 return Ok();
 
@@ -100,7 +102,11 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [HttpPost("ActualizarExportacionSemanal")]
         public async Task ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
         {
-            await estimacion.IngresarPorcentajeExportacionSemanal(input);
+            var userId = await token.GetUserIdFromClaimsAsync(User);
+
+            if (userId is null)
+                throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+            await estimacion.IngresarPorcentajeExportacionSemanal(input, userId.Value);
             return;
         }
 

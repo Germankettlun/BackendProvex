@@ -6,7 +6,7 @@ namespace ProvexBackendAPI.Services.IServices
     public interface IEstimacionService
     {
         Task IngresarEstimacion(IngresarEstimacionRequest request);
-        Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input);
+        Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input, Guid userId);
         Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa);
         Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId);
     }
