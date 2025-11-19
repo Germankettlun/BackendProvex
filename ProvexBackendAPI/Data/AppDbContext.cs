@@ -19,6 +19,7 @@ namespace ProvexBackendAPI.Data
         }
 
         public virtual DbSet<Zona> Zonas { get; set; }
+        public virtual DbSet<EstimacionBisemanal> EstimacionBisemanales { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -44,6 +45,7 @@ namespace ProvexBackendAPI.Data
                     .HasDefaultValueSql("NEWSEQUENTIALID()");
 
             builder.Entity<Zona>().ToTable("Zona", "Estimaciones");
+            builder.Entity<EstimacionBisemanal>().ToTable("ESTIMACION_BISEMANAL", "Estimaciones");
         }
 
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }

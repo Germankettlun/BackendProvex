@@ -215,7 +215,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
 
 
-        public async Task<SpResultEstimacionBisemanalDto> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, int? userId)
+        public async Task<SpResultEstimacionBisemanalDto> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
         {
             using var cn = new SqlConnection(_connString);
             await cn.OpenAsync();

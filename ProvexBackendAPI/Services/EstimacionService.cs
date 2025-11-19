@@ -3,6 +3,7 @@ using ProvexBackendAPI.Data.Models;
 using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
 namespace ProvexBackendAPI.Services
 {
@@ -91,6 +92,43 @@ namespace ProvexBackendAPI.Services
             {
                 throw new Exception(e.Message);
             }
+
+        }
+
+        public async Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
+        {
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+
+            if (dto.IdEstimacion <= 0)
+                throw new ArgumentException("IdEstimacion inválido.", nameof(dto.IdEstimacion));
+
+            if (dto.ValorNuevo < 0)
+                throw new ArgumentException("ValorNuevo no puede ser negativo.", nameof(dto.ValorNuevo));
+            try
+            {
+
+                var exists = await repository.Exists<EstimacionBisemanal>(e => e.idEstimacion == dto.IdEstimacion&& e.fecha.Date == dto.Dia.FechaDia.Date);
+
+                var cajas = Convert.ToInt32(Math.Round(dto.ValorNuevo, 0, MidpointRounding.AwayFromZero));
+
+                //  UPDATE si existe; INSERT si no existe
+                var query = exists ? "[Estimaciones].[usp_UPDATE_EstimacionBisemanal_Dia]" : "[Estimaciones].[usp_INSERT_EstimacionBisemanal_Dia]";
+
+                var parameters = new SqlParameter[]
+               {
+                    new SqlParameter("IDESTIMACION", dto.IdEstimacion),
+                    new SqlParameter("FECHA", dto.Dia.FechaDia),
+                    new SqlParameter("CAJAS", cajas),
+                    new SqlParameter("@IDUSUARIO_GUID", userId)
+               };
+
+                await repository.SpVoid(query, parameters);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al ejecutar UpsertDiaAsync para estimación bisemanal.", ex);
+            }
+
 
         }
     }

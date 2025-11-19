@@ -1,8 +1,10 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
@@ -16,11 +18,13 @@ namespace ProvexBackendAPI.Features.Estimaciones
     {
         private readonly IEstimacionesService _estimacionesService;
         private readonly IEstimacionService estimacion;
+        private readonly ITokenService token;
 
-        public EstimacionesController(IEstimacionesService estimacionesService, IEstimacionService estimacion)
+        public EstimacionesController(IEstimacionesService estimacionesService, IEstimacionService estimacion, ITokenService token)
         {
             _estimacionesService = estimacionesService;
             this.estimacion = estimacion;
+            this.token = token;
         }
 
         //    // GET api/v{version}/estimacion/GetEstimacionBisemanal
@@ -47,16 +51,22 @@ namespace ProvexBackendAPI.Features.Estimaciones
         }
 
         // POST api/v{version}/estimaciones/bisemanal/dia
+        [Authorize]
         [HttpPost("dia", Name = "UpdateInsertBisemanalDia")]
-        //[Authorize] 
+        
 
         public async Task<IActionResult> UpdateInsertBisemanalDia([FromBody] UpdateEstimacionBisemanalRequest request)
         {
-            var userId = 1;      
+               
 
             try
             {
-                _ = await _estimacionesService.UpsertDiaAsync(request, userId);
+                var userId = await token.GetUserIdFromClaimsAsync(User);
+
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+
+                await estimacion.UpsertDiaAsync(request, userId.Value);
                 return Ok("OK"); // 200, data:null
             }
             catch (InvalidOperationException ex)
@@ -67,6 +77,8 @@ namespace ProvexBackendAPI.Features.Estimaciones
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
+
+
         }
 
         [HttpPost("ingresarEstimacion")]

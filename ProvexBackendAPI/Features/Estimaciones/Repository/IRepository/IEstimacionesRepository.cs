@@ -9,6 +9,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
 
         Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion);
 
-        Task<SpResultEstimacionBisemanalDto> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, int? userId);
+        Task<SpResultEstimacionBisemanalDto> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId);
     }
 }
