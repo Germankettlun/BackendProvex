@@ -31,9 +31,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
                            ProvexBackendAPI.Repository.UserRepository>();
 
-builder.Services.AddScoped(
-    typeof(ProvexBackendAPI.Repository.IRepository.IGenericRepository<>),
-    typeof(ProvexBackendAPI.Repository.GenericRepository<>));
+builder.Services.AddScoped<IGenericRepository,GenericRepository>();
 
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
     ProvexBackendAPI.Repository.UnitOfWork>();
@@ -56,14 +54,12 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
 
-builder.Services.AddScoped(
-    typeof(ProvexBackendAPI.Services.IServices.IGenericService<>),
-    typeof(ProvexBackendAPI.Services.GenericService<>));
 
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
-builder.Services.AddScoped<IEstimacionesService, EstimacionesService>();
+builder.Services.AddScoped<IEstimacionesService, EstimacionesService>()
+    .AddScoped<IEstimacionService, EstimacionService>();
 
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));

@@ -8,9 +8,9 @@ namespace ProvexBackendAPI.Services
 {
     public class EstimacionService : IEstimacionService
     {
-        private readonly IGenericRepository<BaseEntity> repository;
+        private readonly IGenericRepository repository;
 
-        public EstimacionService(IGenericRepository<BaseEntity> repository)
+        public EstimacionService(IGenericRepository repository)
         {
             this.repository = repository;
         }
@@ -46,6 +46,52 @@ namespace ProvexBackendAPI.Services
             {
                 throw new Exception("Error al crear estimación");
             }
+        }
+
+        public async Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input)
+        {
+            int idUsuario = 3;
+
+            try
+            {
+                var parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@idEstimacion", input.idEstimacion),
+                    new SqlParameter("@anio", input.anio),
+                    new SqlParameter("@semana", input.semana),
+                    new SqlParameter("@porcentaje", input.porcentaje),
+                    new SqlParameter("@idUsuario", idUsuario)
+                };
+
+                await repository.SpVoid("Estimaciones.usp_INSERT_UPDATE_Procentaje_Exportacion_Semanal", parameters);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Error al actualizar el porcentaje semanal");
+            }
+        }
+
+        public async Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa)
+        {
+            try
+            {
+                var res = await repository.GetList<Zona>(z => z.idEmpresa == codEmpresa);
+
+                List<ZonaDTO> zonas = new List<ZonaDTO>();
+                
+                zonas = [.. res.Select(item => new ZonaDTO
+                {
+                    idEmpresa = item.idEmpresa,
+                    nombre = item.nombre
+                })];
+
+                return zonas;
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+            }
+
         }
     }
 }

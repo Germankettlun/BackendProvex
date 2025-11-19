@@ -1,13 +1,9 @@
 ﻿using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Dto;
-using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services.IServices;
-using static ProvexBackendAPI.Dto.Users.UsersDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones
@@ -87,6 +83,26 @@ namespace ProvexBackendAPI.Features.Estimaciones
 
                 throw new Exception(e.Message);
             }
+        }
+
+        [HttpPost("ActualizarExportacionSemanal")]
+        public async Task ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
+        {
+            await estimacion.IngresarPorcentajeExportacionSemanal(input);
+            return;
+        }
+
+        [HttpGet("ObtenerZonas/{codEmpresa}")]
+        public async Task<ActionResult<List<ZonaDTO>>> ObtenerZonas(string codEmpresa)
+        {
+            var res = await estimacion.ObtenerZonas(codEmpresa);
+            return Ok(res);
+        }
+
+        [HttpPost("Publicar")]
+        public async Task<ActionResult> Publicar(PublicacionDTO publicacion)
+        {
+            return Ok();
         }
     }
 }
