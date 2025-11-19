@@ -185,7 +185,10 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
-                await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+                await _service.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
                 return Ok();
             }
             catch (Exception e)

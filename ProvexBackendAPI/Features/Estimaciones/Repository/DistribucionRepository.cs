@@ -547,7 +547,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                
         }
 
-        public async Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, int idUsuario)
+        public async Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, Guid idUsuario)
         {
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
@@ -559,12 +559,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             cmd.Parameters.AddWithValue("@IdEstimacion", idEstimacion);
             cmd.Parameters.AddWithValue("@PorcentajePredeterminado", (object?)porcentaje ?? DBNull.Value);
-            //cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+            cmd.Parameters.AddWithValue("@id_usuario_guid", idUsuario);
 
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, int idUsuario)
+        public async Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, Guid idUsuario)
         {
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
@@ -578,7 +578,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             cmd.Parameters.AddWithValue("@Anio", anio);
             cmd.Parameters.AddWithValue("@Semana", semana);
             cmd.Parameters.AddWithValue("@Porcentaje", porcentaje);
-            //cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+            cmd.Parameters.AddWithValue("@id_usuario_guid", idUsuario);
 
             await cmd.ExecuteNonQueryAsync();
         }
