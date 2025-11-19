@@ -212,7 +212,11 @@ builder.Services.AddCors(o =>
         if (builder.Environment.IsDevelopment() ||
             builder.Environment.EnvironmentName == "Staging")
         {
-            // En Development/Staging: Permitir todo (súper permisivo)
+            // ========================================
+            // DEVELOPMENT / STAGING: Modo permisivo
+            // ========================================
+            // Permite cualquier origen, método y header
+            // Útil para desarrollo local y pruebas
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
             p.AllowAnyOrigin()
              .AllowAnyHeader()
@@ -220,34 +224,89 @@ builder.Services.AddCors(o =>
         }
         else
         {
-            // En Production: Solo orígenes específicos
+            // ========================================
+            // PRODUCTION: Modo restringido
+            // ========================================
+            // Solo permite orígenes específicos por seguridad
             Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
             p.SetIsOriginAllowed(origin =>
             {
-                if (string.IsNullOrEmpty(origin)) return false;
+                // Validar que el origen no sea nulo o vacío
+                if (string.IsNullOrEmpty(origin)) 
+                {
+                    Console.WriteLine("⚠️ CORS: Origen vacío o nulo - RECHAZADO");
+                    return false;
+                }
 
                 try
                 {
                     var uri = new Uri(origin);
                     var host = uri.Host;
+                    var scheme = uri.Scheme;
 
-                    // Permitir red interna 10.115.x.x
-                    if (host.StartsWith("10.115.")) return true;
+                    // Log para debugging: muestra cada petición evaluada
+                    Console.WriteLine($"🌍 CORS: Evaluando origen: {origin}");
+                    Console.WriteLine($"   └─ Host: {host} | Scheme: {scheme} | Port: {uri.Port}");
 
-                    // Permitir dominios de producción específicos
-                    if (host.EndsWith(".provex.com") || host == "provex.com") return true;
+                    // ========================================
+                    // REGLA 1: Red interna 10.115.x.x
+                    // ========================================
+                    // Permite cualquier IP de la red interna (HTTP o HTTPS)
+                    // Ejemplo: http://10.115.1.253:3000
+                    if (host.StartsWith("10.115."))
+                    {
+                        Console.WriteLine($"   ✅ PERMITIDO - Red interna 10.115.x.x");
+                        return true;
+                    }
 
-                    // Agregar más dominios según necesites
+                    // ========================================
+                    // REGLA 2: Localhost (desarrollo local)
+                    // ========================================
+                    // Permite peticiones desde localhost en cualquier puerto
+                    // Útil para desarrolladores trabajando localmente
+                    if (host == "localhost" || host == "127.0.0.1")
+                    {
+                        Console.WriteLine($"   ✅ PERMITIDO - Localhost");
+                        return true;
+                    }
+
+                    // ========================================
+                    // REGLA 3: Dominios de producción (solo HTTPS)
+                    // ========================================
+                    // Solo permite dominios públicos si usan HTTPS por seguridad
+                    if (scheme == "https")
+                    {
+                        // Dominio principal: provexsa.cl
+                        if (host.EndsWith(".provexsa.cl") || host == "provexsa.cl")
+                        {
+                            Console.WriteLine($"   ✅ PERMITIDO - Dominio provexsa.cl (HTTPS)");
+                            return true;
+                        }
+
+                        // Dominio alternativo: provex.com
+                        if (host.EndsWith(".provex.com") || host == "provex.com")
+                        {
+                            Console.WriteLine($"   ✅ PERMITIDO - Dominio provex.com (HTTPS)");
+                            return true;
+                        }
+                    }
+
+                    // ========================================
+                    // Origen no permitido
+                    // ========================================
+                    Console.WriteLine($"   ❌ RECHAZADO - No cumple con ninguna regla");
                     return false;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    // Error al parsear el origen
+                    Console.WriteLine($"⚠️ CORS: Error al validar origen '{origin}': {ex.Message}");
                     return false;
                 }
             })
-             .AllowAnyHeader()
-             .AllowAnyMethod()
-             .AllowCredentials(); // Permite cookies/auth headers
+             .AllowAnyHeader()        // Permite cualquier header (Authorization, Content-Type, etc.)
+             .AllowAnyMethod()        // Permite todos los métodos HTTP (GET, POST, PUT, DELETE, etc.)
+             .AllowCredentials();     // Permite envío de cookies y headers de autenticación
         }
     });
 });
