@@ -16,11 +16,11 @@ namespace ProvexBackendAPI.Services
             this.repository = repository;
         }
 
-        public async Task IngresarEstimacion(IngresarEstimacionRequest request)
+        public async Task IngresarEstimacion(IngresarEstimacionRequest request, Guid userId)
         {
             try
             {
-                int idUsuario = 3;
+               
 
                 var parameters = new SqlParameter[]
                 {
@@ -37,7 +37,7 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@packing", request.packing),
                     new SqlParameter("@envase", request.envase),
                     new SqlParameter("@contratado", request.contratado),
-                    new SqlParameter("@id_usuario", idUsuario)
+                    new SqlParameter("@id_usuario_guid", userId)
                 };
                     
                 await repository.SpVoid("Estimaciones.sp_IngresarEstimacion", parameters);
@@ -60,7 +60,7 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@anio", input.anio),
                     new SqlParameter("@semana", input.semana),
                     new SqlParameter("@porcentaje", input.porcentaje),
-                    new SqlParameter("@@idUsuario_guid", userId)
+                    new SqlParameter("@idUsuario_guid", userId)
                 };
 
                 await repository.SpVoid("Estimaciones.usp_INSERT_UPDATE_Procentaje_Exportacion_Semanal", parameters);

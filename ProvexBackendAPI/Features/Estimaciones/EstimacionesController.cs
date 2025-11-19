@@ -86,9 +86,12 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
+                var userId = await token.GetUserIdFromClaimsAsync(User);
 
-               
-                await estimacion.IngresarEstimacion(request);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+
+                await estimacion.IngresarEstimacion(request, userId.Value);
                 return Ok();
 
             }
