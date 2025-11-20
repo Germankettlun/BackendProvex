@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
+using static ProvexBackendAPI.Dto.EstimacionesDto;
 
 namespace ProvexBackendAPI.Helpers.Parsing
 {

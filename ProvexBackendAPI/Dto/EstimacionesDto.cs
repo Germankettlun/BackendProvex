@@ -2,9 +2,9 @@
 using System.Globalization;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
+using static ProvexBackendAPI.Dto.EstimacionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
+namespace ProvexBackendAPI.Dto
 {
     public class EstimacionesDto
     {
@@ -301,8 +301,37 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
         {
           
             public int? IdEstimacion { get; set; }
-            public String? Message { get; set; }
+            public string? Message { get; set; }
 
+        }
+
+        public class ResumenSemanalRowDto
+        {
+            public string? IdEstimacion { get; set; }
+            public int? Contratado { get; set; }
+            public int? KilosBaseEspecie { get; set; }
+
+            public string? IdEnvaseCosecha { get; set; }
+            public string? NomEnvaseCosecha { get; set; }
+            public double? KilosEnvase { get; set; }
+
+            public int? Total_E_Sin_Porc { get; set; }
+            public int? Total_E_Con_Porc { get; set; }
+            public int? Total_P { get; set; }
+            public int? Dif_E_Con_P { get; set; }
+
+            public int? Pos { get; set; }
+            public int? Anio { get; set; }
+            public string? Semana_Nro { get; set; }
+
+            public int? E_Sin_Porc { get; set; }
+            public int? E_Con_Porc { get; set; }
+            public int? P_Semana { get; set; }
+
+            public string? Categorias_Semanas { get; set; }
+            public string? Calibres_Semana { get; set; }
+            public string? Packings_Dia_Semana { get; set; }
+            public string? Frigorificos_Dia_Semana { get; set; }
         }
 
     }  

@@ -2,27 +2,23 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Dto;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
-using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
+using static ProvexBackendAPI.Dto.EstimacionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones
+namespace ProvexBackendAPI.Controllers
 {
     [Route("api/v{version:apiVersion}/estimaciones")]
     [ApiController]
     [ApiVersionNeutral]
-    //[Authorize]
-    public class EstimacionesController : ControllerBase
+    [Authorize]
+    public class EstimacionController : ControllerBase
     {
-        private readonly IEstimacionesService _estimacionesService;
         private readonly IEstimacionService estimacion;
         private readonly ITokenService token;
 
-        public EstimacionesController(IEstimacionesService estimacionesService, IEstimacionService estimacion, ITokenService token)
+        public EstimacionController(IEstimacionService estimacion, ITokenService token)
         {
-            _estimacionesService = estimacionesService;
             this.estimacion = estimacion;
             this.token = token;
         }
@@ -30,10 +26,10 @@ namespace ProvexBackendAPI.Features.Estimaciones
         //    // GET api/v{version}/estimacion/GetEstimacionBisemanal
         [HttpGet("GetEstimacionBisemanal", Name = "GetEstimacionBisemanal")]
         public async Task<IActionResult> GetEstimacionBisemanal(
-            [FromQuery] EstimacionesDto.EstimacionBisemanalQueryDto q
+            [FromQuery] EstimacionBisemanalQueryDto q
     )
         {
-            var data = await _estimacionesService.GetEstimacionBisemanalAsync(q);
+            var data = await estimacion.GetEstimacionBisemanalAsync(q);
             return Ok(data);
         }
 
@@ -46,12 +42,11 @@ namespace ProvexBackendAPI.Features.Estimaciones
             [FromQuery] int idEstimacion
         )
         {
-            var data = await _estimacionesService.GetResumenSemanalAsync(codigoEmpresa,idTemporada,idEstimacion);
+            var data = await estimacion.GetResumenSemanalAsync(codigoEmpresa,idTemporada,idEstimacion);
             return Ok(data);
         }
 
         // POST api/v{version}/estimaciones/bisemanal/dia
-        [Authorize]
         [HttpPost("dia", Name = "UpdateInsertBisemanalDia")]
         
 

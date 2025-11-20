@@ -1,5 +1,5 @@
 ﻿using ProvexBackendAPI.Dto;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
+using static ProvexBackendAPI.Dto.EstimacionesDto;
 
 namespace ProvexBackendAPI.Services.IServices
 {
@@ -9,5 +9,12 @@ namespace ProvexBackendAPI.Services.IServices
         Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input, Guid userId);
         Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa);
         Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId);
+
+        Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(
+         EstimacionBisemanalQueryDto req);
+
+        Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion);
+
+
     }
 }
