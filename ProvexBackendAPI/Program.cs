@@ -337,14 +337,28 @@ app.UseMiddleware<ExceptionMiddleware>();
 //    los headers CORS sin ser redirigidas primero
 app.UseCors();
 
-// 2. HTTPS Redirection después de CORS
-//    Las redirecciones HTTPS se aplicarán después de validar CORS
-app.UseHttpsRedirection();
+// 2. HTTPS Redirection solo si está configurado correctamente
+//    En producción con IIS HTTP-only, esto causa problemas
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // 3. Authentication y Authorization al final
 //    Se ejecutan después de CORS y redirecciones
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ========================================
+// Health Check Endpoint
+// ========================================
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "Healthy",
+    environment = app.Environment.EnvironmentName,
+    timestamp = DateTime.UtcNow,
+    version = "1.0.0"
+})).AllowAnonymous();
 
 app.MapControllers();
 
