@@ -1,12 +1,11 @@
 ﻿using Microsoft.Data.SqlClient;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Semanas;
 using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Repository.IRepository;
 using System.Data;
 using System.Runtime.Intrinsics.Arm;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Semanas.SemanasDto;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas.SemanasDto;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services

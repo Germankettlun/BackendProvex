@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Dto.Combos
+namespace ProvexBackendAPI.Dto
 {
     public class ComboItemDto
     {

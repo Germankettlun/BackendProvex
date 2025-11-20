@@ -1,5 +1,5 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Semanas.SemanasDto;
+using static ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas.SemanasDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 {

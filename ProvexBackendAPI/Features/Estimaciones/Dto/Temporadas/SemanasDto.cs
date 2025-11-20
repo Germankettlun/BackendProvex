@@ -1,4 +1,4 @@
-﻿namespace ProvexBackendAPI.Features.Estimaciones.Dto.Semanas
+﻿namespace ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas
 {
     public class SemanasDto
     {

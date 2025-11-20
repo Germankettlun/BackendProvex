@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Combos;
-using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
+using ProvexBackendAPI.Dto;
+using ProvexBackendAPI.Services.IServices;
 
 
 namespace ProvexBackendAPI.Controllers
@@ -27,14 +27,5 @@ namespace ProvexBackendAPI.Controllers
             return Ok(data);
         }
 
-        [HttpGet("GetComboEnvase")]
-        public async Task<ActionResult<List<ComboItemDto>>> GetComboEnvase(
-            [FromQuery] string codigoProductor,
-            [FromQuery] string codigoEspecie,
-            [FromQuery] string codigoVariedad)
-        {
-            var data = await combo.GetComboEnvaseProductorEspecieVariedadAsync(codigoProductor, codigoEspecie, codigoVariedad);
-            return Ok(data);
-        }
     }
 }

@@ -37,8 +37,6 @@ builder.Services.AddScoped<IGenericRepository,GenericRepository>();
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
     ProvexBackendAPI.Repository.UnitOfWork>();
 
-builder.Services.AddScoped<IComboRepository, ComboRepository>();
-
 builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
 
 builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
