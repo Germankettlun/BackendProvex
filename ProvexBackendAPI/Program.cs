@@ -317,6 +317,9 @@ var app = builder.Build();
 // Mostrar entorno actual en los logs
 Console.WriteLine($"🚀 Iniciando API en entorno: {app.Environment.EnvironmentName}");
 
+// ========================================
+// Configurar Swagger según el entorno
+// ========================================
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -324,6 +327,16 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
         // options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
+    });
+}
+else if (app.Environment.IsProduction())
+{
+    // En producción, también habilitar Swagger pero en una ruta específica
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = "swagger"; // Swagger estará disponible en /swagger
     });
 }
 
@@ -337,28 +350,24 @@ app.UseMiddleware<ExceptionMiddleware>();
 //    los headers CORS sin ser redirigidas primero
 app.UseCors();
 
-// 2. HTTPS Redirection solo si está configurado correctamente
-//    En producción con IIS HTTP-only, esto causa problemas
-if (app.Environment.IsDevelopment())
+// 2. HTTPS Redirection - Solo si HTTPS está configurado
+//    En producción HTTP-only (como IIS con puerto 8083), esto causa errores
+//    Solo redirigir si estamos usando HTTPS
+if (app.Configuration.GetValue<bool>("UseHttpsRedirection", false) || 
+    app.Urls.Any(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
 {
+    Console.WriteLine("🔒 HTTPS Redirection habilitado");
     app.UseHttpsRedirection();
+}
+else
+{
+    Console.WriteLine("⚠️ HTTPS Redirection deshabilitado - ejecutando solo HTTP");
 }
 
 // 3. Authentication y Authorization al final
 //    Se ejecutan después de CORS y redirecciones
 app.UseAuthentication();
 app.UseAuthorization();
-
-// ========================================
-// Health Check Endpoint
-// ========================================
-app.MapGet("/health", () => Results.Ok(new
-{
-    status = "Healthy",
-    environment = app.Environment.EnvironmentName,
-    timestamp = DateTime.UtcNow,
-    version = "1.0.0"
-})).AllowAnonymous();
 
 app.MapControllers();
 
