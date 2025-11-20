@@ -1,4 +1,4 @@
-﻿namespace ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas
+﻿namespace ProvexBackendAPI.Dto
 {
     public class TemporadaDto
     {
@@ -6,7 +6,7 @@
         public string Descripcion { get; set; } = default!;
         public DateTime FechaIni { get; set; }
         public int Orden { get; set; }
-        public int Vigente { get; set; } // 1 = vigente, 0 = no vigente (ajusta si usas BIT)
+        public int Vigente { get; set; } 
     }
 
     public class TemporadaDetalleDto

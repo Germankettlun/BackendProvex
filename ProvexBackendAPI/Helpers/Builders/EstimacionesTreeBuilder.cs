@@ -1,6 +1,6 @@
 ﻿using ProvexBackendAPI.Helpers.Semanas;
 using static ProvexBackendAPI.Dto.EstimacionesDto;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas.SemanasDto;
+using static ProvexBackendAPI.Dto.SemanasDto;
 
 namespace ProvexBackendAPI.Helpers.Builders
 {

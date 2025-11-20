@@ -1,9 +1,9 @@
 ﻿using Microsoft.Data.SqlClient;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
+using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
 using System.Data;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas.SemanasDto;
+using static ProvexBackendAPI.Dto.SemanasDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Repository
 {

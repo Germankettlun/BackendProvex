@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\Estimaciones\Dto\Temporadas\" />
     <Folder Include="Models\Dto\" />
   </ItemGroup>
 

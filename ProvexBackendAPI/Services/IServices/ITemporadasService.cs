@@ -1,7 +1,7 @@
-﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas.SemanasDto;
+﻿using ProvexBackendAPI.Dto;
+using static ProvexBackendAPI.Dto.SemanasDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
+namespace ProvexBackendAPI.Services.IServices
 {
     public interface ITemporadasService
     {
