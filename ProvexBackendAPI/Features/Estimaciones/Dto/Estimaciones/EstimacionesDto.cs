@@ -1,5 +1,7 @@
 ﻿using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
+using System.Globalization;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
 
 namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
@@ -33,7 +35,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public double? PesoBaseEspecie { get; set; }
 
 
-
             [JsonPropertyName("especie")]
             public string? Especie { get; set; }
 
@@ -59,6 +60,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
 
             [JsonPropertyName("distribucionCategoria")]
             public bool? DistribucionCategoria { get; set; }
+
+            [JsonPropertyName("porcentajeexp")]
+            public int? PorcentajeExportacion { get; set; }
 
             [JsonPropertyName("envaseCosechero")]
             public EnvaseCosecheroNode? EnvaseCosechero { get; set; }
@@ -117,27 +121,27 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
 
         public class BisemanalNode
         {
-            public int? ID { get; set; }
+
             public int? AnioBase { get; set; }
             public string? SemanaBase { get; set; }
 
-            // (Opcional) Si esto queda a nivel semana, se mantiene:
-            public decimal? PorcentajeExportacion { get; set; }
+            //// (Opcional) Si esto queda a nivel semana, se mantiene:
+            //public decimal? PorcentajeExportacion { get; set; }
 
-            // QUITAR de aquí si lo tenías:
-            // public decimal? DistribucionFrio { get; set; }
-            // public decimal? DistribucionPacking { get; set; }
+
 
             public List<DiaValorNode>? Dias { get; set; }
         }
 
-       
+
 
         public class EstimacionSemanalDto
         {
             public string IdEstimacion { get; set; } = string.Empty;
             public int? Contratado { get; set; }
-            public string? IdEnvaseCosecha { get; set; }
+
+            public int? KilosBaseEspecie { get; set; }
+            public EnvaseCosecheroNode? EnvaseCosechero { get; set; }
 
             public TotalesEstimacionDto Totales { get; set; } = new();
             public List<SemanaEstimacionDto> Semanas { get; set; } = new();
@@ -160,6 +164,14 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public int? EstimadoSinPorcentaje { get; set; } // E_SIN_PORC
             public int? EstimadoConPorcentaje { get; set; } // E_CON_PORC
             public int? PorcentajeSemana { get; set; }      // P_SEMANA
+
+            public List<DistribucionCategoriaPorSemanaNode> DistribucionCategoria { get; set; }
+            public List<DistribucionCalibrePorSemanaNode> DistribucionCalibre { get; set; }
+            public List<Semana_DistribucionPackingPorDia> PackingPorDia { get; set; }
+            public List<Semana_DistribucionFrigorificoPorDia> FrigorificoPorDia { get; set; }
+
+
+
         }
 
         //Helper Repository
@@ -170,6 +182,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public double? PesoBaseEspecie { get; set; }
             public string? Especie { get; set; }
 
+
+
             // Item
             public string? IdProductor { get; set; }
             public string? Productor { get; set; }
@@ -177,6 +191,8 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public string? Agronomo { get; set; }
             public bool? DistribucionCalibre { get; set; }
             public bool? DistribucionCategoria { get; set; }
+
+            public int? PorcentajeExportacion { get; set; }
 
             // Envase
             public string? EnvaseId { get; set; }
@@ -194,13 +210,14 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public decimal? Sig_Producido { get; set; }
 
             // Bisemanal
-            public int? Bis_ID { get; set; }
+
             public int? Bis_AnioBase { get; set; }
             public string? Bis_SemanaBase { get; set; }
-           
-            public int? Bis_PorcExport { get; set; }
+
+         
 
             // Días
+            public int? Bis_ID { get; set; }
             public string? Dia_Nombre { get; set; }
             public DateTime? Dia_Fecha { get; set; } // yyyy-MM-dd
             public decimal? Dia_Estimado { get; set; }
@@ -212,6 +229,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
 
         public class DiaValorNode
         {
+            public int? IdBisemanal { get; set; }
             public DateTimeOffset? FechaDia { get; set; }
             public string? NombreDia { get; set; }
             public decimal? Estimado { get; set; }
@@ -220,7 +238,73 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones
             public bool? DistribucionPacking { get; set; }
         }
 
+        public sealed class DistribucionCategoriaPorSemanaNode
+        {
 
-    }
+            public string? nombreCategoria { get; set; }
+
+
+            public string? Porcentaje { get; set; }
+
+
+        }
+
+        public sealed class DistribucionCalibrePorSemanaNode
+        {
+
+            public string? nombreCalibre { get; set; }
+
+
+            public string? Porcentaje { get; set; }
+
+
+        }
+
+        public sealed class Semana_DistribucionPackingPorDia
+        {
+            public string? nombreDia { get; set; }
+            public List<NombrePorcentajeDto> Packings { get; set; } = new();
+        }
+
+        public sealed class Semana_DistribucionFrigorificoPorDia
+        {
+            public string? nombreDia { get; set; }
+            public List<NombrePorcentajeDto> Frigorificos { get; set; } = new();
+        }
+
+        public sealed class NombrePorcentajeDto
+        {
+            public string? Nombre { get; set; }
+            public string? Porcentaje { get; set; }
+        }
+
+        //DTO PARA POST
+
+        public sealed class UpdateEstimacionBisemanalRequest
+        {
+            public required int IdEstimacion { get; set; }
+            public required decimal ValorNuevo { get; set; } 
+            public required DiaRequest Dia { get; set; }
+        }
+
+        public sealed class DiaRequest
+        {
+            public required string NombreDia { get; set; }    // informativo
+            public required DateTime FechaDia { get; set; }   // ← mapea a @FECHA (insert) o @FECHA_ACTUAL (update)
+            public decimal? Estimado { get; set; }
+            public decimal? Producido { get; set; }
+            public bool? DistribucionFrio { get; set; }
+            public bool? DistribucionPacking { get; set; }
+        }
+
+        public sealed class SpResultEstimacionBisemanalDto
+        {
+          
+            public int? IdEstimacion { get; set; }
+            public String? Message { get; set; }
+
+        }
+
+    }  
 }
 

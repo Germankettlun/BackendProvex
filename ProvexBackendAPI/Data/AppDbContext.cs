@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ProvexBackendAPI.Data.Models;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Repository;
 using System;
@@ -17,7 +18,7 @@ namespace ProvexBackendAPI.Data
         {
         }
 
-        
+        public virtual DbSet<Zona> Zonas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -41,6 +42,8 @@ namespace ProvexBackendAPI.Data
             builder.Entity<IdentityRole<Guid>>() 
                     .Property(r => r.Id)
                     .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+            builder.Entity<Zona>().ToTable("Zona", "Estimaciones");
         }
 
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }

@@ -1,20 +1,23 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Linq.Expressions;
 
 namespace ProvexBackendAPI.Repository.IRepository
 {
-    public interface IGenericRepository<T> : IReadRepository<T> where T : class
+    public interface IGenericRepository
     {
-        // Lectura
-        Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default);
-        Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default);
-        Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
-        IQueryable<T> Query(bool asNoTracking = true);
-
-        // Escritura
-        Task<T> AddAsync(T entity, CancellationToken ct = default);
-        Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
-        void Update(T entity);
-        void Remove(T entity);
-        void RemoveRange(IEnumerable<T> entities);
+        Task<List<TEntity>> GetAll<TEntity>() where TEntity : class;
+        IQueryable<TEntity> GetQueryable<TEntity>() where TEntity : class;
+        Task<TEntity> GetFirst<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
+        Task<List<TEntity>> GetList<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
+        Task<List<TEntity>> GetList<TEntity>(Expression<Func<TEntity, bool>> predicate, int? maxRecords = null) where TEntity : class;
+        Task Add<TEntity>(TEntity entity) where TEntity : class;
+        Task Delete<TEntity>(TEntity entity) where TEntity : class;
+        Task Update<TEntity>(TEntity entity, object id) where TEntity : class;
+        Task<TEntity> Find<TEntity>(object id) where TEntity : class;
+        Task<TEntity> FindPredicate<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
+        Task<bool> Exists<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
+        Task<DataTable> GetDataTable(string query, SqlParameter[] parameters);
+        Task SpVoid(string query, SqlParameter[] parameters);
     }
 }

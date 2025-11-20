@@ -26,7 +26,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> GetSemanas(string codTem, [FromQuery]string codEmp, [FromQuery] int? vigente = null, [FromQuery] string? semana = null, [FromQuery] int? ano = null)
+        public async Task<ActionResult> GetSemanas(string codTem, [FromQuery]string codEmp, [FromQuery] int? vigente = null, [FromQuery] string? semana = null, [FromQuery] int? ano = null)
         {
             if (string.IsNullOrWhiteSpace(codTem) || string.IsNullOrWhiteSpace(codEmp))
                 return BadRequest("El código de temporada y el código de empresa son requeridos.");
