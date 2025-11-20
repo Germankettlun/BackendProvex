@@ -328,10 +328,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+// ========================================
+// ⚠️ ORDEN CRÍTICO DEL PIPELINE DE MIDDLEWARE
+// ========================================
+// 1. CORS debe ir ANTES de HTTPS Redirection
+//    Esto permite que las peticiones OPTIONS (preflight) reciban
+//    los headers CORS sin ser redirigidas primero
+app.UseCors();
+
+// 2. HTTPS Redirection después de CORS
+//    Las redirecciones HTTPS se aplicarán después de validar CORS
 app.UseHttpsRedirection();
 
-// ⚠️ IMPORTANTE: UseCors() debe ir ANTES de UseAuthentication() y UseAuthorization()
-app.UseCors();
+// 3. Authentication y Authorization al final
+//    Se ejecutan después de CORS y redirecciones
 app.UseAuthentication();
 app.UseAuthorization();
 
