@@ -31,6 +31,13 @@ jobs:
       deploy:
         steps:
         # ========================================
+        # 0. CHECKOUT SOURCE CODE (for scripts)
+        # ========================================
+        - checkout: self
+          displayName: 'Checkout source code'
+          clean: true
+
+        # ========================================
         # 1. DOWNLOAD ARTIFACT
         # ========================================
         - task: DownloadPipelineArtifact@2
