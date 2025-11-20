@@ -34,7 +34,7 @@ jobs:
         # 1. DOWNLOAD ARTIFACT
         # ========================================
         - task: DownloadPipelineArtifact@2
-          displayName: '?? Download Artifact'
+          displayName: 'Download Artifact'
           inputs:
             artifact: 'ERPBackendAPI'
             path: '$(Pipeline.Workspace)\drop'
@@ -43,10 +43,10 @@ jobs:
         # 2. SETUP IIS INFRASTRUCTURE
         # ========================================
         - task: PowerShell@2
-          displayName: '??? Setup IIS Infrastructure'
+          displayName: 'Setup IIS Infrastructure'
           inputs:
             targetType: filePath
-            filePath: '$(Build.SourcesDirectory)/ProvexBackendAPI/Pipelines/scripts/setup-iis.ps1'
+            filePath: '$(Build.SourcesDirectory)\ProvexBackendAPI\Pipelines\scripts\setup-iis.ps1'
             arguments: >-
               -SiteName "$(siteName)"
               -AppPoolName "$(appPoolName)"
@@ -57,7 +57,7 @@ jobs:
         # 3. RESOLVE ARTIFACT PATH
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Resolve Artifact Path'
+          displayName: 'Resolve Artifact Path'
           inputs:
             targetType: inline
             script: |
@@ -65,27 +65,27 @@ jobs:
               $dll = Get-ChildItem -Path $root -Recurse -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue |
                      Sort-Object LastWriteTime -Descending | Select-Object -First 1
               
-              if (-not $dll) { throw "? ProvexBackendAPI.dll no encontrado en artifact" }
+              if (-not $dll) { throw "ProvexBackendAPI.dll no encontrado en artifact" }
               
               $artifactPath = $dll.DirectoryName
-              Write-Host "? Artifact path resuelto: $artifactPath"
+              Write-Host "Artifact path resuelto: $artifactPath"
               Write-Host "##vso[task.setvariable variable=artifactPath]$artifactPath"
 
         # ========================================
         # 4. CLEANUP ZOMBIE PROCESSES
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Cleanup Zombie Processes'
+          displayName: 'Cleanup Zombie Processes'
           inputs:
             targetType: filePath
-            filePath: '$(Build.SourcesDirectory)/ProvexBackendAPI/Pipelines/scripts/cleanup-processes.ps1'
+            filePath: '$(Build.SourcesDirectory)\ProvexBackendAPI\Pipelines\scripts\cleanup-processes.ps1'
             arguments: '-PhysicalPath "$(physicalPath)"'
 
         # ========================================
         # 5. STOP IIS
         # ========================================
         - task: PowerShell@2
-          displayName: '? Stop IIS (app_offline.htm)'
+          displayName: 'Stop IIS (app_offline.htm)'
           inputs:
             targetType: inline
             script: |
@@ -102,15 +102,15 @@ jobs:
               # Crear app_offline.htm
               [System.IO.File]::WriteAllText(
                 (Join-Path $path 'app_offline.htm'), 
-                '<!DOCTYPE html><html><body><h1>?? Mantenimiento</h1><p>Deploy en progreso...</p></body></html>'
+                '<!DOCTYPE html><html><body><h1>Mantenimiento</h1><p>Deploy en progreso...</p></body></html>'
               )
-              Write-Host "? app_offline.htm creado"
+              Write-Host "app_offline.htm creado"
 
               # Detener sitio
               if (Test-Path "IIS:\Sites\$site") {
                 if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { 
                   Stop-Website -Name $site 
-                  Write-Host "?? Sitio '$site' detenido"
+                  Write-Host "Sitio '$site' detenido"
                 }
               }
               
@@ -118,12 +118,12 @@ jobs:
               if (Test-Path "IIS:\AppPools\$pool") {
                 if ((Get-WebAppPoolState -Name $pool).Value -ne 'Stopped') {
                   Stop-WebAppPool -Name $pool
-                  Write-Host "?? AppPool '$pool' deteniendo..."
+                  Write-Host "AppPool '$pool' deteniendo..."
                   
                   for ($i = 1; $i -le 30; $i++) {
                     Start-Sleep -Seconds 1
                     if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { 
-                      Write-Host "? AppPool detenido (${i}s)"
+                      Write-Host "AppPool detenido (${i}s)"
                       break 
                     }
                   }
@@ -136,7 +136,7 @@ jobs:
         # 6. CONFIGURE PERMISSIONS
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Configure Permissions'
+          displayName: 'Configure Permissions'
           inputs:
             targetType: inline
             script: |
@@ -153,46 +153,46 @@ jobs:
               icacls "$path" /grant "${me}:(OI)(CI)M" /T /C | Out-Null
               icacls "$path" /grant "IIS AppPool\${pool}:(OI)(CI)M" /T /C | Out-Null
               
-              Write-Host "? Permisos configurados para: $me y AppPool $pool"
+              Write-Host "Permisos configurados para: $me y AppPool $pool"
 
         # ========================================
         # 7. COPY FILES
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Copy Files with Robocopy'
+          displayName: 'Copy Files with Robocopy'
           inputs:
             targetType: inline
             script: |
               $src = '$(artifactPath)'
               $dst = '$(physicalPath)'
               
-              Write-Host "?? Origen: $src"
-              Write-Host "?? Destino: $dst"
+              Write-Host "Origen: $src"
+              Write-Host "Destino: $dst"
               
               robocopy $src $dst /MIR /MT:8 /R:2 /W:2 /FFT `
                 /XD "logs" `
                 /XF "app_offline.htm" `
                 /NFL /NDL /NJH /NJS /NP
 
-              # Robocopy exit codes: 0-7 son éxito, >=8 es error
+              # Robocopy exit codes: 0-7 son exito, >=8 es error
               if ($LASTEXITCODE -ge 8) { 
-                throw "? Robocopy falló (código $LASTEXITCODE)" 
+                throw "Robocopy fallo (codigo $LASTEXITCODE)" 
               }
               
               $global:LASTEXITCODE = 0
-              Write-Host "? Archivos copiados exitosamente"
+              Write-Host "Archivos copiados exitosamente"
 
         # ========================================
         # 8. CREATE WEB.CONFIG
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Create web.config'
+          displayName: 'Create web.config'
           inputs:
             targetType: inline
             script: |
               $path = '$(physicalPath)'
               
-              # Función para escapar XML
+              # Funcion para escapar XML
               function Escape-Xml([string]$text) {
                 if ([string]::IsNullOrWhiteSpace($text)) { return "" }
                 return [System.Security.SecurityElement]::Escape($text)
@@ -262,14 +262,14 @@ jobs:
               $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
               [System.IO.File]::WriteAllText($webConfigPath, $webConfigContent, $utf8NoBom)
               
-              Write-Host "? web.config creado para entorno: $env"
-              Write-Host "?? Build: $buildNumber | Commit: $commitHash | Branch: $sourceBranch"
+              Write-Host "web.config creado para entorno: $env"
+              Write-Host "Build: $buildNumber | Commit: $commitHash | Branch: $sourceBranch"
 
         # ========================================
         # 9. START IIS
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Start IIS'
+          displayName: 'Start IIS'
           inputs:
             targetType: inline
             script: |
@@ -285,31 +285,31 @@ jobs:
               
               # Eliminar app_offline.htm
               Remove-Item (Join-Path $path 'app_offline.htm') -Force -ErrorAction SilentlyContinue
-              Write-Host "? app_offline.htm eliminado"
+              Write-Host "app_offline.htm eliminado"
 
               # Iniciar App Pool
               Start-WebAppPool -Name $pool
-              Write-Host "?? AppPool '$pool' iniciando..."
+              Write-Host "AppPool '$pool' iniciando..."
               
               for ($i = 1; $i -le 30; $i++) {
                 Start-Sleep -Seconds 1
                 if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') { 
-                  Write-Host "? AppPool en estado 'Started' (${i}s)"
+                  Write-Host "AppPool en estado 'Started' (${i}s)"
                   break 
                 }
-                if ($i -eq 30) { throw "? AppPool no arrancó en 30 segundos" }
+                if ($i -eq 30) { throw "AppPool no arranco en 30 segundos" }
               }
               
               # Iniciar Sitio
               Start-Website -Name $site
-              Write-Host "? Sitio '$site' iniciado"
-              Write-Host "?? Aplicación disponible en puerto $(bindingPort)"
+              Write-Host "Sitio '$site' iniciado"
+              Write-Host "Aplicacion disponible en puerto $(bindingPort)"
 
         # ========================================
         # 10. VIEW LOGS
         # ========================================
         - task: PowerShell@2
-          displayName: '?? View Startup Logs'
+          displayName: 'View Startup Logs'
           condition: always()
           inputs:
             targetType: inline
@@ -320,21 +320,21 @@ jobs:
                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
               
               if ($latestLog) {
-                Write-Host "?? Log más reciente: $($latestLog.Name)"
-                Write-Host "????????????????????????????????????????"
+                Write-Host "Log mas reciente: $($latestLog.Name)"
+                Write-Host "========================================"
                 Get-Content $latestLog.FullName -Tail 100 -ErrorAction SilentlyContinue
-                Write-Host "????????????????????????????????????????"
+                Write-Host "========================================"
               } else {
-                Write-Host "?? No hay logs de stdout en: $logsPath"
+                Write-Host "No hay logs de stdout en: $logsPath"
               }
 
         # ========================================
         # 11. HEALTH CHECK
         # ========================================
         - task: PowerShell@2
-          displayName: '?? Health Check'
+          displayName: 'Health Check'
           condition: ne(variables['VerifyUrl'], '')
           inputs:
             targetType: filePath
-            filePath: '$(Build.SourcesDirectory)/ProvexBackendAPI/Pipelines/scripts/health-check.ps1'
+            filePath: '$(Build.SourcesDirectory)\ProvexBackendAPI\Pipelines\scripts\health-check.ps1'
             arguments: '-Url "$(VerifyUrl)" -MaxRetries 10 -WaitSeconds 3'
