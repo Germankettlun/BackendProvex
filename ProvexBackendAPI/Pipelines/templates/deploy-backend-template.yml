@@ -46,7 +46,7 @@ jobs:
           displayName: '??? Setup IIS Infrastructure'
           inputs:
             targetType: filePath
-            filePath: '$(Build.SourcesDirectory)/pipelines/scripts/setup-iis.ps1'
+            filePath: '$(Build.SourcesDirectory)/ProvexBackendAPI/Pipelines/scripts/setup-iis.ps1'
             arguments: >-
               -SiteName "$(siteName)"
               -AppPoolName "$(appPoolName)"
@@ -78,7 +78,7 @@ jobs:
           displayName: '?? Cleanup Zombie Processes'
           inputs:
             targetType: filePath
-            filePath: '$(Build.SourcesDirectory)/pipelines/scripts/cleanup-processes.ps1'
+            filePath: '$(Build.SourcesDirectory)/ProvexBackendAPI/Pipelines/scripts/cleanup-processes.ps1'
             arguments: '-PhysicalPath "$(physicalPath)"'
 
         # ========================================
@@ -332,9 +332,9 @@ jobs:
         # 11. HEALTH CHECK
         # ========================================
         - task: PowerShell@2
-          displayName: '? Health Check'
+          displayName: '?? Health Check'
           condition: ne(variables['VerifyUrl'], '')
           inputs:
             targetType: filePath
-            filePath: '$(Build.SourcesDirectory)/pipelines/scripts/health-check.ps1'
+            filePath: '$(Build.SourcesDirectory)/ProvexBackendAPI/Pipelines/scripts/health-check.ps1'
             arguments: '-Url "$(VerifyUrl)" -MaxRetries 10 -WaitSeconds 3'
