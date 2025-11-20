@@ -1,3 +1,149 @@
 ﻿# 🎯 RESUMEN EJECUTIVO - Migración a Pipeline Modular
 
 ## ✅ ARCHIVOS CREADOS
+
+# =========================
+# ERP Backend API - Pipeline Modular
+# Estructura idéntica a Frontend (React/Next.js)
+# =========================
+# CHANGELOG:
+# - Migrado a estructura modular con templates
+# - Todas las variables vienen de Azure DevOps Variable Groups
+# - Sin valores hardcoded
+# - Scripts separados en /scripts
+# =========================
+
+# ========================================
+# Variables Globales (Build)
+# ========================================
+variables:
+  - name: configuration
+    value: Release
+  - name: dotnetVersion
+    value: 9.0.203
+  - name: publishFolder
+    value: $(Build.ArtifactStagingDirectory)\publish
+  - name: artifactName
+    value: ERPBackendAPI
+
+# ========================================
+# STAGE 1: BUILD & PUBLISH
+# ========================================
+stages:
+- stage: Build
+  displayName: '📦 Build & Publish'
+  condition: or(eq(variables['Build.SourceBranchName'],'dev'), eq(variables['Build.SourceBranchName'],'prod'))
+  jobs:
+  - job: BuildAndPublish
+    displayName: 'Build .NET API'
+    pool:
+      name: PoolPrxSII
+      demands:
+        - agent.os -equals Windows_NT
+    steps:
+    - task: UseDotNet@2
+      displayName: '🧰 Install .NET SDK $(dotnetVersion)'
+      inputs:
+        packageType: sdk
+        version: $(dotnetVersion)
+
+    - task: PowerShell@2
+      displayName: '🧹 Clean obj/bin'
+      inputs:
+        targetType: inline
+        script: |
+          $ErrorActionPreference = 'Continue'
+          Get-ChildItem -LiteralPath '$(Build.SourcesDirectory)' -Recurse -Directory |
+            Where-Object { $_.Name -in @('obj','bin') } |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "✅ Limpieza completada"
+
+    - task: DotNetCoreCLI@2
+      displayName: '📦 Restore packages'
+      inputs:
+        command: restore
+        projects: '**/ProvexBackendAPI.csproj'
+        verbosity: Minimal
+
+    - task: DotNetCoreCLI@2
+      displayName: '🔨 Build'
+      inputs:
+        command: build
+        projects: '**/ProvexBackendAPI.csproj'
+        arguments: '--configuration $(configuration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: '📤 Publish (framework-dependent)'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: '**/ProvexBackendAPI.csproj'
+        arguments: >-
+          --configuration $(configuration)
+          --no-restore
+          --output "$(publishFolder)"
+          /p:SelfContained=false
+          /p:PublishTrimmed=false
+          /p:PublishSingleFile=false
+          /p:UseAppHost=false
+          /p:PublishReadyToRun=false
+        zipAfterPublish: false
+        modifyOutputPath: false
+
+    - task: PowerShell@2
+      displayName: '🔍 Verificar artefactos'
+      inputs:
+        targetType: inline
+        script: |
+          $ErrorActionPreference = 'Stop'
+          $publishDir = '$(publishFolder)'
+          
+          Write-Host "📂 Revisando: $publishDir"
+          
+          $dll = Get-ChildItem $publishDir -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue | Select-Object -First 1
+          
+          if ($dll) {
+            Write-Host "✅ ProvexBackendAPI.dll encontrado: $($dll.FullName)"
+            Write-Host "   Tamaño: $([math]::Round($dll.Length/1MB,2)) MB"
+            exit 0
+          }
+          
+          Write-Host "❌ ProvexBackendAPI.dll no encontrado"
+          Write-Host "Contenido de $(publishFolder):"
+          Get-ChildItem $publishDir -Recurse | Select-Object FullName, Length | Format-Table -Auto
+          throw "No se encontró ProvexBackendAPI.dll"
+
+    - task: PublishPipelineArtifact@1
+      displayName: '📤 Publish Artifact'
+      inputs:
+        targetPath: '$(publishFolder)'
+        artifact: '$(artifactName)'
+        publishLocation: 'pipeline'
+
+# ========================================
+# STAGE 2: DEPLOY TO DEVELOPMENT
+# ========================================
+- stage: Deploy_Dev
+  displayName: '🚀 Deploy to Development'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'],'dev'))
+  jobs:
+  - template: templates/deploy-backend-template.yml
+    parameters:
+      environment: Development
+      variableGroup: ERP-Backend-Development
+      agentName: $(agentName)
+
+# ========================================
+# STAGE 3: DEPLOY TO PRODUCTION
+# ========================================
+- stage: Deploy_Prod
+  displayName: '🚀 Deploy to Production'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranchName'],'prod'))
+  jobs:
+  - template: templates/deploy-backend-template.yml
+    parameters:
+      environment: Production
+      variableGroup: ERP-Backend-Production
+      agentName: $(agentName)
