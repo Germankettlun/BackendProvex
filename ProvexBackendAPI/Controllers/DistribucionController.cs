@@ -11,7 +11,7 @@ using System.Security.Claims;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones
+namespace ProvexBackendAPI.Controllers
 {
     [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]

@@ -8,7 +8,7 @@ using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones
+namespace ProvexBackendAPI.Controllers
 {
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]

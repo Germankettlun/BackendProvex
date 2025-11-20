@@ -7,7 +7,7 @@ using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 
-namespace ProvexBackendAPI.Features.Estimaciones
+namespace ProvexBackendAPI.Controllers
 {
     [ApiController]
     [Route("api/v{version:apiVersion}/temporadas")]
