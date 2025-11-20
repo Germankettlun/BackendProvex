@@ -57,7 +57,7 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@SEMANA_BASE", req.SemanaBase),
                     new SqlParameter("@PAGE", req.Page),
                     new SqlParameter("@WEEKS_PER_PAGE", req.WeeksPerPage),
-                };
+            };
 
             var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_EstimacionBisemanal", parameters);
 

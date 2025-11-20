@@ -15,45 +15,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = config.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<List<ComboItem>> LlenaComboGenericoAsync(ComboRequest req)
-        {
-            var list = new List<ComboItem>();
-
-            await using var conn = new SqlConnection(_connString);
-            await conn.OpenAsync();
-
-            
-            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_LlenaComboGenerico", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            
-            cmd.Parameters.Add(new SqlParameter("@NombreCombo", SqlDbType.NVarChar, 50) { Value = req.NombreCombo });
-            cmd.Parameters.Add(new SqlParameter("@CodigoEmpresa ", SqlDbType.VarChar, 50) { Value = req.CodigoEmpresa });
-            cmd.Parameters.Add(new SqlParameter("@CodigoEspecie", SqlDbType.NVarChar, 50) { Value = (object?)req.CodigoEspecie ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@CodigoGrupoProductor ", SqlDbType.VarChar, 50) { Value = (object?)req.CodigoGrupoProductor ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@CodigoProductor", SqlDbType.NVarChar, 50) { Value = (object?)req.CodigoProductor ?? DBNull.Value });
-            cmd.Parameters.Add(new SqlParameter("@CodigoVariedad ", SqlDbType.VarChar, 50) { Value = (object?)req.CodigoVariedad ?? DBNull.Value });
-
-
-            await using var rdr = await cmd.ExecuteReaderAsync();
-
-            
-            while (await rdr.ReadAsync())
-            {
-                var value = rdr.FirstExistingAsString("Valor", "Value", "VALOR", "ID");
-                var label = rdr.FirstExistingAsString("Texto", "Label", "NOMBRE", "DESCRIPCION");
-
-                list.Add(new ComboItem
-                {
-                    Value = value,
-                    Label = label
-                });
-            }
-
-            return list;
-        }
 
         public async Task<List<ComboItem>> LlenaComboEnvaseProductorEspecieVariedad(string idProductor, string idEspecie, string idVariedad)
         {
