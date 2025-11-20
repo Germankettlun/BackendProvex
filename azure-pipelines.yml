@@ -1,6 +1,6 @@
 # =========================
 # ERP Backend API - UNIFIED Dev/Prod
-# Estructura idéntica a ProvexApi exitoso
+# Configuración validada y funcionando
 # Configuración: Solo web.config (variables de entorno)
 # =========================
 trigger:
@@ -527,7 +527,8 @@ stages:
         path: '$(Pipeline.Workspace)\drop'
 
     - task: PowerShell@2
-      displayName: '🔎 Resolver artifact path'
+      name: resolveProd
+      displayName: '🔎 Resolver paths'
       inputs:
         targetType: inline
         script: |
@@ -535,23 +536,54 @@ stages:
           $dll = Get-ChildItem -Path $root -Recurse -Filter 'ProvexBackendAPI.dll' -File -ErrorAction SilentlyContinue |
                  Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if (-not $dll) { throw "❌ ProvexBackendAPI.dll no encontrado" }
-          Write-Host "##vso[task.setvariable variable=artifactPath]$($dll.DirectoryName)"
+          $src = $dll.DirectoryName
+          Write-Host "✅ Artifact path: $src"
+          Write-Host "##vso[task.setvariable variable=artifactPath]$src"
+
+          if ($PSVersionTable.PSEdition -eq "Core") { Import-Module WebAdministration -UseWindowsPowerShell } else { Import-Module WebAdministration }
+          $site = '$(siteName)'
+          $siteObj = Get-Website -Name $site -ErrorAction SilentlyContinue
+          
+          if (-not $siteObj) {
+            Write-Host "⚠️ Site '$site' no existe en IIS, usando variables del pipeline"
+            $phys = '$(physicalPath)'
+            $pool = '$(appPoolName)'
+          } else {
+            $phys = if ([string]::IsNullOrWhiteSpace('$(physicalPath)')) { $siteObj.PhysicalPath } else { '$(physicalPath)' }
+            $pool = if ([string]::IsNullOrWhiteSpace('$(appPoolName)')) { $siteObj.ApplicationPool } else { '$(appPoolName)' }
+          }
+
+          if (-not (Test-Path $phys)) { New-Item -ItemType Directory -Path $phys -Force | Out-Null }
+          $logs = Join-Path $phys 'logs'
+          if (-not (Test-Path $logs)) { New-Item -ItemType Directory -Path $logs -Force | Out-Null }
+
+          Write-Host "✅ PhysicalPath: $phys"
+          Write-Host "✅ AppPool: $pool"
+          Write-Host "##vso[task.setvariable variable=resolvedPhysicalPath]$phys"
+          Write-Host "##vso[task.setvariable variable=resolvedAppPoolName]$pool"
 
     - task: PowerShell@2
       displayName: "🔥 Limpiar procesos zombie"
       inputs:
         targetType: inline
         script: |
-          $physPath = '$(physicalPath)'
+          $ErrorActionPreference = 'Continue'
+          $physPath = '$(resolvedPhysicalPath)'
+          
+          Write-Host "🔍 Buscando procesos dotnet.exe corriendo desde: $physPath"
+          
           Get-Process -Name 'dotnet' -ErrorAction SilentlyContinue | ForEach-Object {
             try {
-              $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)").CommandLine
+              $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($_.Id)" -ErrorAction SilentlyContinue).CommandLine
               if ($cmdLine -and $cmdLine -match [regex]::Escape($physPath)) {
+                Write-Host "💀 Matando proceso zombie: PID $($_.Id)"
                 Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
               }
             } catch {}
           }
+          
           Start-Sleep -Seconds 3
+          Write-Host "✅ Limpieza de procesos completada"
 
     - task: PowerShell@2
       displayName: "⚡ Detener IIS"
@@ -563,15 +595,27 @@ stages:
           $pool = "$(appPoolName)"
           $path = "$(physicalPath)"
 
-          [System.IO.File]::WriteAllText((Join-Path $path 'app_offline.htm'), 'Offline')
+          [System.IO.File]::WriteAllText((Join-Path $path 'app_offline.htm'), '<!DOCTYPE html><html><body><h1>Mantenimiento</h1><p>Deploy en progreso...</p></body></html>')
+          Write-Host "✅ app_offline.htm creado"
 
-          if (Test-Path "IIS:\Sites\$site") { if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { Stop-Website -Name $site } }
+          if (Test-Path "IIS:\Sites\$site") {
+            if ((Get-WebSiteState -Name $site).Value -ne 'Stopped') { 
+              Stop-Website -Name $site 
+              Write-Host "🛑 Sitio detenido"
+            }
+          }
+          
           if (Test-Path "IIS:\AppPools\$pool") {
             if ((Get-WebAppPoolState -Name $pool).Value -ne 'Stopped') {
               Stop-WebAppPool -Name $pool
+              Write-Host "🛑 AppPool deteniendo..."
+              
               for ($i = 1; $i -le 30; $i++) {
                 Start-Sleep -Seconds 1
-                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { break }
+                if ((Get-WebAppPoolState -Name $pool).Value -eq 'Stopped') { 
+                  Write-Host "✅ AppPool detenido (${i}s)"
+                  break 
+                }
               }
             }
           }
@@ -692,14 +736,22 @@ stages:
           $pool = '$(appPoolName)'
           $site = '$(siteName)'
           
+          # Quitar app_offline
           Remove-Item (Join-Path '$(physicalPath)' 'app_offline.htm') -Force -ErrorAction SilentlyContinue
 
+          # Iniciar AppPool
           Start-WebAppPool -Name $pool
+          Write-Host "▶️ AppPool '$pool' iniciando..."
+          
           for ($i = 1; $i -le 30; $i++) {
             Start-Sleep -Seconds 1
-            if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') { break }
+            if ((Get-WebAppPoolState -Name $pool).Value -eq 'Started') { 
+              Write-Host "✅ AppPool en estado 'Started' (${i}s)"
+              break 
+            }
             if ($i -eq 30) { throw "AppPool no arrancó" }
           }
+          # Iniciar Sitio
           Start-Website -Name $site
 
     - task: PowerShell@2
