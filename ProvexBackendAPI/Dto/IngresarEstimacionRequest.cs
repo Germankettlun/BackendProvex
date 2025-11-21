@@ -16,5 +16,6 @@
         public string packing { get; set; }
         public int envase { get; set; }
 	    public int contratado { get; set; }
+        public decimal kiloEnvase { get; set; }
     }
 }
