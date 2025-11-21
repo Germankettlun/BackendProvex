@@ -4,6 +4,8 @@ using ProvexBackendAPI.Helpers.Validation;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
+using System.Runtime.Intrinsics.Arm;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
@@ -12,24 +14,55 @@ namespace ProvexBackendAPI.Services
     public class DistribucionService : IDistribucionService
     {
         private readonly IDistribucionRepository _repo;
+        private readonly IGenericRepository repository;
 
-        public DistribucionService(IDistribucionRepository repo)
+        public DistribucionService(IDistribucionRepository repo, IGenericRepository repository)
         {
             _repo = repo;
+            this.repository = repository;
         }
 
         public async Task<List<DistribucionCategoriaEspecieResponseDto>> GetDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
 
-            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
+            if (idEstimacion <= 0)
+                throw new ArgumentException("idEstimacion inválido.", nameof(idEstimacion));
 
-            if (idEstimacion < 0)
-                throw new ValidationException("idEstimacion inválido");
+            var parameters = new SqlParameter[]
+              {
+                    new SqlParameter("@ID_ESTIMACION", idEstimacion),
+                   // new SqlParameter("@SEM_ANT",(object?)semanasAntes ?? DBNull.Value),
+                   // new SqlParameter("@SEM_SIG",(object?)semanasDespues ?? DBNull.Value),
+              };
 
-            var rows = await _repo.GetRowsDistribucionCategoriaAsync(idEstimacion, semanasAntes, semanasDespues);
+            var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_DISTRIBUCION_CATEGORIA_ESPECIE", parameters);
+
+            var list = new List<DistribucionCategoriaEspecieRow>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                list.Add(new DistribucionCategoriaEspecieRow
+                {
+                    IdEstimacion = row["ID_ESTIMACION"] == DBNull.Value ? "" : Convert.ToString(row["ID_ESTIMACION"]),
+
+                    CodEspecie = row["CODESPECIE"] == DBNull.Value ? "" : Convert.ToString(row["CODESPECIE"]),
+                    Especie = row["ESPECIE"] == DBNull.Value ? "" : Convert.ToString(row["ESPECIE"]),
+                    IdCategoria = row["IDCATEGORIA"] == DBNull.Value ? "" : Convert.ToString(row["IDCATEGORIA"]),
+                    CategoriaNombre = row["CATEGORIA"] == DBNull.Value ? "" : Convert.ToString(row["CATEGORIA"]),
+                    SemanaAnio = row["SEMANAANO"] == DBNull.Value ? 0 : Convert.ToInt32(row["SEMANAANO"]),
+                    SemanaNumero = row["SEMANANUMERO"] == DBNull.Value ? "" : Convert.ToString(row["SEMANANUMERO"]),
+                    IdDistribucionDefecto = row["IDDISTRIBUCIONDEFECTO"] == DBNull.Value ? 0 : Convert.ToInt32(row["IDDISTRIBUCIONDEFECTO"]),
+                    PorcDefectoCategoria = row["PORCENTAJE_POR_DEFECTO_CATEGORIA"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_DEFECTO_CATEGORIA"]),
+                    IdDistribucionPorSemana = row["DISTRIBUCIONPORSEMANAID"] == DBNull.Value ? 0 : Convert.ToInt32(row["DISTRIBUCIONPORSEMANAID"]),
+                    PorcentajeSemana = row["PORCENTAJE_POR_SEMANA_CATEGORIA"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_SEMANA_CATEGORIA"]),
+
+                    EsSemanaActual = row["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(row["ES_SEMANA_ACTUAL"]),
+
+                });
+            }
 
             // Grouping por (IdEstimacion, IdCategoria)
-            var grouped = rows
+            var grouped = list
                 .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CodEspecie, r.Especie, r.CategoriaNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
                 .Select(g => new DistribucionCategoriaEspecieResponseDto
                 {

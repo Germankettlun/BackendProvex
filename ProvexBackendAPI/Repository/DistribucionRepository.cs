@@ -16,46 +16,7 @@ namespace ProvexBackendAPI.Repository
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
-        {
-            var list = new List<DistribucionCategoriaEspecieRow>();
-
-            await using var conn = new SqlConnection(_connString);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_CATEGORIA_ESPECIE", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
-            //cmd.Parameters.Add(new SqlParameter("@SEM_ANT", SqlDbType.Int) { Value = (object?)semanasAntes ?? DBNull.Value });
-            //cmd.Parameters.Add(new SqlParameter("@SEM_SIG", SqlDbType.Int) { Value = (object?)semanasDespues ?? DBNull.Value });
-
-            await using var rdr = await cmd.ExecuteReaderAsync();
-
-            while (await rdr.ReadAsync())
-            {
-                list.Add(new DistribucionCategoriaEspecieRow
-                {
-                    IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
-                    CodEspecie = rdr.Get<string?>("CODESPECIE") ?? "",
-                    Especie = rdr.Get<string?>("ESPECIE") ?? "",
-                    IdCategoria = rdr.Get<string?>("IDCATEGORIA") ?? "",
-                    CategoriaNombre = rdr.FirstExistingAsString("CATEGORIA"), 
-                    SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
-                    SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
-                    IdDistribucionDefecto = rdr.Get<int?>("IDDISTRIBUCIONDEFECTO"),
-                    PorcDefectoCategoria = rdr.Get<int?>("PORCENTAJE_POR_DEFECTO_CATEGORIA"),
-                    IdDistribucionPorSemana = rdr.Get<int?>("DISTRIBUCIONPORSEMANAID"),
-                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJE_POR_SEMANA_CATEGORIA"),
-                   
-                    EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false   
-                });
-            }
-
-            return list;
-        }
+       
 
         public async Task<List<DistribucionCalibreEspecieRow>> GetRowsDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
