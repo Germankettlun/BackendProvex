@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Temporadas;
 using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;

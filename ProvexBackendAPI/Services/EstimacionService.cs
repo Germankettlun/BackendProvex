@@ -219,6 +219,7 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@packing", request.packing),
                     new SqlParameter("@envase", request.envase),
                     new SqlParameter("@contratado", request.contratado),
+                    new SqlParameter("@kilo_envase", SqlDbType.Decimal){Precision = 18,Scale = 2, Value = request.kiloEnvase},
                     new SqlParameter("@id_usuario_guid", userId)
                 };
                     
