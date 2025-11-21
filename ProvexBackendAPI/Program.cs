@@ -230,7 +230,7 @@ builder.Services.AddCors(o =>
             var allowedOrigins = new[]
             {
                 "http://10.115.1.253:3000",  // Front interno actual
-                "https://intranet.provexsa.cl"   // Front público futuro (ejemplo)
+                "https://intranet.provexsa.com"   // Front público futuro (ejemplo)
             };
 
             Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
