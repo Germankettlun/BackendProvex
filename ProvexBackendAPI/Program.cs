@@ -61,7 +61,6 @@ builder.Services.AddScoped<IEstimacionService, EstimacionService>();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-builder.Services.AddScoped<ISemanaVigenteProvider, SemanaVigenteProvider>();
 
 
 // ===== EF Core + SQL Server =====

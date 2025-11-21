@@ -26,17 +26,19 @@ namespace ProvexBackendAPI.Services
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
-        private readonly ISemanaVigenteProvider _semanaProvider;
+        private readonly ITemporadasService temporada;
 
 
-        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IUserService userService,ISemanaVigenteProvider semanaProvider)
+
+        public AuthService(UserManager<ApplicationUser> userManager,SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole<Guid>> roleManager, ITokenService tokenService, IUserService userService, ITemporadasService temporada)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _userService = userService;
             _tokenService = tokenService;
-            _semanaProvider = semanaProvider;
+            this.temporada = temporada;
+
 
         }
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
@@ -55,7 +57,7 @@ namespace ProvexBackendAPI.Services
                 ? await _userManager.FindByEmailAsync(input)
                 : await _userManager.FindByNameAsync(input);
             
-            var semana = await _semanaProvider.GetAsync(codigoEmpresa: "PRX", codigoTemporada: null, soloVigente: true);
+            var semana = await temporada.GetSemanaAsync(codigoEmpresa: "PRX", codigoTemporada: null, soloVigente: true);
 
             if (user is null)
             throw new InvalidCredentialException("Usuario o contraseña inválidos.");
