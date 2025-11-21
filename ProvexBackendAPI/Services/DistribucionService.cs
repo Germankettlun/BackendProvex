@@ -1,13 +1,13 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
-using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
-using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Helpers.Validation;
+using ProvexBackendAPI.Repository.IRepository;
+using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Services
+namespace ProvexBackendAPI.Services
 {
     public class DistribucionService : IDistribucionService
     {
@@ -244,7 +244,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             foreach (var it in req.Frigorificos)
             {
                 if (it.IdFrigorifico <= 0) throw new ArgumentException("IdFrigorifico inválido.");
-                if ((it.Porcentaje < 0 || it.Porcentaje > 100))
+                if (it.Porcentaje < 0 || it.Porcentaje > 100)
                     throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
             }
 
@@ -263,7 +263,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services
             foreach (var it in req.Packings)
             {
                 if (it.IdPacking <= 0) throw new ArgumentException("IdPacking inválido.");
-                if ((it.Porcentaje < 0 || it.Porcentaje > 100))
+                if (it.Porcentaje < 0 || it.Porcentaje > 100)
                     throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
             }
 

@@ -2,7 +2,7 @@
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using System.Numerics;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
+namespace ProvexBackendAPI.Repository.IRepository
 {
     public interface IDistribucionRepository
     {

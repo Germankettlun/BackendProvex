@@ -2,7 +2,7 @@
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
+namespace ProvexBackendAPI.Services.IServices
 {
     public interface IDistribucionService
     {

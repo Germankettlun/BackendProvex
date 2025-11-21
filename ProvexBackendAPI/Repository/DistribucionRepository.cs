@@ -1,13 +1,13 @@
 ﻿using Azure.Core;
 using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
-using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
+using ProvexBackendAPI.Repository.IRepository;
 using System.Data;
 using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Repository
+namespace ProvexBackendAPI.Repository
 {
     public class DistribucionRepository : IDistribucionRepository
     {
