@@ -110,87 +110,94 @@ namespace ProvexBackendAPI.Services
             return result;
         }
 
-        public async Task<IReadOnlyList<SemanasDto.SemanaVigenteRow>> ListSemanaAsync(string codigoEmpresa, string codigoTemporada, bool? soloVigente = null)
+        public async Task<IReadOnlyList<SemanasDto.SemanaVigenteRow>> ListSemanaAsync(string codigoEmpresa,string? codigoTemporada = null,bool? soloVigente = null)
         {
             if (string.IsNullOrWhiteSpace(codigoEmpresa))
                 throw new ArgumentException("codigoEmpresa es obligatorio.", nameof(codigoEmpresa));
 
-            var parameters = new[]
+            // Normalizar 
+            var codEmpNorm = codigoEmpresa.Trim().ToUpperInvariant();
+            var codTempNorm = string.IsNullOrWhiteSpace(codigoTemporada) ? null : codigoTemporada.Trim().ToUpperInvariant();
+
+            // Query
+            var query = repository.GetQueryable<Semana>().AsNoTracking().Where(s => s.codEmp == codEmpNorm);
+
+            // Filtro opcional por temporada
+            if (codTempNorm is not null)
             {
-                new SqlParameter("@CodigoEmpresa", codigoEmpresa.Trim().ToUpperInvariant()),
-                new SqlParameter("@CodigoTemporada", string.IsNullOrWhiteSpace(codigoTemporada) ? DBNull.Value : codigoTemporada.Trim().ToUpperInvariant()),
-                new SqlParameter("@SoloVigente", (object?)soloVigente ?? DBNull.Value),
-            };
-
-            var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_SEMANA_VIGENTE",parameters);
-
-            var result = new List<SemanasDto.SemanaVigenteRow>(dataTable.Rows.Count);
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                result.Add(MapSemanaVigenteRow(row));
+                query = query.Where(s => s.codTem == codTempNorm);
             }
 
+            // Filtro opcional SOLOVIGENTE
+            if (soloVigente.HasValue && soloVigente.Value)
+            {
+                var ahora = DateTime.Now;
+
+                query = query.Where(s =>
+                    s.inicio <= ahora &&
+                    s.termino >= ahora);
+            }
+
+            var result = await query
+                .Select(s => new SemanasDto.SemanaVigenteRow
+                {
+                    CodigoEmpresa = s.codEmp,
+                    CodigoTemporada = s.codTem,
+                    SemanaBase = s.semana,
+                    AnioBase = s.anio,
+                    Inicio = s.inicio,
+                    Termino = s.termino
+                })
+                .ToListAsync();
+
             return result;
         }
 
-        public async Task<SemanasDto.SemanaVigenteRow?> GetSemanaAsync(string codigoEmpresa, string? codigoTemporada = null, bool? soloVigente = null)
+        public async Task<SemanasDto.SemanaVigenteRow?> GetSemanaAsync(string codigoEmpresa, string? codigoTemporada = null,bool? soloVigente = null)
         {
             if (string.IsNullOrWhiteSpace(codigoEmpresa))
                 throw new ArgumentException("codigoEmpresa es obligatorio.", nameof(codigoEmpresa));
 
+            // Normalizar 
+            var codEmpNorm = codigoEmpresa.Trim().ToUpperInvariant();
+            var codTempNorm = string.IsNullOrWhiteSpace(codigoTemporada) ? null : codigoTemporada.Trim().ToUpperInvariant();
 
-            var parameters = new SqlParameter[]
-               {
-                    new SqlParameter("@CodigoEmpresa", codigoEmpresa.Trim().ToUpperInvariant()),
-                    new SqlParameter("@CodigoTemporada", (object?)codigoTemporada.Trim().ToUpperInvariant() ?? DBNull.Value),
-                    new SqlParameter("@SoloVigente", (object?)soloVigente ?? DBNull.Value),
-               };
+            // Query Semanas
+            var query = repository.GetQueryable<Semana>().AsNoTracking().Where(s => s.codEmp == codEmpNorm);
 
-            var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_SEMANA_VIGENTE", parameters);
-
-            if (dataTable.Rows.Count == 0)
-                return null; 
-
-            var row = dataTable.Rows[0];
-
-            var result = new SemanasDto.SemanaVigenteRow
+            // Filtro opcional temporada
+            if (codTempNorm is not null)
             {
-                CodigoEmpresa = row.IsNull("CODEMP") ? null : row["CODEMP"]?.ToString(),
+                query = query.Where(s => s.codTem == codTempNorm);
+            }
 
-                CodigoTemporada = row.IsNull("CODTEMP") ? null : row["CODTEMP"]?.ToString(),
+            // Filtro opcional SOLOVIGENTE
+            if (soloVigente.HasValue && soloVigente.Value)
+            {
+                var ahora = DateTime.Now;
 
-                SemanaBase = row.IsNull("SEMANA") ? null: row["SEMANA"]?.ToString(),
+                query = query.Where(s =>
+                    s.inicio <= ahora &&
+                    s.termino >= ahora);
+            }
 
-                AnioBase = row["ANIO"] == DBNull.Value ? 0 : Convert.ToInt32(row["ANIO"]),
+            var semana = await query.FirstOrDefaultAsync();
 
-                Inicio = row["INICIO"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["INICIO"]),
+            if (semana is null)
+                return null;
 
-                Termino = row["TERMINO"] == DBNull.Value ? DateTime.MinValue : Convert.ToDateTime(row["TERMINO"])
-            };
-
-            return result;
-
-        }
-
-        //MAPPER LOCAL SEMANA
-
-        static SemanasDto.SemanaVigenteRow MapSemanaVigenteRow(DataRow row)
-        {
             return new SemanasDto.SemanaVigenteRow
             {
-                CodigoEmpresa = row.IsNull("CODEMP")? null : row["CODEMP"]?.ToString(),
-
-                CodigoTemporada = row.IsNull("CODTEMP")? null: row["CODTEMP"]?.ToString(),
-
-                SemanaBase = row.IsNull("SEMANA")? null : row["SEMANA"]?.ToString(),
-
-                AnioBase = row["ANIO"] == DBNull.Value? 0 : Convert.ToInt32(row["ANIO"]),
-
-                Inicio = row["INICIO"] == DBNull.Value? DateTime.MinValue : Convert.ToDateTime(row["INICIO"]),
-
-                Termino = row["TERMINO"] == DBNull.Value? DateTime.MinValue : Convert.ToDateTime(row["TERMINO"])
+                CodigoEmpresa = semana.codEmp,
+                CodigoTemporada = semana.codTem,
+                SemanaBase = semana.semana,
+                AnioBase = semana.anio,
+                Inicio = semana.inicio,
+                Termino = semana.termino
             };
         }
+
+
+
     }
 }
