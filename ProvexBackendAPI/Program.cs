@@ -227,18 +227,23 @@ builder.Services.AddCors(o =>
             // ========================================
             // PRODUCTION: Modo restringido (lista explícita)
             // ========================================
-            // Solo permite orígenes específicos por seguridad
-            Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production - lista explícita)");
+            var allowedOrigins = new[]
+            {
+                "http://10.115.1.253:3000",  // Front interno actual
+                "https://intranet.provexsa.cl"   // Front público futuro (ejemplo)
+            };
 
-            p.WithOrigins(
-                    "http://10.115.1.253:3000",   // Front interno actual
-                    "https://erp.provexsa.cl",    // Front público futuro (ejemplo)
-                    "https://erp2.provexsa.cl"    // Otro front si corresponde
-                )
+            Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
+            Console.WriteLine("   Orígenes permitidos:");
+            foreach (var origin in allowedOrigins)
+            {
+                Console.WriteLine($"   - {origin}");
+            }
+
+            p.WithOrigins(allowedOrigins)
              .AllowAnyHeader()        // Authorization, Content-Type, etc.
-             .AllowAnyMethod();       // GET, POST, PUT, DELETE, etc.
-            // No usamos cookies de autenticación, solo JWT en Authorization,
-            // por eso NO es necesario AllowCredentials aquí.
+             .AllowAnyMethod()        // GET, POST, PUT, DELETE, etc.
+             .AllowCredentials();     // Soporta credentials=true si el front lo usa
         }
     });
 });
