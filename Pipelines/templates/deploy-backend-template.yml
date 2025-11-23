@@ -1,0 +1,326 @@
+parameters:
+  - name: environment
+    type: string
+  - name: variableGroup
+    type: string
+  - name: appName
+    type: string
+
+jobs:
+- deployment: DeployToIIS
+  displayName: 'Deploy ${{ parameters.appName }} to ${{ parameters.environment }}'
+  environment: ${{ parameters.environment }}
+
+  pool:
+    name: $(poolName)
+    demands:
+      - agent.name -equals $(agentName)
+      - agent.os   -equals Windows_NT
+
+  variables:
+    - group: ${{ parameters.variableGroup }}
+
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        # 1) Descargar artefacto publicado en el stage Build
+        - task: DownloadPipelineArtifact@2
+          displayName: 'Download artifact $(artifactName)'
+          inputs:
+            artifact: '$(artifactName)'
+            path: '$(Pipeline.Workspace)\drop'
+
+        # 2) Resolver artifactPath (carpeta donde está la DLL)
+        - task: PowerShell@2
+          displayName: 'Resolve artifactPath (buscar DLL)'
+          inputs:
+            targetType: inline
+            script: |
+              $root = '$(Pipeline.Workspace)\drop'
+              $dllName = '${{ parameters.appName }}.dll'
+
+              Write-Host "Buscando $dllName bajo $root"
+
+              if (-not (Test-Path $root)) {
+                throw "No existe carpeta de artifact: $root"
+              }
+
+              $dll = Get-ChildItem -Path $root -Recurse -Filter $dllName -File -ErrorAction SilentlyContinue |
+                     Sort-Object LastWriteTime -Descending |
+                     Select-Object -First 1
+
+              if (-not $dll) {
+                Get-ChildItem -Path $root -Recurse | Select-Object FullName, Length | Format-Table -Auto
+                throw "No se encontró $dllName en el artifact"
+              }
+
+              $folder = $dll.Directory.FullName
+              Write-Host "artifactPath = $folder"
+              Write-Host "##vso[task.setvariable variable=artifactPath]$folder"
+
+        # 3) Crear/ajustar sitio y app pool en IIS
+        - task: PowerShell@2
+          displayName: 'Setup IIS (site/appPool/binding)'
+          inputs:
+            targetType: filePath
+            filePath: '$(Build.SourcesDirectory)\Pipelines\scripts\setup-iis.ps1'
+            arguments: >-
+              -SiteName "$(siteName)"
+              -AppPoolName "$(appPoolName)"
+              -PhysicalPath "$(physicalPath)"
+              -BindingPort "$(App__Port)"
+
+        # 4) Matar procesos zombie del path
+        - task: PowerShell@2
+          displayName: 'Cleanup zombie processes (dotnet en $(physicalPath))'
+          inputs:
+            targetType: filePath
+            filePath: '$(Build.SourcesDirectory)\Pipelines\scripts\cleanup-processes.ps1'
+            arguments: '-PhysicalPath "$(physicalPath)"'
+
+        # 5) app_offline + stop sitio/appPool
+        - task: PowerShell@2
+          displayName: 'Detener sitio y AppPool (app_offline.htm)'
+          inputs:
+            targetType: inline
+            script: |
+              if ($PSVersionTable.PSEdition -eq "Core") {
+                Import-Module WebAdministration -UseWindowsPowerShell
+              } else {
+                Import-Module WebAdministration
+              }
+
+              $site = "$(siteName)"
+              $pool = "$(appPoolName)"
+              $path = "$(physicalPath)"
+
+              if (-not (Test-Path $path)) {
+                New-Item -ItemType Directory -Path $path -Force | Out-Null
+              }
+
+              $offlinePath = Join-Path $path 'app_offline.htm'
+              [System.IO.File]::WriteAllText(
+                $offlinePath,
+                '<!DOCTYPE html><html><body><h1>Mantenimiento</h1><p>Estamos desplegando una nueva versión de la API...</p></body></html>'
+              )
+              Write-Host "app_offline.htm creado en $offlinePath"
+
+              if (Test-Path "IIS:\Sites\$site") {
+                $state = (Get-WebSiteState -Name $site).Value
+                if ($state -ne 'Stopped') {
+                  Write-Host "Deteniendo sitio '$site' (estado actual: $state)..."
+                  Stop-Website -Name $site
+                }
+              }
+
+              if (Test-Path "IIS:\AppPools\$pool") {
+                $pState = (Get-WebAppPoolState -Name $pool).Value
+                if ($pState -ne 'Stopped') {
+                  Write-Host "Deteniendo AppPool '$pool'..."
+                  Stop-WebAppPool -Name $pool
+                  for ($i = 1; $i -le 30; $i++) {
+                    Start-Sleep -Seconds 1
+                    $pState = (Get-WebAppPoolState -Name $pool).Value
+                    if ($pState -eq 'Stopped') {
+                      Write-Host "AppPool detenido en ${i}s"
+                      break
+                    }
+                  }
+                }
+              }
+
+              Start-Sleep -Seconds 3
+
+        # 6) Permisos en la carpeta física
+        - task: PowerShell@2
+          displayName: 'Configurar permisos en $(physicalPath)'
+          inputs:
+            targetType: inline
+            script: |
+              $path = '$(physicalPath)'
+              $site = "$(siteName)"
+              $pool = "$(appPoolName)"
+              $me = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+
+              if (-not (Test-Path $path)) {
+                New-Item -ItemType Directory -Path $path -Force | Out-Null
+              }
+
+              Get-ChildItem -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue |
+                Where-Object { $_.Attributes -band [IO.FileAttributes]::ReadOnly } |
+                ForEach-Object {
+                  $_.Attributes = $_.Attributes -bxor [IO.FileAttributes]::ReadOnly
+                }
+
+              icacls "$path" /grant "${me}:(OI)(CI)M" /T /C | Out-Null
+              icacls "$path" /grant "IIS AppPool\${pool}:(OI)(CI)M" /T /C | Out-Null
+
+              Write-Host "Permisos configurados para: $me y AppPool $pool"
+
+        # 7) Copia con Robocopy
+        - task: PowerShell@2
+          displayName: 'Copy files to IIS (robocopy)'
+          inputs:
+            targetType: inline
+            script: |
+              $src = '$(artifactPath)'
+              $dst = '$(physicalPath)'
+
+              Write-Host "Origen: $src"
+              Write-Host "Destino: $dst"
+
+              if (-not (Test-Path $src)) {
+                throw "No existe artifactPath: $src"
+              }
+
+              if (-not (Test-Path $dst)) {
+                New-Item -ItemType Directory -Path $dst -Force | Out-Null
+              }
+
+              robocopy $src $dst /MIR /MT:8 /R:2 /W:2 /FFT `
+                /XD "logs" `
+                /XF "app_offline.htm" `
+                /NFL /NDL /NJH /NJS /NP
+
+              if ($LASTEXITCODE -ge 8) {
+                throw "Robocopy fallo (codigo $LASTEXITCODE)"
+              }
+
+              $global:LASTEXITCODE = 0
+              Write-Host "Archivos copiados correctamente a $dst"
+
+        # 8) Crear web.config
+        - task: PowerShell@2
+          displayName: 'Crear web.config'
+          inputs:
+            targetType: inline
+            script: |
+              function Escape-Xml {
+                param([string]$Text)
+                if ($null -eq $Text) { return "" }
+                return $Text.Replace("&", "&amp;")
+                            .Replace("<", "&lt;")
+                            .Replace(">", "&gt;")
+                            .Replace('"', "&quot;")
+                            .Replace("'", "&apos;")
+              }
+
+              $env         = Escape-Xml "$(ASPNETCORE_ENVIRONMENT)"
+              $connStr     = Escape-Xml "$(ConnectionStrings__DatabaseConnection)"
+              $jwtIssuer   = Escape-Xml "$(Jwt__Issuer)"
+              $jwtAudience = Escape-Xml "$(Jwt__Audience)"
+              $jwtKey      = Escape-Xml "$(Jwt__Key)"
+
+              $buildNumber   = Escape-Xml "$(Build.BuildNumber)"
+              $buildId       = Escape-Xml "$(Build.BuildId)"
+              $sourceVersion = "$(Build.SourceVersion)"
+              $commitHash    = if ($sourceVersion.Length -ge 8) { $sourceVersion.Substring(0, 8) } else { $sourceVersion }
+              $sourceBranch  = Escape-Xml "$(Build.SourceBranchName)"
+              $buildDate     = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+
+              $appName = '${{ parameters.appName }}'
+              $dllName = "$appName.dll"
+
+              $webConfigContent = @"
+              <?xml version="1.0" encoding="utf-8"?>
+              <configuration>
+                <system.webServer>
+                  <handlers>
+                    <clear />
+                    <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+                  </handlers>
+                  <aspNetCore processPath="dotnet"
+                              arguments=".\$dllName"
+                              hostingModel="OutOfProcess"
+                              stdoutLogEnabled="true"
+                              stdoutLogFile=".\logs\stdout">
+                    <environmentVariables>
+                      <environmentVariable name="ASPNETCORE_ENVIRONMENT" value="$env" />
+                      <environmentVariable name="ASPNETCORE_URLS" value="http://*:0" />
+                      <environmentVariable name="ASPNETCORE_FORWARDEDHEADERS_ENABLED" value="true" />
+                      <environmentVariable name="ConnectionStrings__DefaultConnection" value="$connStr" />
+                      <environmentVariable name="Jwt__Issuer" value="$jwtIssuer" />
+                      <environmentVariable name="Jwt__Audience" value="$jwtAudience" />
+                      <environmentVariable name="Jwt__Key" value="$jwtKey" />
+                      <environmentVariable name="AllowedHosts" value="*" />
+                      <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
+                      <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
+                      <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
+                      <environmentVariable name="BuildInfo__Branch" value="$sourceBranch" />
+                      <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
+                    </environmentVariables>
+                  </aspNetCore>
+                  <httpErrors existingResponse="PassThrough" />
+                </system.webServer>
+              </configuration>
+              "@
+
+              $path = '$(physicalPath)'
+              if (-not (Test-Path $path)) {
+                New-Item -ItemType Directory -Path $path -Force | Out-Null
+              }
+
+              $webConfigPath = Join-Path $path 'web.config'
+              $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+              [System.IO.File]::WriteAllText($webConfigPath, $webConfigContent, $utf8NoBom)
+
+              Write-Host "web.config creado en $webConfigPath para entorno: $env"
+
+        # 9) Levantar sitio y health check
+        - task: PowerShell@2
+          displayName: 'Iniciar sitio y AppPool'
+          inputs:
+            targetType: inline
+            script: |
+              if ($PSVersionTable.PSEdition -eq "Core") {
+                Import-Module WebAdministration -UseWindowsPowerShell
+              } else {
+                Import-Module WebAdministration
+              }
+
+              $site = "$(siteName)"
+              $pool = "$(appPoolName)"
+              $path = "$(physicalPath)"
+
+              $offlinePath = Join-Path $path 'app_offline.htm'
+              if (Test-Path $offlinePath) {
+                Remove-Item $offlinePath -Force -ErrorAction SilentlyContinue
+                Write-Host "app_offline.htm eliminado"
+              }
+
+              if (Test-Path "IIS:\AppPools\$pool") {
+                Start-WebAppPool -Name $pool
+                Write-Host "AppPool '$pool' iniciado"
+              }
+
+              if (Test-Path "IIS:\Sites\$site") {
+                Start-Website -Name $site
+                Write-Host "Sitio '$site' iniciado"
+              }
+
+              $logsPath = Join-Path $path 'logs'
+              if (Test-Path $logsPath) {
+                $latestLog = Get-ChildItem $logsPath -Filter 'stdout*.log' -ErrorAction SilentlyContinue |
+                  Sort-Object LastWriteTime -Descending |
+                  Select-Object -First 1
+
+                if ($latestLog) {
+                  Write-Host "Últimas líneas de $($latestLog.Name):"
+                  Get-Content $latestLog.FullName -Tail 80 -ErrorAction SilentlyContinue
+                }
+                else {
+                  Write-Host "No se encontraron logs stdout*.log en $logsPath"
+                }
+              }
+              else {
+                Write-Host "No existe carpeta de logs: $logsPath"
+              }
+
+        - task: PowerShell@2
+          displayName: 'Health Check (VerifyUrl)'
+          condition: ne(variables['VerifyUrl'], '')
+          inputs:
+            targetType: filePath
+            filePath: '$(Build.SourcesDirectory)\Pipelines\scripts\health-check.ps1'
+            arguments: '-Url "$(VerifyUrl)" -MaxRetries 10 -WaitSeconds 3'

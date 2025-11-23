@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Provex S.A. – Backend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .logo {
+            width: 200px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            font-size: 18px;
+        }
+
+        .version-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            display: inline-block;
+            min-width: 400px;
+        }
+        
+        .version-info p {
+            margin: 8px 0;
+            font-size: 14px;
+            text-align: left;
+        }
+        
+        .version-info strong {
+            display: inline-block;
+            width: 150px;
+        }
+        
+        .loading {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .error {
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <img src="logo-provex.png" alt="Logo Provex" class="logo">
+    <p>BackenProvex - Se requiere autentificación</p>
+    
+    <div class="version-info">
+        <p><strong>Versión:</strong> <span id="version" class="loading">Cargando...</span></p>
+        <p><strong>Entorno:</strong> <span id="environment" class="loading">-</span></p>
+        <p><strong>Compilación:</strong> <span id="buildDate" class="loading">-</span></p>
+        <p><strong>Servidor:</strong> <span id="machineName" class="loading">-</span></p>
+    </div>
+    
+    <script>
+        (function() {
+            const versionEl = document.getElementById('version');
+            const environmentEl = document.getElementById('environment');
+            const buildDateEl = document.getElementById('buildDate');
+            const machineNameEl = document.getElementById('machineName');
+            
+            if (!versionEl) return;
+            
+            // Guardar el valor original del placeholder (si existe)
+            const originalVersion = (versionEl.textContent || '').trim();
+            
+            fetch('/config/version', { 
+                cache: 'no-store',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                return r.json();
+            })
+            .then(data => {
+                console.log('✅ Información de versión recibida:', data);
+                
+                // Actualizar versión
+                const version = data.version || '1.0.0';
+                const commit = data.commit || '';
+                versionEl.textContent = commit && commit !== 'unknown' 
+                    ? `${version} (${commit})` 
+                    : version;
+                versionEl.classList.remove('loading', 'error');
+                
+                // Actualizar entorno
+                if (environmentEl && data.environment) {
+                    environmentEl.textContent = data.environment;
+                    environmentEl.classList.remove('loading', 'error');
+                }
+                
+                // Actualizar fecha de compilación
+                if (buildDateEl && data.buildDate) {
+                    buildDateEl.textContent = data.buildDate;
+                    buildDateEl.classList.remove('loading', 'error');
+                }
+                
+                // Actualizar nombre de máquina
+                if (machineNameEl && data.machineName) {
+                    machineNameEl.textContent = data.machineName;
+                    machineNameEl.classList.remove('loading', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('❌ Error obteniendo versión:', err);
+                
+                // Si hay un valor placeholder del pipeline, usarlo
+                if (originalVersion && originalVersion !== 'Cargando...' && originalVersion.includes('__VERSION__') === false) {
+                    versionEl.textContent = originalVersion;
+                } else {
+                    versionEl.textContent = 'No disponible';
+                    versionEl.classList.add('error');
+                }
+                
+                versionEl.classList.remove('loading');
+                
+                if (environmentEl) {
+                    environmentEl.textContent = 'Error';
+                    environmentEl.classList.remove('loading');
+                    environmentEl.classList.add('error');
+                }
+                
+                if (buildDateEl) {
+                    buildDateEl.textContent = 'N/A';
+                    buildDateEl.classList.remove('loading');
+                }
+                
+                if (machineNameEl) {
+                    machineNameEl.textContent = 'N/A';
+                    machineNameEl.classList.remove('loading');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

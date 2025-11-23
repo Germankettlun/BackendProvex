@@ -1,0 +1,176 @@
+trigger:
+  branches:
+    include:
+      - Dev
+      - dev
+      - Prod
+      - prod
+
+pr:
+  branches:
+    include:
+      - Dev
+      - dev
+      - Prod
+      - prod
+
+variables:
+  # Pool de agentes de DevOps (si cambias de pool, solo cambias aquí)
+  - name: poolName
+    value: PoolPrxSII
+
+  # Nombre lógico de la app (DLL = ProvexApi.dll)
+  - name: appName
+    value: ProvexApi
+
+  # Patrón del proyecto
+  - name: projectPattern
+    value: '**/ProvexApi.csproj'
+
+  # Build
+  - name: configuration
+    value: Release
+  - name: dotnetVersion
+    value: 9.0.203
+  - name: publishFolder
+    value: $(Build.ArtifactStagingDirectory)\publish
+  - name: artifactName
+    value: ProvexApi
+
+# =========================
+# STAGE 1: BUILD & PUBLISH
+# =========================
+stages:
+- stage: Build
+  displayName: 'Build & Publish $(appName)'
+  condition: or(eq(variables['Build.SourceBranchName'], 'Dev'), eq(variables['Build.SourceBranchName'], 'dev'), eq(variables['Build.SourceBranchName'], 'Prod'), eq(variables['Build.SourceBranchName'], 'prod'))
+  pool:
+    name: $(poolName)
+    demands:
+      - agent.os -equals Windows_NT
+
+  jobs:
+  - job: BuildAndPublish
+    displayName: 'Build & Publish $(appName)'
+    steps:
+    - checkout: self
+      clean: true
+      fetchDepth: 0
+
+    - task: NuGetAuthenticate@1
+      displayName: 'NuGet Authenticate'
+
+    - task: UseDotNet@2
+      displayName: 'Instalar .NET SDK $(dotnetVersion)'
+      inputs:
+        packageType: sdk
+        version: $(dotnetVersion)
+        includePreviewVersions: true
+
+    - task: PowerShell@2
+      displayName: 'Clean bin/obj'
+      inputs:
+        targetType: inline
+        script: |
+          $ErrorActionPreference = 'Continue'
+          Get-ChildItem -LiteralPath '$(Build.SourcesDirectory)' -Recurse -Directory |
+            Where-Object { $_.Name -in @('bin','obj') } |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          Write-Host "Limpieza de bin/obj completada"
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore'
+      inputs:
+        command: restore
+        projects: '$(projectPattern)'
+        verbosity: Minimal
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: build
+        projects: '$(projectPattern)'
+        arguments: '--configuration $(configuration) --no-restore'
+        verbosity: Minimal
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish (folder sin ZIP)'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: '$(projectPattern)'
+        arguments: >-
+          --configuration $(configuration)
+          --no-restore
+          --output "$(publishFolder)"
+          /p:SelfContained=false
+          /p:PublishTrimmed=false
+          /p:PublishSingleFile=false
+          /p:UseAppHost=false
+          /p:PublishReadyToRun=false
+        zipAfterPublish: false
+        modifyOutputPath: false
+
+    - task: PowerShell@2
+      displayName: 'Verificar artefacto ($(appName).dll)'
+      inputs:
+        targetType: inline
+        script: |
+          $ErrorActionPreference = 'Stop'
+          $publishDir = '$(publishFolder)'
+          $dllName = '$(appName).dll'
+
+          Write-Host "Revisando contenido de $publishDir"
+          if (-not (Test-Path $publishDir)) {
+            throw "No existe la carpeta de publish: $publishDir"
+          }
+
+          $dll = Get-ChildItem $publishDir -Recurse -Filter $dllName -File -ErrorAction SilentlyContinue |
+                 Sort-Object LastWriteTime -Descending |
+                 Select-Object -First 1
+
+          if ($dll) {
+            Write-Host "Encontrado $dllName en: $($dll.FullName)"
+            Write-Host "Tamaño: $([math]::Round($dll.Length/1MB,2)) MB"
+          }
+          else {
+            Write-Host "Contenido de ${publishDir}:"
+            Get-ChildItem $publishDir -Recurse | Select-Object FullName, Length | Format-Table -Auto
+            throw "No se encontró $dllName en el publish"
+          }
+
+
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publicar artefacto ($(artifactName))'
+      inputs:
+        targetPath: '$(publishFolder)'
+        artifact: '$(artifactName)'
+        publishLocation: 'pipeline'
+
+# =========================
+# STAGE 2: DEPLOY DEV (Environment)
+# =========================
+- stage: Deploy_Dev
+  displayName: 'Deploy to Development'
+  dependsOn: Build
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranchName'], 'Dev'), eq(variables['Build.SourceBranchName'], 'dev')))
+  jobs:
+  - template: Pipelines/templates/deploy-backend-template.yml   # <== RUTA CORREGIDA
+    parameters:
+      environment: Development
+      variableGroup: ProvexApi-Dev
+      appName: $(appName)
+
+# =========================
+# STAGE 3: DEPLOY PROD (Environment)
+# =========================
+- stage: Deploy_Prod
+  displayName: 'Deploy to Production'
+  dependsOn: Build
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranchName'], 'Prod'), eq(variables['Build.SourceBranchName'], 'prod')))
+  jobs:
+  - template: Pipelines/templates/deploy-backend-template.yml   # <== RUTA CORREGIDA
+    parameters:
+      environment: Production
+      variableGroup: ProvexApi-Production
+      appName: $(appName)
