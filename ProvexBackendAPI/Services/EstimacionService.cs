@@ -288,7 +288,6 @@ namespace ProvexBackendAPI.Services
                 throw new ArgumentException("ValorNuevo no puede ser negativo.", nameof(dto.ValorNuevo));
             try
             {
-
                 var exists = await repository.Exists<EstimacionBisemanal>(e => e.idEstimacion == dto.IdEstimacion&& e.fecha.Date == dto.Dia.FechaDia.Date);
 
                 var cajas = Convert.ToInt32(Math.Round(dto.ValorNuevo, 0, MidpointRounding.AwayFromZero));
@@ -584,7 +583,7 @@ namespace ProvexBackendAPI.Services
 
                 Dia_Fecha = row["DIA"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(row["DIA"]),
 
-                Dia_Estimado = row["CAJAS_E_DISTRIB_SIN_PORC"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_E_DISTRIB_SIN_PORC"]),
+                Dia_Estimado = row["CAJAS_ESTIMADAS_SIN_PORC"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_ESTIMADAS_SIN_PORC"]),
 
                 Dia_Producido = row["CAJAS_P"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_P"]),
 
@@ -592,6 +591,42 @@ namespace ProvexBackendAPI.Services
 
                 Dia_DistribucionPacking = row["DIST_PACK"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(row["DIST_PACK"])
             };
+        }
+
+        public async Task Publicar(PublicacionDTO input, Guid usuario)
+        {
+            try
+            {
+                var parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@ID_EMPRESA", input.idEmpresa),
+                    new SqlParameter("@ID_TEMPORADA", input.idTemporada),
+                    new SqlParameter("@ID_ESPECIE", input.idEspecie),
+                    new SqlParameter("@CodigoGrupoProductor", input.codigoGrupoProductor),
+                    new SqlParameter("@ID_USUARIO_EJECUTOR", usuario),
+                    new SqlParameter
+                    {
+                        ParameterName = "@CodigoSalida",
+                        SqlDbType = SqlDbType.Int,
+                        Direction = ParameterDirection.Output
+                    },
+                    new SqlParameter 
+                    { 
+                        ParameterName = "@MensajeSalida",
+                        Size = 4000,
+                        SqlDbType = SqlDbType.NVarChar,
+                        Direction = ParameterDirection.Output
+                    }
+                    
+                };
+                var res = await repository.GetDataTable("[Estimaciones].[usp_ESTIMACION_OFICIAL]", parameters);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
         }
     }
 }
