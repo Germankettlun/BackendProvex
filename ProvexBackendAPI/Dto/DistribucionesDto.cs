@@ -305,4 +305,23 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public bool SumaPorcentajeEs100 { get; set; }         
     }
 
+    public class DistribucionPackingFlatRow
+    {
+        public string? IdEstimacion { get; set; }
+        public string? IdEspecie { get; set; }
+        public int? IdEstimacionBisemanal { get; set; }
+        public int BisemanalAnio { get; set; }
+        public string? BisemanalSemana { get; set; }
+        public DateTime? FechaDia { get; set; }
+        public string? DiaNombre { get; set; }
+        public int TotalCajasBisemanal { get; set; }
+
+        public string? IdDistribucionPacking { get; set; }
+        public string? IdPacking { get; set; }
+        public string? Packing { get; set; }
+        public int Porcentaje { get; set; }
+
+        public bool SumaPorcentajeEs100 { get; set; }
+    }
+
 }

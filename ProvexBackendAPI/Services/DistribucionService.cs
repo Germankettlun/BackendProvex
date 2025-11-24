@@ -182,7 +182,7 @@ namespace ProvexBackendAPI.Services
             var rows = dataTable.AsEnumerable()
                 .Select(r => new DistribucionFrigorificoFlatRow
                 {
-                    IdEstimacion = r["ID_ESTIMACION"] == DBNull.Value ? "" : Convert.ToString(r["ID_ESTIMACION"]),
+                    IdEstimacion = r["IDESTIMACION"] == DBNull.Value ? "" : Convert.ToString(r["IDESTIMACION"]),
                     IdEspecie = r["IDESPECIE"] == DBNull.Value ? "" : Convert.ToString(r["IDESPECIE"]),
                     IdEstimacionBisemanal = r["IDESTIMACIONBISEMANAL"] == DBNull.Value ? 0 : Convert.ToInt32(r["IDESTIMACIONBISEMANAL"]),
                     BisemanalAnio = r["BISEMANALANIO"] == DBNull.Value ? 0 : Convert.ToInt32(r["BISEMANALANIO"]),
@@ -190,7 +190,7 @@ namespace ProvexBackendAPI.Services
                     FechaDia = r.Field<DateTime?>("FECHADIA"),
                     DiaNombre = r["DIANOMBRE"] == DBNull.Value ? "" : Convert.ToString(r["DIANOMBRE"]),
                     TotalCajasBisemanal = r.Field<int?>("TOTALCAJASBISEMANAL") ?? 0,
-                    IdDistribucionFrigorifico = r["IDDISTRIBUCIONFRIGORIFICO"] == DBNull.Value ? "" : Convert.ToString(r["IDDISTRIBUCIONFRIGORIFICO"]),
+                    IdDistribucionFrigorifico = r["IDDISTRIBUCIONFIGORIFICO"] == DBNull.Value ? "" : Convert.ToString(r["IDDISTRIBUCIONFIGORIFICO"]),
                     IdFrigorifico = r["IDFRIGORIFICO"] == DBNull.Value ? "" : Convert.ToString(r["IDFRIGORIFICO"]),
                     Frigorifico = r["FRIGORIFICO"] == DBNull.Value ? "" : Convert.ToString(r["FRIGORIFICO"]),
                     Porcentaje = r["PORCENTAJE"] == DBNull.Value ? 0 : Convert.ToInt32(r["PORCENTAJE"]),
@@ -252,11 +252,85 @@ namespace ProvexBackendAPI.Services
 
         public async Task<List<DistribucionPackingDiaDto>> GetDistribucionPackingAgrupadoAsync(int idBisemanal)
         {
-            idBisemanal = Guard.Require(nameof(idBisemanal), idBisemanal);
-
             if (idBisemanal < 0)
                 throw new ValidationException("idBisemanal inválido");
-            return await _repo.GetRowsDistribucionPackingAgrupadoAsync(idBisemanal);
+
+            var parameters = new SqlParameter[]
+            {
+                    new SqlParameter("@ID_ESTIMACION_BISEMANAL", idBisemanal),
+            };
+
+            var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_DISTRIBUCION_BISEMANAL_PACKING_SEMANAANO", parameters);
+
+            var rows = dataTable.AsEnumerable()
+                .Select(r => new DistribucionPackingFlatRow
+                {
+                    IdEstimacion = r["IDESTIMACION"] == DBNull.Value ? "" : Convert.ToString(r["IDESTIMACION"]),
+                    IdEspecie = r["IDESPECIE"] == DBNull.Value ? "" : Convert.ToString(r["IDESPECIE"]),
+                    IdEstimacionBisemanal = r["IDESTIMACIONBISEMANAL"] == DBNull.Value ? 0 : Convert.ToInt32(r["IDESTIMACIONBISEMANAL"]),
+                    BisemanalAnio = r["BISEMANALANIO"] == DBNull.Value ? 0 : Convert.ToInt32(r["BISEMANALANIO"]),
+                    BisemanalSemana = r["BISEMANALSEMANA"] == DBNull.Value ? "" : Convert.ToString(r["BISEMANALSEMANA"]),
+                    FechaDia = r.Field<DateTime?>("FECHADIA"),
+                    DiaNombre = r["DIANOMBRE"] == DBNull.Value ? "" : Convert.ToString(r["DIANOMBRE"]),
+                    TotalCajasBisemanal = r.Field<int?>("TOTALCAJASBISEMANAL") ?? 0,
+                    IdDistribucionPacking = r["IDDISTRIBUCIONPACKING"] == DBNull.Value ? "" : Convert.ToString(r["IDDISTRIBUCIONPACKING"]),
+                    IdPacking = r["IDPACKING"] == DBNull.Value ? "" : Convert.ToString(r["IDPACKING"]),
+                    Packing = r["PACKING"] == DBNull.Value ? "" : Convert.ToString(r["PACKING"]),
+                    Porcentaje = r["PORCENTAJE"] == DBNull.Value ? 0 : Convert.ToInt32(r["PORCENTAJE"]),
+                    SumaPorcentajeEs100 = r["SumaPorcentajeEs100"] == DBNull.Value ? false : Convert.ToBoolean(r["SumaPorcentajeEs100"]),
+                })
+                .ToList();
+
+            var result = rows
+            .GroupBy(r => new
+            {
+                r.IdEstimacion,
+                r.IdEspecie,
+                r.IdEstimacionBisemanal,
+                r.BisemanalAnio,
+                r.BisemanalSemana,
+                r.FechaDia,
+                r.DiaNombre,
+                r.TotalCajasBisemanal,
+                r.SumaPorcentajeEs100
+            })
+            .Select(g =>
+            {
+                var k = g.Key;
+
+                var packings = g
+                    .Select(r => new PackingItemDto
+                    {
+                        IdDistribucionPacking = string.IsNullOrWhiteSpace(r.IdDistribucionPacking)
+                            ? null
+                            : r.IdDistribucionPacking,
+                        IdPacking = r.IdPacking ?? string.Empty,
+                        Nombre = r.Packing ?? string.Empty,
+                        Porcentaje = r.Porcentaje
+                    })
+                    .OrderByDescending(x => x.Porcentaje)
+                    .ThenBy(x => x.Nombre)
+                    .ToList();
+
+                return new DistribucionPackingDiaDto
+                {
+                    IdEstimacion = k.IdEstimacion ?? string.Empty,
+                    IdEspecie = k.IdEspecie ?? string.Empty,
+                    IdEstimacionBisemanal = Convert.ToString(k.IdEstimacionBisemanal) ?? "",
+                    Anio = k.BisemanalAnio,
+                    Semana = k.BisemanalSemana ?? string.Empty,
+                    FechaDia = k.FechaDia,
+                    DiaNombre = k.DiaNombre ?? string.Empty,
+                    TotalCajasBisemanal = k.TotalCajasBisemanal,
+                    SumaPorcentajeEs100 = k.SumaPorcentajeEs100,
+                    PackingPorDia = packings
+                };
+            })
+            .OrderBy(d => d.FechaDia ?? DateTime.MinValue)
+            .ThenBy(d => d.IdEstimacion)
+            .ToList();
+
+            return result;
         }
 
         public async Task<List<DistribucionExportacionEstimacionResponseDto>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
