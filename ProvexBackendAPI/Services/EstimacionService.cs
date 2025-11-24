@@ -550,11 +550,11 @@ namespace ProvexBackendAPI.Services
                 PorcentajeExportacion = row["PCT_EXP_PORC"] == DBNull.Value ? 0 : Convert.ToInt32(row["PCT_EXP_PORC"]),
 
                 // Envase
-                EnvaseId = row.Table.Columns.Contains("ENVASE_ID") ? (row.IsNull("ENVASE_ID") ? "" : row["ENVASE_ID"]?.ToString() ?? "") : "",
+                EnvaseId = row.Table.Columns.Contains("ID_ENVASE_COSECHA") ? (row.IsNull("ID_ENVASE_COSECHA") ? "" : row["ID_ENVASE_COSECHA"]?.ToString() ?? "") : "",
 
                 EnvaseNombre = row.Table.Columns.Contains("NOM_ENVASE_COSECHA") ? (row.IsNull("NOM_ENVASE_COSECHA") ? "" : row["NOM_ENVASE_COSECHA"]?.ToString() ?? "") : "",
 
-                EnvaseKilo = row["KG_DIA_ENVASE"] == DBNull.Value ? 0 : Convert.ToInt32(row["KG_DIA_ENVASE"]),
+                EnvaseKilo = row["KILOS_ENVASE_COSECHA"] == DBNull.Value ? 0 : Convert.ToInt32(row["KILOS_ENVASE_COSECHA"]),
 
                 // Estimación
                 Est_ID = row["ID_ESTIMACION"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ID_ESTIMACION"]),
