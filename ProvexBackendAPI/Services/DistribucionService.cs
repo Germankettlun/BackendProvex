@@ -56,7 +56,7 @@ namespace ProvexBackendAPI.Services
                     IdDistribucionPorSemana = row["DISTRIBUCIONPORSEMANAID"] == DBNull.Value ? 0 : Convert.ToInt32(row["DISTRIBUCIONPORSEMANAID"]),
                     PorcentajeSemana = row["PORCENTAJE_POR_SEMANA_CATEGORIA"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_SEMANA_CATEGORIA"]),
 
-                    EsSemanaActual = row["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(row["ES_SEMANA_ACTUAL"]),
+                  //  EsSemanaActual = row["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(row["ES_SEMANA_ACTUAL"]),
 
                 });
             }
@@ -96,17 +96,46 @@ namespace ProvexBackendAPI.Services
 
         public async Task<List<DistribucionCalibreEspecieResponseDto>> GetDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
-            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
 
-            if (idEstimacion < 0)
-                throw new ValidationException("idEstimacion inválido");
+            if (idEstimacion <= 0)
+                throw new ArgumentException("idEstimacion inválido.", nameof(idEstimacion));
 
+            var parameters = new SqlParameter[]
+              {
+                    new SqlParameter("@ID_ESTIMACION", idEstimacion),
+                   // new SqlParameter("@SEM_ANT",(object?)semanasAntes ?? DBNull.Value),
+                   // new SqlParameter("@SEM_SIG",(object?)semanasDespues ?? DBNull.Value),
+              };
 
-            var rows = await _repo.GetRowsDistribucionCalibreAsync(idEstimacion, semanasAntes, semanasDespues);
+            var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_DISTRIBUCION_CALIBRE_ESPECIE", parameters);
+
+            var list = new List<DistribucionCalibreEspecieRow>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                list.Add(new DistribucionCalibreEspecieRow
+                {
+                    IdEstimacion = row["ID_ESTIMACION"] == DBNull.Value ? "" : Convert.ToString(row["ID_ESTIMACION"]),
+
+                    CodEspecie = row["CODESPECIE"] == DBNull.Value ? "" : Convert.ToString(row["CODESPECIE"]),
+                    Especie = row["ESPECIE"] == DBNull.Value ? "" : Convert.ToString(row["ESPECIE"]),
+                    IdCalibre = row["IDCALIBRE"] == DBNull.Value ? "" : Convert.ToString(row["IDCALIBRE"]),
+                    CalibreNombre = row["IDCALIBRE"] == DBNull.Value ? "" : Convert.ToString(row["IDCALIBRE"]),
+                    SemanaAnio = row["SEMANAANO"] == DBNull.Value ? 0 : Convert.ToInt32(row["SEMANAANO"]),
+                    SemanaNumero = row["SEMANANUMERO"] == DBNull.Value ? "" : Convert.ToString(row["SEMANANUMERO"]),
+                    IdDistribucionDefecto = row["IDDISTRIBUCIONDEFECTO"] == DBNull.Value ? 0 : Convert.ToInt32(row["IDDISTRIBUCIONDEFECTO"]),
+                    PorcDefectoCalibre = row["PORCENTAJE_POR_DEFECTO_CALIBRE"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_DEFECTO_CALIBRE"]),
+                    IdDistribucionPorSemana = row["DISTRIBUCIONPORSEMANAID"] == DBNull.Value ? 0 : Convert.ToInt32(row["DISTRIBUCIONPORSEMANAID"]),
+                    PorcentajeSemana = row["PORCENTAJE_POR_SEMANA_CALIBRE"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_SEMANA_CALIBRE"]),
+
+                    //  EsSemanaActual = row["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(row["ES_SEMANA_ACTUAL"]),
+
+                });
+            }
 
             // Grouping por (IdEstimacion, IdCategoria)
-            var grouped = rows
-                .GroupBy(r => new { r.IdEstimacion, r.IdCalibre, r.CodEspecie, r.Especie, r.CalibreNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
+            var grouped = list
+                .GroupBy(r => new { r.IdEstimacion, r.IdCalibre, r.CodEspecie, r.Especie, r.CalibreNombre, r.IdDistribucionDefecto, r.PorcDefectoCalibre })
                 .Select(g => new DistribucionCalibreEspecieResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
@@ -115,7 +144,7 @@ namespace ProvexBackendAPI.Services
                     CodigoEspecie = g.Key.CodEspecie,
                     Especie = g.Key.Especie,
                     IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
-                    PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
+                    PorcentajePredeterminado = g.Key.PorcDefectoCalibre,
                     Semanas = g
                         .Select(r => new SemanaPorcentajeDto
                         {
@@ -125,7 +154,7 @@ namespace ProvexBackendAPI.Services
                             PorcentajePorSemana = r.PorcentajeSemana,
                             EsSemanaActual = r.EsSemanaActual
                         })
-                        .DistinctBy(x => new { x.Anio, x.Semana }) 
+                        .DistinctBy(x => new { x.Anio, x.Semana })
                         .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
                         .ToList()
                 })
@@ -135,8 +164,6 @@ namespace ProvexBackendAPI.Services
 
             return grouped;
         }
-
-
 
 
 

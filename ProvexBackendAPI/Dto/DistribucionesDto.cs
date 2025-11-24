@@ -58,7 +58,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public int SemanaAnio { get; set; }
         public string SemanaNumero { get; set; } = string.Empty;
         public int? IdDistribucionDefecto { get; set; }
-        public int? PorcDefectoCategoria { get; set; }
+        public int? PorcDefectoCalibre { get; set; }
         public int? IdDistribucionPorSemana { get; set; }
         public int? PorcentajeSemana { get; set; }
         public bool EsSemanaActual { get; set; }

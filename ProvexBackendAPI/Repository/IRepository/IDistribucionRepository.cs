@@ -7,8 +7,6 @@ namespace ProvexBackendAPI.Repository.IRepository
     public interface IDistribucionRepository
     {
 
-        Task<List<DistribucionCalibreEspecieRow>> GetRowsDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
-
 
 
         Task<List<DistribucionPackingDiaDto>> GetRowsDistribucionPackingAgrupadoAsync(int idBisemanal);
