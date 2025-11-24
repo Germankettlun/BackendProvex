@@ -286,6 +286,23 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
     }
     public record DistribucionPorcentajeExportacionGuardarRequest(int IdEstimacion, int? PorcentajePredeterminado, List<PorcentajePorSemanaGuardarDto> Semanas);
 
+    public class DistribucionFrigorificoFlatRow
+    {
+        public string? IdEstimacion { get; set; }                  
+        public string? IdEspecie { get; set; }                    
+        public int? IdEstimacionBisemanal { get; set; }        
+        public int BisemanalAnio { get; set; }                     
+        public string? BisemanalSemana { get; set; }               
+        public DateTime? FechaDia { get; set; }                    
+        public string? DiaNombre { get; set; }                     
+        public int TotalCajasBisemanal { get; set; }              
 
+        public string? IdDistribucionFrigorifico { get; set; }    
+        public string? IdFrigorifico { get; set; }                
+        public string? Frigorifico { get; set; }                 
+        public int Porcentaje { get; set; }                       
+
+        public bool SumaPorcentajeEs100 { get; set; }         
+    }
 
 }

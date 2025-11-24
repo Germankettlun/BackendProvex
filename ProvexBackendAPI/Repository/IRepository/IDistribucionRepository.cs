@@ -10,11 +10,6 @@ namespace ProvexBackendAPI.Repository.IRepository
 
 
         Task<List<DistribucionPackingDiaDto>> GetRowsDistribucionPackingAgrupadoAsync(int idBisemanal);
-
-
-
-        Task<List<DistribucionFrigorificoDiaDto>> GetRowsDistribucionFrigorificoAgrupadoAsync(int idBisemanal);
-
         Task<List<DistribucionExportacionEstimacionRow>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
 
         Task InsertUpdateDistribucionCategoriaPredeterminadoAsync(int idEstimacion, string idCategoria, int? porcentaje, Guid idUsuario);
