@@ -117,9 +117,7 @@ namespace ProvexBackendAPI.Controllers
         [HttpPost("Publicar")]
         public async Task<ActionResult> Publicar(PublicacionDTO publicacion)
         {
-            var userId = await token.GetUserIdFromClaimsAsync(User);
-
-            if (userId is null)
+            var userId = await token.GetUserIdFromClaimsAsync(User) ??
                 throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
 
             return Ok();
