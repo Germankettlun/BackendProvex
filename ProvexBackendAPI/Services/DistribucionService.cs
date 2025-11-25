@@ -336,34 +336,58 @@ namespace ProvexBackendAPI.Services
         public async Task<List<DistribucionExportacionEstimacionResponseDto>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
         {
 
-            idEstimacion = Guard.Require(nameof(idEstimacion), idEstimacion);
 
             if (idEstimacion < 0)
                 throw new ValidationException("idEstimacion inválido");
 
-            var rows = await _repo.GetRowsDistribucionPorcentajeExportacionAsync(idEstimacion, semanasAntes, semanasDespues);
+            var parameters = new SqlParameter[]
+            {
+                new SqlParameter("@ID_ESTIMACION", idEstimacion),
+                //new SqlParameter("@SEM_ANT", (object?)semanasAntes   ?? DBNull.Value),
+                //new SqlParameter("@SEM_SIG", (object?)semanasDespues ?? DBNull.Value),
+            };
 
-            // Grouping por (IdEstimacion, IdCategoria)
-            var grouped = rows
-                .GroupBy(r => new { r.IdEstimacion, r.CodEspecie, r.Especie, r.PorcDefecto })
-                .Select(g => new DistribucionExportacionEstimacionResponseDto
+            var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_DISTRIBUCION_PORC_EXPORTACION",parameters);
+
+            var rows = dataTable.AsEnumerable()
+            .Select(r => new DistribucionExportacionEstimacionRow
+            {
+                IdEstimacion = r["ID_ESTIMACION"] == DBNull.Value ? string.Empty : Convert.ToString(r["ID_ESTIMACION"]),
+                CodEspecie = "",
+                Especie = "",
+                SemanaAnio = r["SEMANAANO"] == DBNull.Value ? 0 : Convert.ToInt32(r["SEMANAANO"]),
+                SemanaNumero = r["SEMANANUMERO"] == DBNull.Value ? string.Empty : Convert.ToString(r["SEMANANUMERO"]),
+                PorcDefecto = r["PORCENTAJE_POR_DEFECTO"] == DBNull.Value ? null : Convert.ToInt32(r["PORCENTAJE_POR_DEFECTO"]),
+                IdDistribucionPorSemana = r["ID_DISTRIBUCION_PORCENTAJE_EXPORTACION"] == DBNull.Value ? null : Convert.ToInt32(r["ID_DISTRIBUCION_PORCENTAJE_EXPORTACION"]),
+                PorcentajeSemana = r["PORCENTAJE_POR_SEMANA"] == DBNull.Value ? null : Convert.ToInt32(r["PORCENTAJE_POR_SEMANA"]),
+                EsSemanaActual = r["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(r["ES_SEMANA_ACTUAL"]),
+            }).ToList();
+
+            var grouped = rows.GroupBy(r => new
+                {
+                    r.IdEstimacion,
+                    r.CodEspecie,
+                    r.Especie,
+                    r.PorcDefecto
+                }).Select(g => new DistribucionExportacionEstimacionResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
                     CodigoEspecie = g.Key.CodEspecie,
                     Especie = g.Key.Especie,
                     PorcentajePredeterminado = g.Key.PorcDefecto,
                     Semanas = g
-                        .Select(r => new SemanaPorcentajeDto
-                        {
-                            Anio = r.SemanaAnio,
-                            Semana = r.SemanaNumero,
-                            IdPorcentajePorSemana = r.IdDistribucionPorSemana,
-                            PorcentajePorSemana = r.PorcentajeSemana,
-                            EsSemanaActual = r.EsSemanaActual
-                        })
-                        .DistinctBy(x => new { x.Anio, x.Semana })
-                        .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
-                        .ToList()
+                .Select(r => new SemanaPorcentajeDto
+                {
+                    Anio = r.SemanaAnio,
+                    Semana = r.SemanaNumero,
+                    IdPorcentajePorSemana = r.IdDistribucionPorSemana,
+                    PorcentajePorSemana = r.PorcentajeSemana,
+                    EsSemanaActual = r.EsSemanaActual
+                })
+                .DistinctBy(x => new { x.Anio, x.Semana })
+                .OrderBy(x => x.Anio)
+                .ThenBy(x => x.Semana)
+                .ToList()
                 })
                 .OrderBy(x => x.IdEstimacion)
                 .ThenBy(x => x.CodigoEspecie)
