@@ -555,21 +555,88 @@ namespace ProvexBackendAPI.Services
 
         public async Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
         {
+            if (req is null || req.IdEstimacionBisemanal <= 0)
+                throw new ArgumentException("Parámetros inválidos.");
 
-            if (req.IdEstimacionBisemanal <= 0) throw new ArgumentException("IdEstimacionBisemanal inválido.");
-            if (req.Packings is null || req.Packings.Count == 0) throw new ArgumentException("Debe enviar al menos un packing.");
-            foreach (var it in req.Packings)
+            if (req.Packings is null || req.Packings.Count == 0)
+                throw new ArgumentException("Debe enviar al menos un packing.");
+
+            foreach (var fr in req.Packings)
             {
-                if (it.IdPacking <= 0) throw new ArgumentException("IdPacking inválido.");
-                if (it.Porcentaje < 0 || it.Porcentaje > 100)
+                if (fr.IdPacking <= 0)
+                    throw new ArgumentException("IdPacking inválido.");
+
+                if (fr.Porcentaje < 0 || fr.Porcentaje > 100)
                     throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
             }
 
-            //Borrado para realizar una actualización completa
 
-            await _repo.EliminaDistribucionPackingAsync(req.IdEstimacionBisemanal, req.ReplicarASemana);
+            //NO replicar a la semana 
 
-            await _repo.InsertUpdateDistribucionPackingAsync(req, usuarioId);
+            if (req.ReplicarASemana == null || req.ReplicarASemana == false)
+            {
+                //Borrado del día base
+                var deleteParams = new[]
+                {
+                    new SqlParameter("@IdBisemanal", req.IdEstimacionBisemanal)
+                };
+
+                await repository.SpVoid("[Estimaciones].[usp_delete_DistribucionPacking_Dia]", deleteParams);
+
+                //Insert/Update para el día base
+                foreach (var fr in req.Packings)
+                {
+                    var upsertParams = new[]
+                    {
+                        new SqlParameter("@IdBisemanal",  req.IdEstimacionBisemanal),
+                        new SqlParameter("@IdPacking", fr.IdPacking),
+                        new SqlParameter("@Porcentaje",   (object?)fr.Porcentaje ?? DBNull.Value),
+                        new SqlParameter("@IdUsuario",    usuarioId)
+                    };
+
+                    await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", upsertParams);
+                }
+
+                return;
+            }
+
+            //Replicar a TODA LA SEMANA
+
+
+            //Obtener todos los IdBisemanal de la semana
+            var idsSemana = await ObtenerIdsBisemanalSemanaAsync(req.IdEstimacionBisemanal);
+
+            // Aseguramos que el id base esté incluido
+            if (!idsSemana.Contains(req.IdEstimacionBisemanal))
+                idsSemana.Add(req.IdEstimacionBisemanal);
+
+            //Borrado para cada día de la semana
+            foreach (var id in idsSemana)
+            {
+                var deleteParamsSemana = new[]
+                {
+                    new SqlParameter("@IdBisemanal", id)
+                };
+
+                await repository.SpVoid("[Estimaciones].[usp_delete_DistribucionPacking_Dia]", deleteParamsSemana);
+            }
+
+            //Insert/Update para cada día de la semana
+            foreach (var idSemana in idsSemana)
+            {
+                foreach (var fr in req.Packings)
+                {
+                    var upsertParamsSemana = new[]
+                    {
+                        new SqlParameter("@IdBisemanal",  idSemana),
+                        new SqlParameter("@IdPacking", fr.IdPacking),
+                        new SqlParameter("@Porcentaje",   (object?)fr.Porcentaje ?? DBNull.Value),
+                        new SqlParameter("@IdUsuario",    usuarioId)
+                    };
+
+                    await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", upsertParamsSemana);
+                }
+            }
         }
 
         public async Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId)
