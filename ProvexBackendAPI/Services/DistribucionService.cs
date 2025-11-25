@@ -410,28 +410,22 @@ namespace ProvexBackendAPI.Services
             new SqlParameter("@IdUsuario", usuarioId)
         };
 
-                await repository.SpVoid(
-                    "[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Predeterminado",
-                    predParams
-                );
+                await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Predeterminado",predParams);
 
                 // Semanas
                 foreach (var s in cat.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
                 {
                     var semanaParams = new[]
                     {
-                new SqlParameter("@IdEstimacion", req.IdEstimacion),
-                new SqlParameter("@IdCategoria", cat.IdCategoria),
-                new SqlParameter("@Anio", s.Anio),
-                new SqlParameter("@Semana", s.Semana),
-                new SqlParameter("@Porcentaje", s.Porcentaje ?? 0),
-                new SqlParameter("@IdUsuario", usuarioId) 
-            };
+                        new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                        new SqlParameter("@IdCategoria", cat.IdCategoria),
+                        new SqlParameter("@Anio", s.Anio),
+                        new SqlParameter("@Semana", s.Semana),
+                        new SqlParameter("@Porcentaje", s.Porcentaje ?? 0),
+                        new SqlParameter("@IdUsuario", usuarioId) 
+                    };
 
-                    await repository.SpVoid(
-                        "[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Semana",
-                        semanaParams
-                    );
+                    await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Semana", semanaParams);
                 }
             }
         }
@@ -443,27 +437,31 @@ namespace ProvexBackendAPI.Services
 
             foreach (var cal in req.Calibres ?? Enumerable.Empty<DistribucionCalibrePredeterminadoGuardarDto>())
             {
-                // Predeterminado
-                await _repo.InsertUpdateDistribucionCalibrePredeterminadoAsync(
-                    req.IdEstimacion,
-                    cal.IdCalibre,
-                    cal.PorcentajePredeterminado,
-                    usuarioId
-                );
+                //Predeterminado
+                var predParams = new[]
+                {
+                    new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                    new SqlParameter("@IdCalibre", cal.IdCalibre),
+                    new SqlParameter("@PorcentajePredeterminado", (object?)cal.PorcentajePredeterminado ?? DBNull.Value),
+                    new SqlParameter("@IdUsuario", usuarioId)
+                };
+
+                await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Predeterminado",predParams);
 
                 // Semanas
                 foreach (var s in cal.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
                 {
+                    var semanaParams = new[]
+                    {
+                         new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                         new SqlParameter("@IdCalibre", cal.IdCalibre),
+                         new SqlParameter("@Anio", s.Anio),
+                         new SqlParameter("@Semana", s.Semana),
+                         new SqlParameter("@Porcentaje", s.Porcentaje ?? 0),
+                         new SqlParameter("@IdUsuario", usuarioId)
+                    };
 
-
-                    await _repo.InsertUpdateDistribucionCalibrePorSemanaAsync(
-                        req.IdEstimacion,
-                        cal.IdCalibre,
-                        s.Anio,
-                        s.Semana,
-                        s.Porcentaje ?? 0,
-                        usuarioId
-                    );
+                    await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Semana",semanaParams);
                 }
             }
         }
