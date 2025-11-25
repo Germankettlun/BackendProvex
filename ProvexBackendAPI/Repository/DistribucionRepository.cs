@@ -18,89 +18,8 @@ namespace ProvexBackendAPI.Repository
         }
        
 
-        public async Task InsertUpdateDistribucionFrigorificoAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId)
-        {
-           
 
-            // Si no se debe replicar a toda la semana
-            if (req.ReplicarASemana == null || req.ReplicarASemana == false)
-            {
-                using var conn = new SqlConnection(_connString);
-                await conn.OpenAsync();
 
-                foreach (var it in req.Frigorificos)
-                {
-                    using var cmd = new SqlCommand("[Estimaciones].[usp_INSERT_UPDATE_DistribucionFrigorifico_Dia]", conn)
-                    {
-                        CommandType = CommandType.StoredProcedure
-                    };
-
-                    cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = req.IdEstimacionBisemanal });
-                    cmd.Parameters.Add(new SqlParameter("@IdFrigorifico", SqlDbType.Int) { Value = it.IdFrigorifico });
-                    cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
-                    cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.UniqueIdentifier) { Value = usuarioId });
-
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                return;
-            }
-            else
-            {
-                //Replicar a toda la semana
-                using (var conn = new SqlConnection(_connString))
-                {
-                    await conn.OpenAsync();
-
-                    //Traer todos los IdBisemanal de la semana
-                    var idsSemana = new List<int>();
-
-                    using (var cmdIds = new SqlCommand("[Estimaciones].[usp_IDS_BISEMANAL_DE_LA_SEMANA]", conn)
-                    {
-                        CommandType = CommandType.StoredProcedure
-                    })
-                    {
-                        cmdIds.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = req.IdEstimacionBisemanal });
-
-                        using var rdr = await cmdIds.ExecuteReaderAsync();
-                        int ord = rdr.GetOrdinal("IdBisemanal");
-                        while (await rdr.ReadAsync())
-                        {
-                            if (!rdr.IsDBNull(ord))
-                            {
-                                int id = rdr.GetInt32(ord);
-                                if (id > 0) idsSemana.Add(id);
-                            }
-                        }
-                    }
-
-                    // Asegurar incluir el id base por si el SP no lo devuelve
-                    if (!idsSemana.Contains(req.IdEstimacionBisemanal))
-                        idsSemana.Add(req.IdEstimacionBisemanal);
-
-                    //Ejecutar el insert/update para cada IdBisemanal encontrado
-                    foreach (var idSemana in idsSemana)
-                    {
-                        foreach (var it in req.Frigorificos)
-                        {
-                            using var cmd = new SqlCommand("[Estimaciones].[usp_INSERT_UPDATE_DistribucionFrigorifico_Dia]", conn)
-                            {
-                                CommandType = CommandType.StoredProcedure
-                            };
-
-                            cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = idSemana });
-                            cmd.Parameters.Add(new SqlParameter("@IdFrigorifico", SqlDbType.Int) { Value = it.IdFrigorifico });
-                            cmd.Parameters.Add(new SqlParameter("@Porcentaje", SqlDbType.Int) { Value = (object?)it.Porcentaje ?? DBNull.Value });
-                            cmd.Parameters.Add(new SqlParameter("@IdUsuario", SqlDbType.UniqueIdentifier) { Value = usuarioId });
-
-                            await cmd.ExecuteNonQueryAsync();
-                        }
-                    }
-                }
-            }
-
-                
-        }
 
         public async Task InsertUpdateDistribucionPackingAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
         {
@@ -221,68 +140,6 @@ namespace ProvexBackendAPI.Repository
 
     
 
-      public async Task EliminaDistribucionFrigorificoAsync(int idBisemanal, bool? replicarASemana)
-        {
-           if (replicarASemana == null || replicarASemana == false){
-                using var conn = new SqlConnection(_connString);
-                await conn.OpenAsync();
-
-
-                using var cmd = new SqlCommand("[Estimaciones].[usp_delete_DistribucionFrigorifico_Dia]", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                cmd.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = idBisemanal });
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-            else { 
-                // replicar a toda la semana: primero obtengo todos los IdBisemanal de esa semana
-                using (var conn = new SqlConnection(_connString))
-                {
-                    await conn.OpenAsync();
-
-                    // Traigo los IDs de la semana del idBisemanal base
-                    var idsSemana = new List<int>();
-                    using (var cmdIds = new SqlCommand("[Estimaciones].[usp_IDS_BISEMANAL_DE_LA_SEMANA]", conn)
-                    {
-                        CommandType = CommandType.StoredProcedure
-                    })
-                    {
-                        cmdIds.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = idBisemanal });
-
-                        using var rdr = await cmdIds.ExecuteReaderAsync();
-                        int ord = rdr.GetOrdinal("IdBisemanal");
-                        while (await rdr.ReadAsync())
-                        {
-                            if (!rdr.IsDBNull(ord))
-                            {
-                                int id = rdr.GetInt32(ord);
-                                if (id > 0) idsSemana.Add(id);
-                            }
-                        }
-
-
-
-
-                    }
-
-                    // Borrar por cada IdBisemanal de esa semana
-                    foreach (var id in idsSemana)
-                    {
-                        using var cmdDel = new SqlCommand("[Estimaciones].[usp_delete_DistribucionFrigorifico_Dia]", conn)
-                        {
-                            CommandType = CommandType.StoredProcedure
-                        };
-                        cmdDel.Parameters.Add(new SqlParameter("@IdBisemanal", SqlDbType.Int) { Value = id });
-
-                        await cmdDel.ExecuteNonQueryAsync();
-                    }
-                }
-            }
-
-        }
 
         public async Task EliminaDistribucionPackingAsync(int idBisemanal, bool? replicarASemana)
         {

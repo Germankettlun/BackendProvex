@@ -1,6 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Helpers.Validation;
+using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
@@ -468,21 +469,88 @@ namespace ProvexBackendAPI.Services
 
         public async Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId)
         {
+            if (req is null || req.IdEstimacionBisemanal <= 0)
+                throw new ArgumentException("Parámetros inválidos.");
 
-            if (req.IdEstimacionBisemanal <= 0) throw new ArgumentException("IdEstimacionBisemanal inválido.");
-            if (req.Frigorificos is null || req.Frigorificos.Count == 0) throw new ArgumentException("Debe enviar al menos un frigorífico.");
-            foreach (var it in req.Frigorificos)
+            if (req.Frigorificos is null || req.Frigorificos.Count == 0)
+                throw new ArgumentException("Debe enviar al menos un frigorífico.");
+
+            foreach (var fr in req.Frigorificos)
             {
-                if (it.IdFrigorifico <= 0) throw new ArgumentException("IdFrigorifico inválido.");
-                if (it.Porcentaje < 0 || it.Porcentaje > 100)
+                if (fr.IdFrigorifico <= 0)
+                    throw new ArgumentException("IdFrigorifico inválido.");
+
+                if (fr.Porcentaje < 0 || fr.Porcentaje > 100)
                     throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
             }
 
-            //Borrado para realizar una actualización completa
+       
+            //NO replicar a la semana 
+       
+            if (req.ReplicarASemana == null || req.ReplicarASemana == false)
+            {
+                //Borrado del día base
+                var deleteParams = new[]
+                {
+                    new SqlParameter("@IdBisemanal", req.IdEstimacionBisemanal)
+                };
 
-            await _repo.EliminaDistribucionFrigorificoAsync(req.IdEstimacionBisemanal, req.ReplicarASemana);
+                await repository.SpVoid("[Estimaciones].[usp_delete_DistribucionFrigorifico_Dia]",deleteParams);
 
-            await _repo.InsertUpdateDistribucionFrigorificoAsync(req, usuarioId);
+                //Insert/Update para el día base
+                foreach (var fr in req.Frigorificos)
+                {
+                    var upsertParams = new[]
+                    {
+                        new SqlParameter("@IdBisemanal",  req.IdEstimacionBisemanal),
+                        new SqlParameter("@IdFrigorifico", fr.IdFrigorifico),
+                        new SqlParameter("@Porcentaje",   (object?)fr.Porcentaje ?? DBNull.Value),
+                        new SqlParameter("@IdUsuario",    usuarioId)
+                    };
+
+                    await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionFrigorifico_Dia]",upsertParams);
+                }
+
+                return;
+            }
+
+            //Replicar a TODA LA SEMANA
+         
+
+            //Obtener todos los IdBisemanal de la semana
+            var idsSemana = await ObtenerIdsBisemanalSemanaAsync(req.IdEstimacionBisemanal);
+
+            // Aseguramos que el id base esté incluido
+            if (!idsSemana.Contains(req.IdEstimacionBisemanal))
+                idsSemana.Add(req.IdEstimacionBisemanal);
+
+            //Borrado para cada día de la semana
+            foreach (var id in idsSemana)
+            {
+                var deleteParamsSemana = new[]
+                {
+                    new SqlParameter("@IdBisemanal", id)
+                };
+
+                await repository.SpVoid("[Estimaciones].[usp_delete_DistribucionFrigorifico_Dia]",deleteParamsSemana);
+            }
+
+            //Insert/Update para cada día de la semana
+            foreach (var idSemana in idsSemana)
+            {
+                foreach (var fr in req.Frigorificos)
+                {
+                    var upsertParamsSemana = new[]
+                    {
+                        new SqlParameter("@IdBisemanal",  idSemana),
+                        new SqlParameter("@IdFrigorifico", fr.IdFrigorifico),
+                        new SqlParameter("@Porcentaje",   (object?)fr.Porcentaje ?? DBNull.Value),
+                        new SqlParameter("@IdUsuario",    usuarioId)
+                    };
+
+                    await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionFrigorifico_Dia]",upsertParamsSemana);
+                }
+            }
         }
 
         public async Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
@@ -526,6 +594,31 @@ namespace ProvexBackendAPI.Services
                     );
                 }
          
+        }
+
+        private async Task<List<int>> ObtenerIdsBisemanalSemanaAsync(int idBisemanalBase)
+        {
+            var param = new[]
+            {
+                new SqlParameter("@IdBisemanal", idBisemanalBase)
+            };
+
+
+            var dt = await repository.GetDataTable("[Estimaciones].[usp_IDS_BISEMANAL_DE_LA_SEMANA]", param);
+
+            var ids = new List<int>();
+
+            foreach (DataRow row in dt.Rows)
+            {
+                if (row["IdBisemanal"] != DBNull.Value)
+                {
+                    var id = Convert.ToInt32(row["IdBisemanal"]);
+                    if (id > 0)
+                        ids.Add(id);
+                }
+            }
+
+            return ids.Distinct().ToList();
         }
 
     }
