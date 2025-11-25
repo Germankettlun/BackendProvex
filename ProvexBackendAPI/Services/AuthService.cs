@@ -23,8 +23,8 @@ namespace ProvexBackendAPI.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
-        private readonly ITokenService _tokenService;
-        private readonly IUserService _userService;
+        private readonly ITokenService tokenService;
+        private readonly IUserService userService;
         private readonly ITemporadasService temporada;
 
 
@@ -34,8 +34,8 @@ namespace ProvexBackendAPI.Services
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
-            _userService = userService;
-            _tokenService = tokenService;
+            this.userService = userService;
+            this.tokenService = tokenService;
             this.temporada = temporada;
 
 
@@ -75,7 +75,7 @@ namespace ProvexBackendAPI.Services
 
             var roles = await _userManager.GetRolesAsync(user);
 
-            var token = await _tokenService.GenerateTokenAsync(user.UserName!,roles.ToList());
+            var token = await tokenService.GenerateTokenAsync(user.UserName!,roles.ToList());
 
 
             //var userDto = _mapper.Map<UserDataDto>(user);
@@ -107,7 +107,7 @@ namespace ProvexBackendAPI.Services
                 throw new ArgumentNullException("La password es requerida");
             }
 
-            var exists = await _userService.IsUniqueUser(createUserDto.Username);
+            var exists = await userService.IsUniqueUser(createUserDto.Username);
 
                 if (!exists)
                 throw new ApplicationException("El usuario ya existe.");
