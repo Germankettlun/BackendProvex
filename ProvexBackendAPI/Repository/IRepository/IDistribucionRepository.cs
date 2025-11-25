@@ -7,8 +7,6 @@ namespace ProvexBackendAPI.Repository.IRepository
     public interface IDistribucionRepository
     {
 
-        Task InsertUpdateDistribucionCategoriaPredeterminadoAsync(int idEstimacion, string idCategoria, int? porcentaje, Guid idUsuario);
-
         Task InsertUpdateDistribucionCategoriaPorSemanaAsync(int idEstimacion, string idCategoria, int anio, string semana, int porcentaje, Guid idUsuario);
 
         Task InsertUpdateDistribucionCalibrePredeterminadoAsync(int idEstimacion, string idCalibre, int? porcentaje, Guid idUsuario);

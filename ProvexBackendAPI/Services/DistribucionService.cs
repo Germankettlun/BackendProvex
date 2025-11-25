@@ -164,8 +164,6 @@ namespace ProvexBackendAPI.Services
         }
 
 
-
-
         public async Task<List<DistribucionFrigorificoDiaDto>> GetDistribucionFrigorificoAgrupadoAsync(int idBisemanal)
         {
                   
@@ -401,29 +399,38 @@ namespace ProvexBackendAPI.Services
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
 
-            // Guardar predeterminados + semanas, usando tu repo actual (cada método abre su conexión)
             foreach (var cat in req.Categorias ?? Enumerable.Empty<DistribucionCategoriaPredeterminadoGuardarDto>())
             {
-                // Predeterminado
-                await _repo.InsertUpdateDistribucionCategoriaPredeterminadoAsync(
-                    req.IdEstimacion,
-                    cat.IdCategoria,
-                    cat.PorcentajePredeterminado,
-                    usuarioId
+                //Predeterminado
+                var predParams = new[]
+                {
+            new SqlParameter("@IdEstimacion", req.IdEstimacion),
+            new SqlParameter("@IdCategoria", cat.IdCategoria),
+            new SqlParameter("@PorcentajePredeterminado", (object?)cat.PorcentajePredeterminado ?? DBNull.Value),
+            new SqlParameter("@IdUsuario", usuarioId)
+        };
+
+                await repository.SpVoid(
+                    "[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Predeterminado",
+                    predParams
                 );
 
                 // Semanas
                 foreach (var s in cat.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
                 {
-                   
+                    var semanaParams = new[]
+                    {
+                new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                new SqlParameter("@IdCategoria", cat.IdCategoria),
+                new SqlParameter("@Anio", s.Anio),
+                new SqlParameter("@Semana", s.Semana),
+                new SqlParameter("@Porcentaje", s.Porcentaje ?? 0),
+                new SqlParameter("@IdUsuario", usuarioId) 
+            };
 
-                    await _repo.InsertUpdateDistribucionCategoriaPorSemanaAsync(
-                        req.IdEstimacion,
-                        cat.IdCategoria,
-                        s.Anio,
-                        s.Semana,
-                        s.Porcentaje ?? 0,
-                        usuarioId
+                    await repository.SpVoid(
+                        "[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Semana",
+                        semanaParams
                     );
                 }
             }
@@ -434,7 +441,6 @@ namespace ProvexBackendAPI.Services
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
 
-            // Guardar predeterminados + semanas, usando tu repo actual (cada método abre su conexión)
             foreach (var cal in req.Calibres ?? Enumerable.Empty<DistribucionCalibrePredeterminadoGuardarDto>())
             {
                 // Predeterminado
@@ -504,8 +510,6 @@ namespace ProvexBackendAPI.Services
         {
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
-
-            // Guardar predeterminados + semanas, usando tu repo actual (cada método abre su conexión)
           
                 // Porcentaje predeterminado
                 await _repo.InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(req.IdEstimacion, req.PorcentajePredeterminado, userId);

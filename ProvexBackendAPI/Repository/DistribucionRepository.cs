@@ -18,30 +18,7 @@ namespace ProvexBackendAPI.Repository
         }
        
 
-
-    
-
-       
-
-        public async Task InsertUpdateDistribucionCategoriaPredeterminadoAsync(int idEstimacion, string idCategoria, int? porcentaje, Guid idUsuario)
-        {
-            await using var conn = new SqlConnection(_connString);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Predeterminado", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            cmd.Parameters.AddWithValue("@IdEstimacion", idEstimacion);
-            cmd.Parameters.AddWithValue("@IdCategoria", idCategoria);
-            cmd.Parameters.AddWithValue("@PorcentajePredeterminado", (object?)porcentaje ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
-
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        public async Task InsertUpdateDistribucionCategoriaPorSemanaAsync(int idEstimacion, string idCategoria, int anio, string semana, int porcentaje, Guid idUsuario)
+    public async Task InsertUpdateDistribucionCategoriaPorSemanaAsync(int idEstimacion, string idCategoria, int anio, string semana, int porcentaje, Guid idUsuario)
         {
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
