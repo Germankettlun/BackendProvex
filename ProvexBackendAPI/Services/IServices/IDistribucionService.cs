@@ -2,7 +2,7 @@
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
+namespace ProvexBackendAPI.Services.IServices
 {
     public interface IDistribucionService
     {
@@ -25,7 +25,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Services.IServices
 
         Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req);
+        Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId);
 
     }
 }

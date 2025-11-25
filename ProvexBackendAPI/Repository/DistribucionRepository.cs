@@ -1,13 +1,13 @@
 ﻿using Azure.Core;
 using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
-using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
+using ProvexBackendAPI.Repository.IRepository;
 using System.Data;
 using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Repository
+namespace ProvexBackendAPI.Repository
 {
     public class DistribucionRepository : IDistribucionRepository
     {
@@ -16,86 +16,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
         {
             _connString = cfg.GetConnectionString("DefaultConnection")!;
         }
-        public async Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
-        {
-            var list = new List<DistribucionCategoriaEspecieRow>();
-
-            await using var conn = new SqlConnection(_connString);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_CATEGORIA_ESPECIE", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
-            //cmd.Parameters.Add(new SqlParameter("@SEM_ANT", SqlDbType.Int) { Value = (object?)semanasAntes ?? DBNull.Value });
-            //cmd.Parameters.Add(new SqlParameter("@SEM_SIG", SqlDbType.Int) { Value = (object?)semanasDespues ?? DBNull.Value });
-
-            await using var rdr = await cmd.ExecuteReaderAsync();
-
-            while (await rdr.ReadAsync())
-            {
-                list.Add(new DistribucionCategoriaEspecieRow
-                {
-                    IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
-                    CodEspecie = rdr.Get<string?>("CODESPECIE") ?? "",
-                    Especie = rdr.Get<string?>("ESPECIE") ?? "",
-                    IdCategoria = rdr.Get<string?>("IDCATEGORIA") ?? "",
-                    CategoriaNombre = rdr.FirstExistingAsString("CATEGORIA"), 
-                    SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
-                    SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
-                    IdDistribucionDefecto = rdr.Get<int?>("IDDISTRIBUCIONDEFECTO"),
-                    PorcDefectoCategoria = rdr.Get<int?>("PORCENTAJE_POR_DEFECTO_CATEGORIA"),
-                    IdDistribucionPorSemana = rdr.Get<int?>("DISTRIBUCIONPORSEMANAID"),
-                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJE_POR_SEMANA_CATEGORIA"),
-                   
-                    EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false   
-                });
-            }
-
-            return list;
-        }
-
-        public async Task<List<DistribucionCalibreEspecieRow>> GetRowsDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues)
-        {
-            var list = new List<DistribucionCalibreEspecieRow>();
-
-            await using var conn = new SqlConnection(_connString);
-            await conn.OpenAsync();
-
-            await using var cmd = new SqlCommand("[Estimaciones].usp_UI_DISTRIBUCION_CALIBRE_ESPECIE", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            cmd.Parameters.Add(new SqlParameter("@ID_ESTIMACION", SqlDbType.Int) { Value = idEstimacion });
-            //cmd.Parameters.Add(new SqlParameter("@SEM_ANT", SqlDbType.Int) { Value = (object?)semanasAntes ?? DBNull.Value });
-            //cmd.Parameters.Add(new SqlParameter("@SEM_SIG", SqlDbType.Int) { Value = (object?)semanasDespues ?? DBNull.Value });
-
-            await using var rdr = await cmd.ExecuteReaderAsync();
-
-            while (await rdr.ReadAsync())
-            {
-                list.Add(new DistribucionCalibreEspecieRow
-                {
-                    IdEstimacion = rdr.Get<string?>("ID_ESTIMACION") ?? "",
-                    CodEspecie = rdr.Get<string?>("CODESPECIE") ?? "",
-                    Especie = rdr.Get<string?>("ESPECIE") ?? "",
-                    IdCalibre = rdr.Get<string?>("IDCALIBRE") ?? "",
-                    CalibreNombre = rdr.FirstExistingAsString("IDCALIBRE"),
-                    SemanaAnio = rdr.Get<int?>("SEMANAANO") ?? 0,
-                    SemanaNumero = rdr.Get<string?>("SEMANANUMERO") ?? "",
-                    IdDistribucionDefecto = rdr.Get<int?>("IDDISTRIBUCIONDEFECTO"),
-                    PorcDefectoCategoria = rdr.Get<int?>("PORCENTAJE_POR_DEFECTO_CALIBRE"),
-                    IdDistribucionPorSemana = rdr.Get<int?>("DISTRIBUCIONPORSEMANAID"),
-                    PorcentajeSemana = rdr.Get<int?>("PORCENTAJE_POR_SEMANA_CALIBRE"),
-                    EsSemanaActual = rdr.Get<bool?>("ES_SEMANA_ACTUAL") ?? false
-                });
-            }
-
-            return list;
-        }
+       
 
 
         public async Task<List<DistribucionFrigorificoDiaDto>> GetRowsDistribucionFrigorificoAgrupadoAsync(int idBisemanal)
@@ -547,7 +468,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
                
         }
 
-        public async Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, int idUsuario)
+        public async Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, Guid idUsuario)
         {
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
@@ -559,12 +480,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
 
             cmd.Parameters.AddWithValue("@IdEstimacion", idEstimacion);
             cmd.Parameters.AddWithValue("@PorcentajePredeterminado", (object?)porcentaje ?? DBNull.Value);
-            //cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+            cmd.Parameters.AddWithValue("@id_usuario_guid", idUsuario);
 
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, int idUsuario)
+        public async Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, Guid idUsuario)
         {
             await using var conn = new SqlConnection(_connString);
             await conn.OpenAsync();
@@ -578,7 +499,7 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository
             cmd.Parameters.AddWithValue("@Anio", anio);
             cmd.Parameters.AddWithValue("@Semana", semana);
             cmd.Parameters.AddWithValue("@Porcentaje", porcentaje);
-            //cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+            cmd.Parameters.AddWithValue("@id_usuario_guid", idUsuario);
 
             await cmd.ExecuteNonQueryAsync();
         }

@@ -2,14 +2,10 @@
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using System.Numerics;
 
-namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
+namespace ProvexBackendAPI.Repository.IRepository
 {
     public interface IDistribucionRepository
     {
-        Task<List<DistribucionCategoriaEspecieRow>> GetRowsDistribucionCategoriaAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
-
-
-        Task<List<DistribucionCalibreEspecieRow>> GetRowsDistribucionCalibreAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
 
 
 
@@ -33,9 +29,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Repository.IRepository
         Task InsertUpdateDistribucionFrigorificoAsync(DistribucionFrigorificoGuardarRequest req, Guid idUsuario);
         Task InsertUpdateDistribucionPackingAsync(DistribucionPackingGuardarRequest req, Guid idUsuario);
 
-        Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, int idUsuario);
+        Task InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(int idEstimacion, int? porcentaje, Guid idUsuario);
 
-        Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, int idUsuario);
+        Task InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(int idEstimacion, int anio, string semana, int porcentaje, Guid idUsuario);
 
         Task EliminaDistribucionFrigorificoAsync(int idBisemanal, bool? replicarASemana);
         Task EliminaDistribucionPackingAsync(int idBisemanal, bool? replicarASemana);

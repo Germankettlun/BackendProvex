@@ -4,20 +4,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
-using ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones;
-using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
 using System.Security.Claims;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
-namespace ProvexBackendAPI.Features.Estimaciones
+namespace ProvexBackendAPI.Controllers
 {
     [Route("api/v{version:apiVersion}/distribucion")]
     [ApiController]
     [ApiVersionNeutral]
-    //[Authorize]
+    [Authorize]
     public class DistribucionController : ControllerBase
     {
         private readonly IDistribucionService _service;
@@ -102,7 +100,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
             return Ok(data);
         }
 
-        [Authorize]
+ 
         // POST api/v{version}/distribucion/categoria
         [HttpPost("categoria", Name = "SaveDistribucionCategoria")]
         public async Task<IActionResult> SaveCategoria([FromBody] DistribucionCategoriaGuardarRequest req)
@@ -121,7 +119,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
                 throw new Exception(e.Message);
             }
         }
-        [Authorize]
+       
         // POST api/v{version}/distribucion/calibre
         [HttpPost("calibre", Name = "SaveDistribucionCalibre")]
         public async Task<IActionResult> SaveCalibre([FromBody] DistribucionCalibreGuardarRequest req)
@@ -159,7 +157,7 @@ namespace ProvexBackendAPI.Features.Estimaciones
                 throw new Exception(e.Message);
             }
         }
-        [Authorize]
+       
         // POST api/v{version}/distribucion/packing
         [HttpPost("packing", Name = "SaveDistribucionPacking")]
         public async Task<IActionResult> SavePacking([FromBody] DistribucionPackingGuardarRequest req)
@@ -185,7 +183,10 @@ namespace ProvexBackendAPI.Features.Estimaciones
         {
             try
             {
-                await _service.DistribucionPorcentajeExportacionGuardarAsync(req);
+                var userId = await _tokenService.GetUserIdFromClaimsAsync(User);
+                if (userId is null)
+                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+                await _service.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
                 return Ok();
             }
             catch (Exception e)

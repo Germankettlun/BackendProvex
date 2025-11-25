@@ -163,7 +163,6 @@ namespace ProvexBackendAPI.Repository
             catch (Exception ex)
             {
                 throw ex;
-                throw;
             }
             finally
             {
