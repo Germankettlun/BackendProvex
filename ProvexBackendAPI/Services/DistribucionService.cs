@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using ProvexBackendAPI.Data.Models;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Helpers.Validation;
 using ProvexBackendAPI.Repository;
@@ -14,12 +15,10 @@ namespace ProvexBackendAPI.Services
 {
     public class DistribucionService : IDistribucionService
     {
-        private readonly IDistribucionRepository _repo;
         private readonly IGenericRepository repository;
 
-        public DistribucionService(IDistribucionRepository repo, IGenericRepository repository)
+        public DistribucionService( IGenericRepository repository)
         {
-            _repo = repo;
             this.repository = repository;
         }
 
@@ -643,24 +642,35 @@ namespace ProvexBackendAPI.Services
         {
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
-          
-                // Porcentaje predeterminado
-                await _repo.InsertUpdateDistribucionPorcentajeExportacionPredeterminadoAsync(req.IdEstimacion, req.PorcentajePredeterminado, userId);
 
-                // Semanas
-                foreach (var s in req.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
-                {
+            // Porcentaje predeterminado
+            var predeterminadoParams = new[]
+                   {
+                        new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                        new SqlParameter("@PorcentajePredeterminado",    (object?)req.PorcentajePredeterminado ?? DBNull.Value),
+                        new SqlParameter("@id_usuario_guid",    userId)
+                   };
+
+            await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPorcentajeExportacion_Predeterminado]", predeterminadoParams);
+
+            // Semanas
+            foreach (var s in req.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
+            {
+
+                var semanaParams = new[]
+                  {
+                        new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                         new SqlParameter("@Anio", s.Anio),
+                          new SqlParameter("@Semana", s.Semana ),
+                        new SqlParameter("@Porcentaje", s.Porcentaje ?? 0),
+                        new SqlParameter("@id_usuario_guid",    userId)
+                   };
+
+                await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPorcentajeExportacion_Semana]", semanaParams);
 
 
-                    await _repo.InsertUpdateDistribucionPorcentajeExportacionPorSemanaAsync(
-                        req.IdEstimacion,
-                        s.Anio,
-                        s.Semana,
-                        s.Porcentaje ?? 0,
-                        userId
-                    );
-                }
-         
+            }
+
         }
 
         private async Task<List<int>> ObtenerIdsBisemanalSemanaAsync(int idBisemanalBase)
