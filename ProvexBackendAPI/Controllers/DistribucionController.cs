@@ -35,10 +35,6 @@ namespace ProvexBackendAPI.Controllers
         [FromQuery] int? semanasDespues
     )
         {
-            if (idEstimacion <= 0)
-                return BadRequest("El idEstimacion debe ser mayor que cero.");
-
-
 
             var data = await distribucion.GetDistribucionCategoriaAsync(idEstimacion, semanasAntes, semanasDespues);
             return Ok(data);
@@ -52,8 +48,6 @@ namespace ProvexBackendAPI.Controllers
         [FromQuery] int? semanasDespues
     )
         {
-            if (idEstimacion <= 0)
-                return BadRequest("El idEstimacion debe ser mayor que cero.");
 
             var data = await distribucion.GetDistribucionCalibreAsync(idEstimacion, semanasAntes, semanasDespues);
             return Ok(data);
@@ -91,10 +85,6 @@ namespace ProvexBackendAPI.Controllers
         [FromQuery] int? semanasDespues
     )
         {
-            if (idEstimacion <= 0)
-                return BadRequest("El idEstimacion debe ser mayor que cero.");
-
-
 
             var data = await distribucion.GetRowsDistribucionPorcentajeExportacionAsync(idEstimacion, semanasAntes, semanasDespues);
             return Ok(data);
@@ -108,9 +98,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
-
                 await distribucion.DistribucionCategoriaGuardarAsync(req, userId.Value);
                 return NoContent();
             }
@@ -127,9 +114,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
-
                 await distribucion.DistribucionCalibreGuardarAsync(req, userId.Value);
                 return NoContent();
             }
@@ -146,9 +130,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
-
                 await distribucion.DistribucionFrigorificoGuardarAsync(req, userId.Value);
                 return NoContent();
             }
@@ -165,9 +146,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
-
                 await distribucion.DistribucionPackingGuardarAsync(req, userId.Value);
                 return NoContent();
             }
@@ -184,8 +162,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
                 await   distribucion.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
                 return Ok();
             }

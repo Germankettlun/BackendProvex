@@ -56,10 +56,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
-
                 await estimacion.UpsertDiaAsync(request, userId.Value);
                 return Ok("OK"); // 200, data:null
             }
@@ -81,10 +77,6 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-
-                if (userId is null)
-                    throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
-
                 await estimacion.IngresarEstimacion(request, userId.Value);
                 return Ok();
 
@@ -100,9 +92,6 @@ namespace ProvexBackendAPI.Controllers
         public async Task ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
         {
             var userId = await token.GetUserIdFromClaimsAsync(User);
-
-            if (userId is null)
-                throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
             await estimacion.IngresarPorcentajeExportacionSemanal(input, userId.Value);
             return;
         }
@@ -117,8 +106,7 @@ namespace ProvexBackendAPI.Controllers
         [HttpPost("Publicar")]
         public async Task<ActionResult> Publicar(PublicacionDTO publicacion)
         {
-            var userId = await token.GetUserIdFromClaimsAsync(User) ??
-                throw new UnauthorizedAccessException("No se pudo determinar el usuario.");
+            var userId = await token.GetUserIdFromClaimsAsync(User);
 
             return Ok();
         }

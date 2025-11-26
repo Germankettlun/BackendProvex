@@ -12,60 +12,34 @@ namespace ProvexBackendAPI.Controllers
 {
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
-    // [ApiVersion("1.0")]
-    // [ApiVersion("2.0")]
     [ApiVersionNeutral]
     [AllowAnonymous]
     public class AuthenticationController : ControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly IAuthService auth;
 
-        public AuthenticationController(IAuthService authService)
+        public AuthenticationController(IAuthService auth)
         {
-            _authService = authService;
+            this.auth = auth;
 
         }
 
         
         [HttpPost("Login", Name = "LoginUser")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> LoginUser([FromBody] LoginDto userLoginDtoDto)
         {
-            if (userLoginDtoDto == null || !ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            var user = await _authService.Login(userLoginDtoDto);
-            if (user == null)
-            {
-                return Unauthorized();
-            }
+            var user = await auth.Login(userLoginDtoDto);
             return Ok(user);
         }
 
         [HttpPost("Register", Name = "RegisterUser")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> RegisterUser([FromBody] CreateUserDto createUserDto)
         {
-            if (createUserDto == null || !ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-             var result = await _authService.Register(createUserDto);
-            if (result == null)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error al registrar el usuario");
-            }
+             var result = await auth.Register(createUserDto);
             return Ok(result);
         }
     }

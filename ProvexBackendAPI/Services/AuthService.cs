@@ -43,13 +43,8 @@ namespace ProvexBackendAPI.Services
         public async Task<AuthenticationDto.LoginResponseDto> Login(AuthenticationDto.LoginDto loginDto)
         {
 
-            if (loginDto is null) throw new ArgumentNullException(nameof(loginDto));
-
-            if (string.IsNullOrWhiteSpace(loginDto.Username))
-                throw new ValidationException("El username es requerido.");
-
-            if (string.IsNullOrWhiteSpace(loginDto.Password))
-                throw new ValidationException("El password es requerido.");
+            if (loginDto is null || string.IsNullOrWhiteSpace(loginDto.Username) || string.IsNullOrWhiteSpace(loginDto.Password))
+                throw new InvalidCredentialException("Usuario o contraseña incorrectos.");
 
             var input = loginDto.Username.Trim();
             ApplicationUser? user = input.Contains('@')
@@ -58,19 +53,13 @@ namespace ProvexBackendAPI.Services
             
            
             if (user is null)
-            throw new InvalidCredentialException("Usuario o contraseña inválidos.");
+            throw new InvalidCredentialException("Credenciales inválidas.");
 
             // Verificar contraseña ( Identity )
             var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
 
-            if (check.IsLockedOut)
-                throw new UnauthorizedAccessException("locked_out");
-            if (check.IsNotAllowed)
-                throw new UnauthorizedAccessException("not_allowed");
-            if (check.RequiresTwoFactor)
-                throw new UnauthorizedAccessException("requires_2fa");
             if (!check.Succeeded)
-                throw new InvalidCredentialException("Usuario o contraseña inválidos.");
+                throw new InvalidCredentialException("Credenciales inválidas.");
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -98,17 +87,18 @@ namespace ProvexBackendAPI.Services
 
         public async Task<UserDataDto> Register(CreateUserDto createUserDto)
         {
-            if (string.IsNullOrEmpty(createUserDto.Username))
-            {
-                throw new ArgumentNullException("El username es requerido");
-            }
+            if (createUserDto is null)
+                throw new ApplicationException("Datos de registro requeridos.");
 
-            if (createUserDto.Password == null)
-            {
-                throw new ArgumentNullException("La password es requerida");
-            }
+            var username = createUserDto.Username?.Trim();
 
-            var exists = await userService.IsUniqueUser(createUserDto.Username);
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ApplicationException("El username es requerido.");
+
+            if (string.IsNullOrWhiteSpace(createUserDto.Password))
+                throw new ApplicationException("La password es requerida.");
+
+            var exists = await userService.IsUniqueUser(username);
 
                 if (!exists)
                 throw new ApplicationException("El usuario ya existe.");
@@ -117,48 +107,44 @@ namespace ProvexBackendAPI.Services
             
             var user = new ApplicationUser()
             {   
-                UserName = createUserDto.Username,
-                Email = createUserDto.Username,
-                NormalizedEmail = createUserDto.Username.ToUpper(),
+                UserName = username,
+                Email = username,
+                NormalizedEmail = username.ToUpper(),
                 Name = createUserDto.Name
             };
+
             user.Id = Guid.NewGuid();
-           
+
+            const string DefaultRole = "User";
 
             var result = await _userManager.CreateAsync(user, createUserDto.Password);
-            if (result.Succeeded)
-            {
-                var userRole = string.IsNullOrWhiteSpace(createUserDto.Role) ? "User" : createUserDto.Role;
 
-                var roleExists = await _roleManager.RoleExistsAsync(userRole);
+            if (!result.Succeeded)
+            {
+                throw new ApplicationException("Error al crear el usuario.");
+            }
+                // Si no especifica rol, usamos el por defecto
+                var requestedRole = string.IsNullOrWhiteSpace(createUserDto.Role) ? DefaultRole : createUserDto.Role.Trim();
+
+                // Si el rol no existe, degradamos al rol por defecto
+                var roleExists = await _roleManager.RoleExistsAsync(requestedRole);
+
                 if (!roleExists)
                 {
-                    // OJO: usamos IdentityRole<Guid> (no el IdentityRole por defecto de string)
-                    var identityRole = new IdentityRole<Guid>
-                    {
-                        Id = Guid.NewGuid(),
-                        Name = userRole,
-                        NormalizedName = userRole.ToUpperInvariant()
-                    };
-                    var roleCreate = await _roleManager.CreateAsync(identityRole);
-                    if (!roleCreate.Succeeded)
-                    {
-                        var errs = string.Join(" | ", roleCreate.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                        throw new ApplicationException($"No se pudo crear el rol '{userRole}'. {errs}");
-                    }
+
+                    requestedRole = DefaultRole;
                 }
 
-                var addToRole = await _userManager.AddToRoleAsync(user, userRole);
+                var addToRole = await _userManager.AddToRoleAsync(user, requestedRole);
                 if (!addToRole.Succeeded)
                 {
-                    var errs = string.Join(" | ", addToRole.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                    throw new ApplicationException($"No se pudo asignar el rol '{userRole}' al usuario. {errs}");
+                    throw new ApplicationException("No se pudo asignar el rol al usuario.");
                 }
-            }
+           
 
             var createdUser = await _userManager.FindByNameAsync(createUserDto.Username);
             if (createdUser == null)
-                throw new ApplicationException("No se pudo recuperar el usuario recién creado.");
+                throw new ApplicationException("Error al crear el usuario.");
 
             //return _mapper.Map<UserDataDto>(createdUser);
             return createdUser.ToUserDataDto();
