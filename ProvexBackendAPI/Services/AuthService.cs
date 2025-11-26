@@ -56,8 +56,7 @@ namespace ProvexBackendAPI.Services
                 ? await _userManager.FindByEmailAsync(input)
                 : await _userManager.FindByNameAsync(input);
             
-            var semana = await temporada.GetSemanaAsync(codigoEmpresa: "PRX", codigoTemporada: null, soloVigente: true);
-
+           
             if (user is null)
             throw new InvalidCredentialException("Usuario o contraseña inválidos.");
 
@@ -76,6 +75,8 @@ namespace ProvexBackendAPI.Services
             var roles = await _userManager.GetRolesAsync(user);
 
             var token = await tokenService.GenerateTokenAsync(user.UserName!,roles.ToList());
+
+            var semana = await temporada.GetSemanaAsync(codigoEmpresa: "PRX", codigoTemporada: null, soloVigente: true);
 
 
             //var userDto = _mapper.Map<UserDataDto>(user);
