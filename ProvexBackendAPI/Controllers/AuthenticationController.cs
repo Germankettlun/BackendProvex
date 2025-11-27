@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using ProvexBackendAPI.Exceptions;
+using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
@@ -13,7 +14,7 @@ namespace ProvexBackendAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [ApiVersionNeutral]
-    [AllowAnonymous]
+
     public class AuthenticationController : ControllerBase
     {
         private readonly IAuthService auth;
@@ -41,6 +42,16 @@ namespace ProvexBackendAPI.Controllers
 
              var result = await auth.Register(createUserDto);
             return Ok(result);
+        }
+
+        [HttpPost("admin/resetPassowrd")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminResetPassword([FromBody] AdminResetPasswordByUserNameRequest request)
+        {
+
+            await auth.ResetPasswordByUserNameAsync(request);
+
+            return NoContent(); 
         }
     }
 

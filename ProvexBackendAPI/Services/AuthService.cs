@@ -1,10 +1,12 @@
 ﻿
+using Azure.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto.Authentication;
+using ProvexBackendAPI.Exceptions;
 using ProvexBackendAPI.Helpers.Mapping;
 using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
@@ -14,6 +16,7 @@ using System.Security.Claims;
 using System.Text;
 using static ProvexBackendAPI.Dto.Authentication.AuthenticationDto;
 using static ProvexBackendAPI.Dto.Users.UsersDto;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ProvexBackendAPI.Services
 {
@@ -44,7 +47,7 @@ namespace ProvexBackendAPI.Services
         {
 
             if (loginDto is null || string.IsNullOrWhiteSpace(loginDto.Username) || string.IsNullOrWhiteSpace(loginDto.Password))
-                throw new InvalidCredentialException("Usuario o contraseña incorrectos.");
+                throw new BadRequestException("Usuario y contraseña son obligatorios.");
 
             var input = loginDto.Username.Trim();
             ApplicationUser? user = input.Contains('@')
@@ -53,13 +56,13 @@ namespace ProvexBackendAPI.Services
             
            
             if (user is null)
-            throw new InvalidCredentialException("Credenciales inválidas.");
+                throw new UnauthorizedException("Usuario o contraseña incorrectos.");
 
             // Verificar contraseña ( Identity )
             var check = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, lockoutOnFailure: true);
 
             if (!check.Succeeded)
-                throw new InvalidCredentialException("Credenciales inválidas.");
+                throw new UnauthorizedException("Usuario o contraseña incorrectos.");
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -87,6 +90,8 @@ namespace ProvexBackendAPI.Services
 
         public async Task<UserDataDto> Register(CreateUserDto createUserDto)
         {
+            try { 
+            
             if (createUserDto is null)
                 throw new ApplicationException("Datos de registro requeridos.");
 
@@ -148,9 +153,60 @@ namespace ProvexBackendAPI.Services
 
             //return _mapper.Map<UserDataDto>(createdUser);
             return createdUser.ToUserDataDto();
-           
 
+            }
+            catch (Exception)
+            {
+                throw new Exception("Error al crear usuario.");
+            }
 
+        }
+
+        public async Task ResetPasswordByUserNameAsync(AdminResetPasswordByUserNameRequest request)
+        {
+            try { 
+
+            if (string.IsNullOrWhiteSpace(request.UserName))
+                throw new ArgumentException("userName es obligatorio.", nameof(request.UserName));
+
+            if (!string.IsNullOrWhiteSpace(request.ConfirmNewPassword) &&
+               request.NewPassword != request.ConfirmNewPassword)
+                throw new ArgumentException("Las contraseñas ingresadas no coinciden.");
+
+            var normalizedUserName = request.UserName.Trim();
+
+            var user = await _userManager.FindByNameAsync(normalizedUserName);
+            if (user is null)
+                throw new InvalidOperationException("Error al restablecer la contraseña.");
+
+            // Validar contraseña con las reglas de Identity
+            foreach (var validator in _userManager.PasswordValidators)
+            {
+                var validationResult = await validator.ValidateAsync(_userManager, user, request.NewPassword);
+                if (!validationResult.Succeeded)
+                {
+                    var errors = string.Join(" | ", validationResult.Errors.Select(e => e.Description));
+                    throw new ValidationException("Error al restablecer la contraseña.");
+                }
+            }
+
+            // Generar token y resetear
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            var result = await _userManager.ResetPasswordAsync(user, token, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(" | ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"No se pudo restablecer la contraseña: {errors}");
+            }
+
+            await _userManager.UpdateSecurityStampAsync(user);
+
+            }
+            catch (Exception)
+            {
+                throw new Exception("Error al restablecer contraseña.");
+            }
         }
 
 
