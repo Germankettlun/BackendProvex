@@ -82,7 +82,7 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@ID_ESTIMACION", idEstimacion),
                 };
 
-            var dataTable = await repository.GetDataTable("Estimaciones.usp_UI_Estimacion_ResumenSemanal", parameters);
+            var dataTable = await repository.GetDataTable("[Estimaciones].[usp_UI_Estimacion_ResumenSemanal]", parameters);
 
             //Mapear DataTable a lista tipada
             var filas = dataTable.AsEnumerable().Select(MapResumenSemanalRow).ToList();
@@ -335,8 +335,8 @@ namespace ProvexBackendAPI.Services
                 Anio = row["ANIO"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ANIO"]),
                 Semana_Nro = row.IsNull("SEMANA_NRO") ? null : row["SEMANA_NRO"]?.ToString(),
 
-                E_Sin_Porc = row["TOTAL_E_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["TOTAL_E_SIN_PORC"]),
-                E_Con_Porc = row["TOTAL_E_CON_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["TOTAL_E_CON_PORC"]),
+                E_Sin_Porc = row["E_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["E_SIN_PORC"]),
+                E_Con_Porc = row["E_CON_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["E_CON_PORC"]),
                 P_Semana = row["P_SEMANA"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["P_SEMANA"]),
 
                 Categorias_Semanas = row.IsNull("CATEGORIAS_SEMANA") ? null : row["CATEGORIAS_SEMANA"]?.ToString(),
