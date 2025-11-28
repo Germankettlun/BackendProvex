@@ -52,17 +52,20 @@ namespace ProvexBackendAPI.Services
                     SemanaNumero = row["SEMANANUMERO"] == DBNull.Value ? "" : Convert.ToString(row["SEMANANUMERO"]),
                     IdDistribucionDefecto = row["IDDISTRIBUCIONDEFECTO"] == DBNull.Value ? 0 : Convert.ToInt32(row["IDDISTRIBUCIONDEFECTO"]),
                     PorcDefectoCategoria = row["PORCENTAJE_POR_DEFECTO_CATEGORIA"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_DEFECTO_CATEGORIA"]),
+                    PorcDefectoCategoriaProducido = row["PCT_PROD_SEMANA_ACT"] == DBNull.Value ? 0 : Convert.ToInt32(row["PCT_PROD_SEMANA_ACT"]),
                     IdDistribucionPorSemana = row["DISTRIBUCIONPORSEMANAID"] == DBNull.Value ? 0 : Convert.ToInt32(row["DISTRIBUCIONPORSEMANAID"]),
                     PorcentajeSemana = row["PORCENTAJE_POR_SEMANA_CATEGORIA"] == DBNull.Value ? 0 : Convert.ToInt32(row["PORCENTAJE_POR_SEMANA_CATEGORIA"]),
+                    PorcentajeSemanaProducido = row["PCT_PROD_SEMANA_TEMP_ANT"] == DBNull.Value ? 0 : Convert.ToInt32(row["PCT_PROD_SEMANA_TEMP_ANT"]),
+                    CajasProducidasSemanaActual = row["CAJAS_PROD_SEMANA_ACT"] == DBNull.Value ? 0 : Convert.ToInt32(row["CAJAS_PROD_SEMANA_ACT"]),
 
-                  //  EsSemanaActual = row["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(row["ES_SEMANA_ACTUAL"]),
+                    //  EsSemanaActual = row["ES_SEMANA_ACTUAL"] == DBNull.Value ? false : Convert.ToBoolean(row["ES_SEMANA_ACTUAL"]),
 
                 });
             }
 
             // Grouping por (IdEstimacion, IdCategoria)
             var grouped = list
-                .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CodEspecie, r.Especie, r.CategoriaNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria })
+                .GroupBy(r => new { r.IdEstimacion, r.IdCategoria, r.CodEspecie, r.Especie, r.CategoriaNombre, r.IdDistribucionDefecto, r.PorcDefectoCategoria, r.PorcDefectoCategoriaProducido })
                 .Select(g => new DistribucionCategoriaEspecieResponseDto
                 {
                     IdEstimacion = g.Key.IdEstimacion,
@@ -72,6 +75,7 @@ namespace ProvexBackendAPI.Services
                     Especie = g.Key.Especie, 
                     IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
                     PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
+                    PorcentajePredeterminadoProducido = g.Key.PorcDefectoCategoriaProducido,
                     Semanas = g
                         .Select(r => new SemanaPorcentajeDto
                         {
@@ -79,6 +83,8 @@ namespace ProvexBackendAPI.Services
                             Semana = r.SemanaNumero,
                             IdPorcentajePorSemana = r.IdDistribucionPorSemana,
                             PorcentajePorSemana = r.PorcentajeSemana,
+                            PorcentajePorSemanaProducido = r.PorcentajeSemanaProducido,
+                            CajasProducidasSemanaActual = r.CajasProducidasSemanaActual,
                             EsSemanaActual = r.EsSemanaActual
                         })
                         .DistinctBy(x => new { x.Anio, x.Semana }) 

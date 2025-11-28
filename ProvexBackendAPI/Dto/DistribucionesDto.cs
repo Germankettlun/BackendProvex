@@ -43,9 +43,16 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
         public int? IdDistribucionDefecto { get; set; }
         public int? PorcDefectoCategoria { get; set; }
+
+        public int? PorcDefectoCategoriaProducido { get; set; }
         public int? IdDistribucionPorSemana { get; set; }
-        public int? PorcentajeSemana { get; set; }          
+        public int? PorcentajeSemana { get; set; }
+
+        public int? PorcentajeSemanaProducido { get; set; }
         public bool EsSemanaActual { get; set; } 
+
+        public int? CajasProducidasSemanaActual { get; set; }
+
     }
 
     public class DistribucionCalibreEspecieRow
@@ -59,9 +66,13 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public string SemanaNumero { get; set; } = string.Empty;
         public int? IdDistribucionDefecto { get; set; }
         public int? PorcDefectoCalibre { get; set; }
+
+        public int? PorcDefectoCalibreProducido { get; set; }
         public int? IdDistribucionPorSemana { get; set; }
         public int? PorcentajeSemana { get; set; }
+        public int? PorcentajeSemanaProducido { get; set; }
         public bool EsSemanaActual { get; set; }
+        public int? CajasProducidasSemanaActual { get; set; }
     }
 
     public  class DistribucionCategoriaEspecieResponseDto
@@ -86,6 +97,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
         [JsonPropertyName("porcentajePredeterminado")]
         public int? PorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("porcentajePredeterminadoProducido")]
+        public int? PorcentajePredeterminadoProducido { get; set; }
 
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
@@ -131,6 +145,12 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
         [JsonPropertyName("porcentajePorSemana")]
         public int? PorcentajePorSemana { get; set; }
+
+        [JsonPropertyName("porcentajePorSemanaProducido")]
+        public int? PorcentajePorSemanaProducido { get; set; }
+
+        [JsonPropertyName("cajasProducidasSemanaActual")]
+        public int? CajasProducidasSemanaActual { get; set; }
 
         [JsonPropertyName("actual")]
         public bool EsSemanaActual { get; set; }
