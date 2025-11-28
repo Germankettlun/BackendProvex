@@ -36,12 +36,10 @@ namespace ProvexBackendAPI.Controllers
         //    // GET api/v{version}/estimacion/GetResumenSemanal
         [HttpGet("GetResumenSemanal", Name = "GetResumenSemanal")]
         public async Task<IActionResult> GetResumenSemanal(
-            [FromQuery] string codigoEmpresa,
-            [FromQuery] string idTemporada,
             [FromQuery] int idEstimacion
         )
         {
-            var data = await estimacion.GetResumenSemanalAsync(codigoEmpresa,idTemporada,idEstimacion);
+            var data = await estimacion.GetResumenSemanalAsync(idEstimacion);
             return Ok(data);
         }
 

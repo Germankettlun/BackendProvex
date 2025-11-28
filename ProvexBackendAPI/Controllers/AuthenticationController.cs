@@ -44,7 +44,7 @@ namespace ProvexBackendAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPost("admin/resetPassowrd")]
+        [HttpPost("admin/resetPassword")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminResetPassword([FromBody] AdminResetPasswordByUserNameRequest request)
         {

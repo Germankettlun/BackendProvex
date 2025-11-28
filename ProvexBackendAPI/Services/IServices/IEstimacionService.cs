@@ -13,7 +13,7 @@ namespace ProvexBackendAPI.Services.IServices
         Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(
          EstimacionBisemanalQueryDto req);
 
-        Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion);
+        Task<List<ResumenSemanalEstimacionDto>> GetResumenSemanalAsync(int idEstimacion);
 
 
     }
