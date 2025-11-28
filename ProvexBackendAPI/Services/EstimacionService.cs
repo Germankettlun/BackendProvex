@@ -207,6 +207,61 @@ namespace ProvexBackendAPI.Services
             return resumen.Values.ToList();
         }
 
+        public async Task<DetalleDistribucionesEstimacionDto> GetDetalleDistribucionesAsync(int idEstimacion)
+        {
+            if (idEstimacion <= 0)
+                throw new ValidationException("IdEstimacion inválido");
+
+            var dtSemana = await repository.GetDataTable("[Estimaciones].[usp_UI_EstimacionSemanal_DetalleDistribucion]",new[]{new SqlParameter("@ID_ESTIMACION", idEstimacion)});
+
+            // 2) Segundo SP
+            var dtPorDia = await repository.GetDataTable("[Estimaciones].[usp_UI_EstimacionSemanal_DetalleDistribucionXDia]",new[]{new SqlParameter("@ID_ESTIMACION", idEstimacion)});
+
+            //Agrupar por Semana-Año y armar un DetalleDistribucionesSemanalDto por cada grupo
+            var semanas = dtSemana.AsEnumerable()
+                .GroupBy(r => new
+                {
+                    Anio = r.Field<int>("ANIO"),
+                    Semana = r.Field<int>("SEMANA_NRO")
+                })
+                .Select(g =>
+                {
+                    var any = g.First();
+
+                    var anio = any.Field<int>("ANIO");
+                    var semanaNro = any.Field<int>("SEMANA_NRO");
+
+                    var categoriasRaw = any.Field<string?>("CATEGORIAS_SEMANA");
+                    var calibresRaw = any.Field<string?>("CALIBRES_SEMANA");
+
+                    var aplicaDefaultPctExp = any.Field<int?>("APLICA_DEFAULT_PCT_EXP");
+
+                    return new DetalleDistribucionesSemanalDto
+                    {
+                        Anio = anio,
+                        Semana = semanaNro.ToString(),
+
+
+                        DistribucionCategoria = BuildDistribucionCategoria(categoriasRaw, aplicaDefaultPctExp),
+                        DistribucionCalibre = BuildDistribucionCalibre(calibresRaw, aplicaDefaultPctExp),
+
+
+                        PackingPorDia = BuildPackingPorDiaSemana(dtPorDia, anio, semanaNro.ToString()),
+                        FrigorificoPorDia = BuildFrigorificoPorDiaSemana(dtPorDia, anio, semanaNro.ToString())
+                    };
+                })
+                .OrderBy(x => x.Anio)
+                .ThenBy(x => x.Semana)
+                .ToList();
+
+           
+            return new DetalleDistribucionesEstimacionDto
+            {
+                IdEstimacion = idEstimacion,
+                Semanas = semanas
+            };
+        }
+
         public async Task IngresarEstimacion(IngresarEstimacionRequest request, Guid userId)
         {
             try
@@ -360,41 +415,102 @@ namespace ProvexBackendAPI.Services
         }
 
 
-        //Helper distribución packing / frigorifico
+        //Helper distribución packing / frigorifico / categoria / calibre
 
-        public static List<Semana_DistribucionPackingPorDia> BuildPackingPorDia(string? raw)
+        public static List<DistribucionCategoriaPorSemanaNode> BuildDistribucionCategoria(string? raw, int? aplicaDefaultPctExp)
         {
-            var parsed = ParseDayNamePercentList(raw);
+            var parsed = ParseNombrePorcentajeCajasDefault(raw);
+
+            bool? esDefault = aplicaDefaultPctExp.HasValue ? aplicaDefaultPctExp.Value == 1 : (bool?)null;
+
             return parsed
-                .GroupBy(x => x.Day, StringComparer.OrdinalIgnoreCase)
-                .Select(g => new Semana_DistribucionPackingPorDia
+                .Select(p => new DistribucionCategoriaPorSemanaNode
                 {
-                    nombreDia = g.Key,
-                    Packings = g.Select(p => new NombrePorcentajeDto
-                    {
-                        Nombre = p.Name,
-                        Porcentaje = p.PercentText
-                    }).ToList()
+                    nombreCategoria = p.Nombre,
+                    Porcentaje = p.Porcentaje,
+                    Cajas = p.Cajas,
+                    EsPorcentajeDefault = esDefault
                 })
                 .ToList();
         }
 
-        public static List<Semana_DistribucionFrigorificoPorDia> BuildFrigorificoPorDia(string? raw)
+        public static List<DistribucionCalibrePorSemanaNode> BuildDistribucionCalibre(string? raw, int? aplicaDefaultPctExp)
         {
-            var parsed = ParseDayNamePercentList(raw);
+            var parsed = ParseNombrePorcentajeCajasDefault(raw);
+
+            bool? esDefault = aplicaDefaultPctExp.HasValue ? aplicaDefaultPctExp.Value == 1 : (bool?)null;
+
             return parsed
-                .GroupBy(x => x.Day, StringComparer.OrdinalIgnoreCase)
-                .Select(g => new Semana_DistribucionFrigorificoPorDia
+                .Select(p => new DistribucionCalibrePorSemanaNode
                 {
-                    nombreDia = g.Key,
-                    Frigorificos = g.Select(p => new NombrePorcentajeDto
-                    {
-                        Nombre = p.Name,
-                        Porcentaje = p.PercentText
-                    }).ToList()
+                    nombreCalibre = p.Nombre,
+                    Porcentaje = p.Porcentaje,
+                    Cajas = p.Cajas,
+                    EsPorcentajeDefault = esDefault
                 })
                 .ToList();
         }
+
+        private static List<Semana_DistribucionPackingPorDia> BuildPackingPorDiaSemana(DataTable dtPorDia, int anio, string semanaNro)
+        {
+            if (!int.TryParse(semanaNro, out var semanaFiltro))
+                return new List<Semana_DistribucionPackingPorDia>();
+
+            return dtPorDia.AsEnumerable()
+                .Where(r =>
+                    Convert.ToInt32(r["ANIO"]) == anio &&
+                    Convert.ToInt32(r["SEMANA_NRO"]) == semanaFiltro
+                )
+                .OrderBy(r => r.Field<DateTime>("DIA"))
+                .Select(r => BuildPackingPorDiaRow(
+                    r.Field<DateTime>("DIA"),
+                    r.Field<string?>("PACKINGS_DIA")
+                ))
+                .ToList();
+        }
+
+        private static List<Semana_DistribucionFrigorificoPorDia> BuildFrigorificoPorDiaSemana(DataTable dtPorDia,int anio, string semanaNro)
+        {
+            if (!int.TryParse(semanaNro, out var semanaFiltro))
+                return new List<Semana_DistribucionFrigorificoPorDia>();
+
+            return dtPorDia.AsEnumerable()
+                .Where(r =>
+                    Convert.ToInt32(r["ANIO"]) == anio &&
+                    Convert.ToInt32(r["SEMANA_NRO"]) == semanaFiltro
+                )
+                .OrderBy(r => r.Field<DateTime>("DIA"))
+                .Select(r => BuildFrigorificoPorDiaRow(
+                    r.Field<DateTime>("DIA"),
+                    r.Field<string?>("FRIGORIFICOS_DIA")
+                ))
+                .ToList();
+        }
+
+        public static Semana_DistribucionPackingPorDia BuildPackingPorDiaRow(DateTime fechaDia, string? rawPackings)
+        {
+            var cultureEs = new CultureInfo("es-ES");
+
+            return new Semana_DistribucionPackingPorDia
+            {
+                nombreDia = cultureEs.TextInfo.ToTitleCase(fechaDia.ToString("dddd", cultureEs)),
+                fechaDia = fechaDia,
+                Packings = ParseNombrePorcentajeCajasDefault(rawPackings)
+            };
+        }
+
+        public static Semana_DistribucionFrigorificoPorDia BuildFrigorificoPorDiaRow(DateTime fechaDia, string? rawFrigos)
+        {
+            var cultureEs = new CultureInfo("es-ES");
+
+            return new Semana_DistribucionFrigorificoPorDia
+            {
+                nombreDia = cultureEs.TextInfo.ToTitleCase(fechaDia.ToString("dddd", cultureEs)),
+                fechaDia = fechaDia,
+                Frigorificos = ParseNombrePorcentajeCajasDefault(rawFrigos)
+            };
+        }
+
         public static List<(string Day, string Name, string PercentText, double? PercentValue)>
         ParseDayNamePercentList(string? raw, char[]? daySeps = null, char[]? innerPairSeps = null, char[]? innerKvSeps = null)
         {
@@ -535,6 +651,67 @@ namespace ProvexBackendAPI.Services
             }
             return list;
         }
+
+        private static List<NombrePorcentajeDto> ParseNombrePorcentajeCajasDefault(string? raw)
+        {
+            var result = new List<NombrePorcentajeDto>();
+            if (string.IsNullOrWhiteSpace(raw))
+                return result;
+
+            // Cada item separado por ';'
+            var items = raw.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var item in items)
+            {
+                var part = item.Trim();
+                if (part.Length == 0) continue;
+
+                // Formato: Nombre:Porcentaje:Cajas:Flag
+                var segments = part.Split(':', StringSplitOptions.RemoveEmptyEntries);
+
+                if (segments.Length < 2)
+                {
+                    // Al menos necesitamos Nombre y Porcentaje
+                    continue;
+                }
+
+                var nombre = segments[0].Trim();
+                var porcentaje = segments[1].Trim();
+
+                int? cajas = null;
+                if (segments.Length >= 3)
+                {
+                    var rawCajas = segments[2].Trim().Replace(",", ".");
+                    if (double.TryParse(rawCajas, NumberStyles.Any, CultureInfo.InvariantCulture, out var cajasDouble))
+                    {
+                        //Siempre convertimos a int
+                        cajas = (int)Math.Round(cajasDouble);
+                    }
+                }
+
+                bool? esDefault = null;
+                if (segments.Length >= 4)
+                {
+                    var flag = segments[3].Trim();
+                    if (flag.Equals("D", StringComparison.OrdinalIgnoreCase))
+                        esDefault = true;
+                    else if (flag.Equals("E", StringComparison.OrdinalIgnoreCase))
+                        esDefault = false;
+                }
+
+                result.Add(new NombrePorcentajeDto
+                {
+                    Nombre = nombre,
+                    Porcentaje = porcentaje,
+                    Cajas = cajas,
+                    EsPorcentajeDefault = esDefault
+                });
+            }
+
+            return result;
+        }
+
+
 
         //HELPERS EstimacionBisemanal
 

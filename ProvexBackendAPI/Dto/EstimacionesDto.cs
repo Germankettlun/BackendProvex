@@ -173,6 +173,30 @@ namespace ProvexBackendAPI.Dto
 
         }
 
+        public class DetalleDistribucionesSemanalDto
+        {
+            public int? Anio { get; set; }        
+            public string? Semana { get; set; }       
+
+            public List<DistribucionCategoriaPorSemanaNode> DistribucionCategoria { get; set; }
+                = new();
+
+            public List<DistribucionCalibrePorSemanaNode> DistribucionCalibre { get; set; }
+                = new();
+
+            public List<Semana_DistribucionPackingPorDia> PackingPorDia { get; set; }
+                = new();
+
+            public List<Semana_DistribucionFrigorificoPorDia> FrigorificoPorDia { get; set; }
+                = new();
+        }
+
+        public class DetalleDistribucionesEstimacionDto
+        {
+            public int IdEstimacion { get; set; }
+            public List<DetalleDistribucionesSemanalDto> Semanas { get; set; } = new();
+        }
+
         //Helper Repository
 
         public sealed class RowFlat
@@ -245,6 +269,10 @@ namespace ProvexBackendAPI.Dto
 
             public string? Porcentaje { get; set; }
 
+            public int? Cajas { get; set; }
+
+            public bool? EsPorcentajeDefault { get; set; }
+
 
         }
 
@@ -256,18 +284,26 @@ namespace ProvexBackendAPI.Dto
 
             public string? Porcentaje { get; set; }
 
+            public int? Cajas { get; set; }
+
+            public bool? EsPorcentajeDefault { get; set; }
+
 
         }
 
         public sealed class Semana_DistribucionPackingPorDia
         {
             public string? nombreDia { get; set; }
+
+            public DateTime fechaDia { get; set; }
             public List<NombrePorcentajeDto> Packings { get; set; } = new();
         }
 
         public sealed class Semana_DistribucionFrigorificoPorDia
         {
             public string? nombreDia { get; set; }
+
+            public DateTime fechaDia { get; set; }
             public List<NombrePorcentajeDto> Frigorificos { get; set; } = new();
         }
 
@@ -275,6 +311,9 @@ namespace ProvexBackendAPI.Dto
         {
             public string? Nombre { get; set; }
             public string? Porcentaje { get; set; }
+            public int? Cajas { get; set; }
+            public Boolean? EsPorcentajeDefault { get; set; }
+
         }
 
         //DTO PARA POST

@@ -33,7 +33,7 @@ namespace ProvexBackendAPI.Controllers
         }
 
 
-        //    // GET api/v{version}/estimacion/GetResumenSemanal
+        //GET api/v{version}/estimacion/GetResumenSemanal
         [HttpGet("GetResumenSemanal", Name = "GetResumenSemanal")]
         public async Task<IActionResult> GetResumenSemanal(
             [FromQuery] int idEstimacion
@@ -43,9 +43,17 @@ namespace ProvexBackendAPI.Controllers
             return Ok(data);
         }
 
+        [HttpGet("{idEstimacion:int}/detalle-distribuciones")]
+        public async Task<ActionResult<DetalleDistribucionesEstimacionDto>> GetDetalleDistribuciones(int idEstimacion)
+        {
+            var result = await estimacion.GetDetalleDistribucionesAsync(idEstimacion);
+            return Ok(result);
+        }
+
+
+
         // POST api/v{version}/estimaciones/bisemanal/dia
-        [HttpPost("dia", Name = "UpdateInsertBisemanalDia")]
-        
+        [HttpPost("dia", Name = "UpdateInsertBisemanalDia")]        
 
         public async Task<IActionResult> UpdateInsertBisemanalDia([FromBody] UpdateEstimacionBisemanalRequest request)
         {
