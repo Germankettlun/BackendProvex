@@ -724,6 +724,8 @@ namespace ProvexBackendAPI.Services
 
                 Especie = row.Table.Columns.Contains("NOM_ESP") ? (row.IsNull("NOM_ESP") ? "" : row["NOM_ESP"]?.ToString() ?? "") : "",
 
+                UnidadMedidaEspecie = row["ESPECIE_UM"] == DBNull.Value ? 0 : Convert.ToInt32(row["ESPECIE_UM"]),
+
                 // Item
                 IdProductor = row.Table.Columns.Contains("ID_PRODUCTOR") ? (row.IsNull("ID_PRODUCTOR") ? "" : row["ID_PRODUCTOR"]?.ToString() ?? ""): "",
 

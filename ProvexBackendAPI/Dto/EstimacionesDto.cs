@@ -38,6 +38,9 @@ namespace ProvexBackendAPI.Dto
             [JsonPropertyName("especie")]
             public string? Especie { get; set; }
 
+            [JsonPropertyName("unidadMedidaEspecie")]
+            public int? UnidadMedidaEspecie { get; set; }
+
             [JsonPropertyName("items")]
             public List<ItemNode>? Items { get; set; }
         }
@@ -205,6 +208,7 @@ namespace ProvexBackendAPI.Dto
             public double? PesoBaseEspecie { get; set; }
             public string? Especie { get; set; }
 
+            public int? UnidadMedidaEspecie { get; set; }
 
 
             // Item
