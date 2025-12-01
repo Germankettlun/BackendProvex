@@ -66,7 +66,6 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
         public string SemanaNumero { get; set; } = string.Empty;
         public int? IdDistribucionDefecto { get; set; }
         public int? PorcDefectoCalibre { get; set; }
-
         public int? PorcDefectoCalibreProducido { get; set; }
         public int? IdDistribucionPorSemana { get; set; }
         public int? PorcentajeSemana { get; set; }
@@ -127,6 +126,9 @@ namespace ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspeci
 
         [JsonPropertyName("porcentajePredeterminado")]
         public int? PorcentajePredeterminado { get; set; }
+
+        [JsonPropertyName("porcentajePredeterminadoProducido")]
+        public int? PorcentajePredeterminadoProducido { get; set; }
 
         [JsonPropertyName("%semanas")]
         public List<SemanaPorcentajeDto> Semanas { get; set; } = new();
