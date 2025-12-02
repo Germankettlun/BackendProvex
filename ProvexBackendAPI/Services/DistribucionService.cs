@@ -64,50 +64,47 @@ namespace ProvexBackendAPI.Services
             }
 
             // Grouping por (IdEstimacion, IdCategoria)
-            var grouped = list
-    .GroupBy(r => new {
-        r.IdEstimacion,
-        r.IdCategoria,
-        r.CodEspecie,
-        r.Especie,
-        r.CategoriaNombre,
-        r.IdDistribucionDefecto,
-        r.PorcDefectoCategoria
-    })
-    .Select(g => new DistribucionCategoriaEspecieResponseDto
-    {
-        IdEstimacion = g.Key.IdEstimacion,
-        CategoriaId = g.Key.IdCategoria,
-        CategoriaNombre = g.Key.CategoriaNombre,
-        CodigoEspecie = g.Key.CodEspecie,
-        Especie = g.Key.Especie,
-        IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
-        PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
-
-       
-        PorcentajePredeterminadoProducido = g
-            .Where(x => x.PorcDefectoCategoriaProducido > 0)
-            .Select(x => (int?)x.PorcDefectoCategoriaProducido)
-            .FirstOrDefault(),
-
-        Semanas = g
-            .Select(r => new SemanaPorcentajeDto
-            {
-                Anio = r.SemanaAnio,
-                Semana = r.SemanaNumero,
-                IdPorcentajePorSemana = r.IdDistribucionPorSemana,
-                PorcentajePorSemana = r.PorcentajeSemana,
-                PorcentajePorSemanaProducido = r.PorcentajeSemanaProducido,
-                CajasProducidasSemanaActual = r.CajasProducidasSemanaActual,
-                EsSemanaActual = r.EsSemanaActual
+            var grouped = list.GroupBy(r => new {
+                r.IdEstimacion,
+                r.IdCategoria,
+                r.CodEspecie,
+                r.Especie,
+                r.CategoriaNombre,
+                r.IdDistribucionDefecto,
+                r.PorcDefectoCategoria
             })
-            .DistinctBy(x => new { x.Anio, x.Semana })
-            .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
-            .ToList()
-    })
-    .OrderBy(x => x.IdEstimacion)
-    .ThenBy(x => x.CategoriaId)
-    .ToList();
+                .Select(g => new DistribucionCategoriaEspecieResponseDto
+                {
+                    IdEstimacion = g.Key.IdEstimacion,
+                    CategoriaId = g.Key.IdCategoria,
+                    CategoriaNombre = g.Key.CategoriaNombre,
+                    CodigoEspecie = g.Key.CodEspecie,
+                    Especie = g.Key.Especie,
+                    IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
+                    PorcentajePredeterminado = g.Key.PorcDefectoCategoria,
+                    PorcentajePredeterminadoProducido = g
+                .Where(x => x.PorcDefectoCategoriaProducido > 0)
+                 .Select(x => (int?)x.PorcDefectoCategoriaProducido)
+                .FirstOrDefault(),
+
+                    Semanas = g
+                .Select(r => new SemanaPorcentajeDto
+                {
+                    Anio = r.SemanaAnio,
+                    Semana = r.SemanaNumero,
+                    IdPorcentajePorSemana = r.IdDistribucionPorSemana,
+                    PorcentajePorSemana = r.PorcentajeSemana,
+                    PorcentajePorSemanaProducido = r.PorcentajeSemanaProducido,
+                    CajasProducidasSemanaActual = r.CajasProducidasSemanaActual,
+                    EsSemanaActual = r.EsSemanaActual
+                })
+                .DistinctBy(x => new { x.Anio, x.Semana })
+                .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
+                .ToList()
+                })
+            .OrderBy(x => x.IdEstimacion)
+            .ThenBy(x => x.CategoriaId)
+            .ToList();
 
             return grouped;
         }
@@ -155,35 +152,32 @@ namespace ProvexBackendAPI.Services
             }
 
             // Grouping por (IdEstimacion, IdCategoria)
-            var grouped = list
-   .GroupBy(r => new {
-       r.IdEstimacion,
-       r.IdCalibre,
-       r.CodEspecie,
-       r.Especie,
-       r.CalibreNombre,
-       r.IdDistribucionDefecto,
-       r.PorcDefectoCalibre
-   })
-   .Select(g => new DistribucionCalibreEspecieResponseDto
-   {
-       IdEstimacion = g.Key.IdEstimacion,
-       CalibreId = g.Key.IdCalibre,
-       CalibreNombre = g.Key.CalibreNombre,
-       CodigoEspecie = g.Key.CodEspecie,
-       Especie = g.Key.Especie,
-       IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
-       PorcentajePredeterminado = g.Key.PorcDefectoCalibre,
+            var grouped = list.GroupBy(r => new {
+                r.IdEstimacion,
+                r.IdCalibre,
+                r.CodEspecie,
+                r.Especie,
+                r.CalibreNombre,
+                r.IdDistribucionDefecto,
+                r.PorcDefectoCalibre
+                })
+                .Select(g => new DistribucionCalibreEspecieResponseDto
+                {
+                 IdEstimacion = g.Key.IdEstimacion,
+                 CalibreId = g.Key.IdCalibre,
+                 CalibreNombre = g.Key.CalibreNombre,
+                 CodigoEspecie = g.Key.CodEspecie,
+                 Especie = g.Key.Especie,
+                 IdPorcentajePredeterminado = g.Key.IdDistribucionDefecto,
+                 PorcentajePredeterminado = g.Key.PorcDefectoCalibre,
+                 PorcentajePredeterminadoProducido = g
+                .Where(x => x.PorcDefectoCalibreProducido > 0)
+                 .Select(x => (int?)x.PorcDefectoCalibreProducido)
+                .FirstOrDefault(),
 
-
-       PorcentajePredeterminadoProducido = g
-           .Where(x => x.PorcDefectoCalibreProducido > 0)
-           .Select(x => (int?)x.PorcDefectoCalibreProducido)
-           .FirstOrDefault(),
-
-       Semanas = g
-           .Select(r => new SemanaPorcentajeDto
-           {
+                Semanas = g
+                .Select(r => new SemanaPorcentajeDto
+                {
                Anio = r.SemanaAnio,
                Semana = r.SemanaNumero,
                IdPorcentajePorSemana = r.IdDistribucionPorSemana,
@@ -191,14 +185,14 @@ namespace ProvexBackendAPI.Services
                PorcentajePorSemanaProducido = r.PorcentajeSemanaProducido,
                CajasProducidasSemanaActual = r.CajasProducidasSemanaActual,
                EsSemanaActual = r.EsSemanaActual
-           })
-           .DistinctBy(x => new { x.Anio, x.Semana })
-           .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
-           .ToList()
-   })
-   .OrderBy(x => x.IdEstimacion)
-   .ThenBy(x => x.CalibreId)
-   .ToList();
+                })
+                .DistinctBy(x => new { x.Anio, x.Semana })
+                .OrderBy(x => x.Anio).ThenBy(x => x.Semana)
+                .ToList()
+            })
+            .OrderBy(x => x.IdEstimacion)
+            .ThenBy(x => x.CalibreId)
+            .ToList();
 
             return grouped;
         }
