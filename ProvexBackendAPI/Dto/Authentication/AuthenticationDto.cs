@@ -32,6 +32,13 @@ namespace ProvexBackendAPI.Dto.Authentication
             public string? Message { get; set; }
         }
 
+        public class AdminResetPasswordByUserNameRequest
+        {
+            public string UserName { get; set; } = string.Empty;
+            public string NewPassword { get; set; } = string.Empty;
+            public string? ConfirmNewPassword { get; set; }
+        }
+
 
     }
 }

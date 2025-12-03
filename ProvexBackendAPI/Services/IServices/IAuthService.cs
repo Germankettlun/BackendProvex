@@ -7,5 +7,7 @@ namespace ProvexBackendAPI.Services.IServices
     {
         Task<UserDataDto> Register(CreateUserDto createUserDto);
         Task<LoginResponseDto> Login(LoginDto loginDto);
+
+        Task ResetPasswordByUserNameAsync(AdminResetPasswordByUserNameRequest request);
     }
 }

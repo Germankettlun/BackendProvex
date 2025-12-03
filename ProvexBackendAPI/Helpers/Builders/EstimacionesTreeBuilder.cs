@@ -15,6 +15,7 @@ namespace ProvexBackendAPI.Helpers.Builders
             {
                 PesoBaseEspecie = rows.FirstOrDefault()?.PesoBaseEspecie,
                 Especie = rows.FirstOrDefault()?.Especie,
+                UnidadMedidaEspecie = rows.FirstOrDefault()?.UnidadMedidaEspecie,
                 Items = new List<ItemNode>()
             };
 

@@ -154,10 +154,13 @@ namespace ProvexBackendAPI.Repository
                     cmd.CommandText = query;
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddRange(parameters);
+
+
                     using (var reader = await cmd.ExecuteReaderAsync())
                     {
                         dt.Load(reader);
                     }
+                    
                 }
             }
             catch (Exception ex)

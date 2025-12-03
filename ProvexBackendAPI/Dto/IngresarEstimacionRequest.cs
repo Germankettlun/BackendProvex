@@ -17,5 +17,7 @@
         public int envase { get; set; }
 	    public int contratado { get; set; }
         public decimal kiloEnvase { get; set; }
+
+        public decimal pesoFijo { get; set; }
     }
 }

@@ -38,6 +38,9 @@ namespace ProvexBackendAPI.Dto
             [JsonPropertyName("especie")]
             public string? Especie { get; set; }
 
+            [JsonPropertyName("unidadMedidaEspecie")]
+            public int? UnidadMedidaEspecie { get; set; }
+
             [JsonPropertyName("items")]
             public List<ItemNode>? Items { get; set; }
         }
@@ -135,11 +138,12 @@ namespace ProvexBackendAPI.Dto
 
 
 
-        public class EstimacionSemanalDto
+        public class ResumenSemanalEstimacionDto
         {
             public string IdEstimacion { get; set; } = string.Empty;
             public int? Contratado { get; set; }
 
+            public double? CajasPesoFijo { get; set; }
             public int? KilosBaseEspecie { get; set; }
             public EnvaseCosecheroNode? EnvaseCosechero { get; set; }
 
@@ -151,27 +155,49 @@ namespace ProvexBackendAPI.Dto
         {
             public int? EstimadoSinPorcentaje { get; set; }   // TOTAL_E_SIN_PORC
             public int? EstimadoConPorcentaje { get; set; }   // TOTAL_E_CON_PORC
-            public int? Proyectado { get; set; }              // TOTAL_P
-            public int? DiferenciaEstimadoConProyectado { get; set; } // DIF_E_CON_P
+            public int? Producido { get; set; }              // TOTAL_P
+            public int? DiferenciaEstimadoConProducido { get; set; } // DIF_E_CON_P
         }
 
         public class SemanaEstimacionDto
         {
-            public int? Pos { get; set; }                    // POS
+           // public int? Pos { get; set; }                 
 
             public int Anio { get; set; }
-            public string? SemanaNumero { get; set; }        // SEMANA_NRO
-            public int? EstimadoSinPorcentaje { get; set; } // E_SIN_PORC
-            public int? EstimadoConPorcentaje { get; set; } // E_CON_PORC
-            public int? PorcentajeSemana { get; set; }      // P_SEMANA
+            public string? SemanaNumero { get; set; }      
+            public int? EstimadoSinPorcentaje { get; set; } 
+            public int? EstimadoConPorcentaje { get; set; } 
+            public int? Producido { get; set; }     
+
+          //  public List<DistribucionCategoriaPorSemanaNode> DistribucionCategoria { get; set; }
+          //  public List<DistribucionCalibrePorSemanaNode> DistribucionCalibre { get; set; }
+          //  public List<Semana_DistribucionPackingPorDia> PackingPorDia { get; set; }
+          //  public List<Semana_DistribucionFrigorificoPorDia> FrigorificoPorDia { get; set; }
+
+        }
+
+        public class DetalleDistribucionesSemanalDto
+        {
+            public int? Anio { get; set; }        
+            public string? Semana { get; set; }       
 
             public List<DistribucionCategoriaPorSemanaNode> DistribucionCategoria { get; set; }
+                = new();
+
             public List<DistribucionCalibrePorSemanaNode> DistribucionCalibre { get; set; }
+                = new();
+
             public List<Semana_DistribucionPackingPorDia> PackingPorDia { get; set; }
+                = new();
+
             public List<Semana_DistribucionFrigorificoPorDia> FrigorificoPorDia { get; set; }
+                = new();
+        }
 
-
-
+        public class DetalleDistribucionesEstimacionDto
+        {
+            public int IdEstimacion { get; set; }
+            public List<DetalleDistribucionesSemanalDto> Semanas { get; set; } = new();
         }
 
         //Helper Repository
@@ -182,6 +208,7 @@ namespace ProvexBackendAPI.Dto
             public double? PesoBaseEspecie { get; set; }
             public string? Especie { get; set; }
 
+            public int? UnidadMedidaEspecie { get; set; }
 
 
             // Item
@@ -246,6 +273,10 @@ namespace ProvexBackendAPI.Dto
 
             public string? Porcentaje { get; set; }
 
+            public int? Cajas { get; set; }
+
+            public bool? EsPorcentajeDefault { get; set; }
+
 
         }
 
@@ -257,18 +288,26 @@ namespace ProvexBackendAPI.Dto
 
             public string? Porcentaje { get; set; }
 
+            public int? Cajas { get; set; }
+
+            public bool? EsPorcentajeDefault { get; set; }
+
 
         }
 
         public sealed class Semana_DistribucionPackingPorDia
         {
             public string? nombreDia { get; set; }
+
+            public DateTime fechaDia { get; set; }
             public List<NombrePorcentajeDto> Packings { get; set; } = new();
         }
 
         public sealed class Semana_DistribucionFrigorificoPorDia
         {
             public string? nombreDia { get; set; }
+
+            public DateTime fechaDia { get; set; }
             public List<NombrePorcentajeDto> Frigorificos { get; set; } = new();
         }
 
@@ -276,6 +315,9 @@ namespace ProvexBackendAPI.Dto
         {
             public string? Nombre { get; set; }
             public string? Porcentaje { get; set; }
+            public int? Cajas { get; set; }
+            public Boolean? EsPorcentajeDefault { get; set; }
+
         }
 
         //DTO PARA POST
@@ -307,8 +349,9 @@ namespace ProvexBackendAPI.Dto
 
         public class ResumenSemanalRowDto
         {
-            public string? IdEstimacion { get; set; }
             public int? Contratado { get; set; }
+
+            public double? CajasPesoFijo { get; set; }
             public int? KilosBaseEspecie { get; set; }
 
             public string? IdEnvaseCosecha { get; set; }
@@ -319,8 +362,6 @@ namespace ProvexBackendAPI.Dto
             public int? Total_E_Con_Porc { get; set; }
             public int? Total_P { get; set; }
             public int? Dif_E_Con_P { get; set; }
-
-            public int? Pos { get; set; }
             public int? Anio { get; set; }
             public string? Semana_Nro { get; set; }
 
@@ -328,10 +369,6 @@ namespace ProvexBackendAPI.Dto
             public int? E_Con_Porc { get; set; }
             public int? P_Semana { get; set; }
 
-            public string? Categorias_Semanas { get; set; }
-            public string? Calibres_Semana { get; set; }
-            public string? Packings_Dia_Semana { get; set; }
-            public string? Frigorificos_Dia_Semana { get; set; }
         }
 
     }  
