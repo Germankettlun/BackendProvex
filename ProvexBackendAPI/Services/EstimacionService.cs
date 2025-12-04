@@ -723,6 +723,8 @@ namespace ProvexBackendAPI.Services
                 // Raíz
                 PesoBaseEspecie = row["ESPECIE_KILO_BASE"] == DBNull.Value? 0.0 : Convert.ToDouble(row["ESPECIE_KILO_BASE"]),
 
+                CodigoEspecie = row.Table.Columns.Contains("COD_ESP") ? (row.IsNull("COD_ESP") ? "" : row["COD_ESP"]?.ToString() ?? "") : "",
+
                 Especie = row.Table.Columns.Contains("NOM_ESP") ? (row.IsNull("NOM_ESP") ? "" : row["NOM_ESP"]?.ToString() ?? "") : "",
 
                 UnidadMedidaEspecie = row["ESPECIE_UM"] == DBNull.Value ? 0 : Convert.ToInt32(row["ESPECIE_UM"]),
@@ -731,6 +733,8 @@ namespace ProvexBackendAPI.Services
                 IdProductor = row.Table.Columns.Contains("ID_PRODUCTOR") ? (row.IsNull("ID_PRODUCTOR") ? "" : row["ID_PRODUCTOR"]?.ToString() ?? ""): "",
 
                 Productor = row.Table.Columns.Contains("NOM_PROD") ? (row.IsNull("NOM_PROD") ? "" : row["NOM_PROD"]?.ToString() ?? "") : "",
+
+                CodigoVariedad = row.Table.Columns.Contains("COD_VAR") ? (row.IsNull("COD_VAR") ? "" : row["COD_VAR"]?.ToString() ?? "") : "",
 
                 Variedad = row.Table.Columns.Contains("NOM_VAR") ? (row.IsNull("NOM_VAR") ? "" : row["NOM_VAR"]?.ToString() ?? "") : "",
 
