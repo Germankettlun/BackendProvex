@@ -14,6 +14,7 @@ namespace ProvexBackendAPI.Helpers.Builders
             var root = new EstructuraDistribucionDto
             {
                 PesoBaseEspecie = rows.FirstOrDefault()?.PesoBaseEspecie,
+                CodigoEspecie = rows.FirstOrDefault()?.CodigoEspecie,
                 Especie = rows.FirstOrDefault()?.Especie,
                 UnidadMedidaEspecie = rows.FirstOrDefault()?.UnidadMedidaEspecie,
                 Items = new List<ItemNode>()

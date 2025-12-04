@@ -34,6 +34,8 @@ namespace ProvexBackendAPI.Dto
             [JsonPropertyName("pesoBaseEspecie")]
             public double? PesoBaseEspecie { get; set; }
 
+            [JsonPropertyName("codigoEspecie")]
+            public string? CodigoEspecie { get; set; }
 
             [JsonPropertyName("especie")]
             public string? Especie { get; set; }
@@ -51,6 +53,9 @@ namespace ProvexBackendAPI.Dto
             public string? Id_Productor { get; set; }
             [JsonPropertyName("productor")]
             public string? Productor { get; set; }
+
+            [JsonPropertyName("codigoVariedad")]
+            public string? CodigoVariedad { get; set; }
 
             [JsonPropertyName("variedad")]
             public string? Variedad { get; set; }
@@ -206,6 +211,8 @@ namespace ProvexBackendAPI.Dto
         {
             // Raíz
             public double? PesoBaseEspecie { get; set; }
+
+            public string? CodigoEspecie { get; set; }
             public string? Especie { get; set; }
 
             public int? UnidadMedidaEspecie { get; set; }
@@ -214,6 +221,8 @@ namespace ProvexBackendAPI.Dto
             // Item
             public string? IdProductor { get; set; }
             public string? Productor { get; set; }
+
+            public string? CodigoVariedad { get; set; }
             public string? Variedad { get; set; }
             public string? Agronomo { get; set; }
             public bool? DistribucionCalibre { get; set; }

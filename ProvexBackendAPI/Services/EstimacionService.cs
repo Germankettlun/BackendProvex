@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using ProvexBackendAPI.Data.Models;
 using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto;
@@ -718,19 +719,77 @@ namespace ProvexBackendAPI.Services
 
         private static RowFlat MapRowFlat(DataRow row)
         {
+
+            decimal? cajasEstimadas = null;
+            decimal? cajasProducidas = null;
+            int? cajasAnteriorEstimado = null;
+            int? cajasAnteriorProducido = null;
+            int? cajasSiguienteEstimado = null;
+            int? cajasSiguienteProducido = null;
+            var unidadMedidaEspecie = row["ESPECIE_UM"] == DBNull.Value ? 1 : Convert.ToInt32(row["ESPECIE_UM"]);
+
+            //Conversión por unidad de medida
+
+            switch (unidadMedidaEspecie)
+            {
+                case 1:
+                    cajasEstimadas = row["CAJAS_ESTIMADAS_SIN_PORC"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_ESTIMADAS_SIN_PORC"]);
+                    cajasProducidas = row["CAJAS_P"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_P"]);
+                    cajasAnteriorEstimado = row["CAJAS_E_ANTERIOR_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_E_ANTERIOR_SIN_PORC"]);
+                    cajasAnteriorProducido = row["CAJAS_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_P_ANTERIOR"]);
+                    cajasSiguienteEstimado = row["CAJAS_E_SIGUIENTE_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_E_SIGUIENTE_SIN_PORC"]);
+                    cajasSiguienteProducido = row["CAJAS_P_SIGUIENTE_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_P_SIGUIENTE_SIN_PORC"]);
+                    break;
+
+                case 2:
+                    //KILOS
+                    cajasEstimadas = row["KILOS_BASE_SIN_EXP"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["KILOS_BASE_SIN_EXP"]);
+                    cajasProducidas = !row.Table.Columns.Contains("KILOS_P") || row["KILOS_P"] == DBNull.Value ? 0m : Convert.ToDecimal(row["KILOS_P"]);
+                    cajasAnteriorEstimado = row["KILOS_E_ANTERIOR_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["KILOS_E_ANTERIOR_SIN_EXP"]);
+                    cajasAnteriorProducido = row["KILOS_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["KILOS_P_ANTERIOR"]);
+                    cajasSiguienteEstimado = row["KILOS_E_SIGUIENTE_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["KILOS_E_SIGUIENTE_SIN_EXP"]);
+                    cajasSiguienteProducido = row["KILOS_P_SIGUIENTE"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["KILOS_P_SIGUIENTE"]);
+                    break;
+
+                case 3:
+                    //ENVASE
+                    cajasEstimadas = row["ENVASE_BASE_SIN_EXP"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["ENVASE_BASE_SIN_EXP"]);
+                    cajasProducidas = !row.Table.Columns.Contains("ENVASES_P") || row["ENVASES_P"] == DBNull.Value ? 0m : Convert.ToDecimal(row["ENVASES_P"]);
+                    cajasAnteriorEstimado = row["ENVASES_E_ANTERIOR_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_E_ANTERIOR_SIN_EXP"]);
+                    cajasAnteriorProducido = row["ENVASES_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_P_ANTERIOR"]);
+                    cajasSiguienteEstimado = row["ENVASES_E_SIGUIENTE_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_E_SIGUIENTE_SIN_EXP"]);
+                    cajasSiguienteProducido = row["ENVASES_P_SIGUIENTE"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_P_SIGUIENTE"]);
+                    break;
+
+                default:
+                    // En caso venga otro valor (no debería) se deja en cajas base por default
+                    cajasEstimadas = row["CAJAS_ESTIMADAS_SIN_PORC"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_ESTIMADAS_SIN_PORC"]);
+                    cajasProducidas = row["CAJAS_P"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_P"]);
+                    cajasAnteriorEstimado = row["CAJAS_E_ANTERIOR_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_E_ANTERIOR_SIN_PORC"]);
+                    cajasAnteriorProducido = row["CAJAS_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_P_ANTERIOR"]);
+                    cajasSiguienteEstimado = row["CAJAS_E_SIGUIENTE_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_E_SIGUIENTE_SIN_PORC"]);
+                    cajasSiguienteProducido = row["CAJAS_P_SIGUIENTE_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_P_SIGUIENTE_SIN_PORC"]);
+                    break;
+            }
+
+
             return new RowFlat
             {
                 // Raíz
                 PesoBaseEspecie = row["ESPECIE_KILO_BASE"] == DBNull.Value? 0.0 : Convert.ToDouble(row["ESPECIE_KILO_BASE"]),
 
+                CodigoEspecie = row.Table.Columns.Contains("COD_ESP") ? (row.IsNull("COD_ESP") ? "" : row["COD_ESP"]?.ToString() ?? "") : "",
+
                 Especie = row.Table.Columns.Contains("NOM_ESP") ? (row.IsNull("NOM_ESP") ? "" : row["NOM_ESP"]?.ToString() ?? "") : "",
 
-                UnidadMedidaEspecie = row["ESPECIE_UM"] == DBNull.Value ? 0 : Convert.ToInt32(row["ESPECIE_UM"]),
+                UnidadMedidaEspecie = unidadMedidaEspecie,
 
                 // Item
                 IdProductor = row.Table.Columns.Contains("ID_PRODUCTOR") ? (row.IsNull("ID_PRODUCTOR") ? "" : row["ID_PRODUCTOR"]?.ToString() ?? ""): "",
 
                 Productor = row.Table.Columns.Contains("NOM_PROD") ? (row.IsNull("NOM_PROD") ? "" : row["NOM_PROD"]?.ToString() ?? "") : "",
+
+                CodigoVariedad = row.Table.Columns.Contains("COD_VAR") ? (row.IsNull("COD_VAR") ? "" : row["COD_VAR"]?.ToString() ?? "") : "",
 
                 Variedad = row.Table.Columns.Contains("NOM_VAR") ? (row.IsNull("NOM_VAR") ? "" : row["NOM_VAR"]?.ToString() ?? "") : "",
 
@@ -756,13 +815,13 @@ namespace ProvexBackendAPI.Services
 
                 Est_FCosecha = row.Table.Columns.Contains("FECHA_INICIO_COSECHA_YM") ? (row.IsNull("FECHA_INICIO_COSECHA_YM") ? "" : row["FECHA_INICIO_COSECHA_YM"]?.ToString() ?? "") : "",
 
-                Ant_Estimado = row["CAJAS_E_ANTERIOR_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_E_ANTERIOR_SIN_PORC"]),
+                Ant_Estimado = cajasAnteriorEstimado,
 
-                Ant_Producido = row["CAJAS_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_P_ANTERIOR"]),
+                Ant_Producido = cajasAnteriorProducido,
 
-                Sig_Estimado = row["CAJAS_E_SIGUIENTE_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_E_SIGUIENTE_SIN_PORC"]),
+                Sig_Estimado = cajasSiguienteEstimado,
 
-                Sig_Producido = row["CAJAS_P_SIGUIENTE_SIN_PORC"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["CAJAS_P_SIGUIENTE_SIN_PORC"]),
+                Sig_Producido = cajasSiguienteProducido,
 
                 // Bisemanal
                 Bis_AnioBase = row["ANIO"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ANIO"]),
@@ -776,9 +835,9 @@ namespace ProvexBackendAPI.Services
 
                 Dia_Fecha = row["DIA"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(row["DIA"]),
 
-                Dia_Estimado = row["CAJAS_ESTIMADAS_SIN_PORC"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_ESTIMADAS_SIN_PORC"]),
+                Dia_Estimado = cajasEstimadas,
 
-                Dia_Producido = row["CAJAS_P"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["CAJAS_P"]),
+                Dia_Producido = cajasProducidas,
 
                 Dia_DistribucionFrio = row["DIST_FRI"] == DBNull.Value ? (bool?)null : Convert.ToBoolean(row["DIST_FRI"]),
 
