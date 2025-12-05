@@ -23,8 +23,6 @@ namespace ProvexBackendAPI.Controllers
         [HttpGet("{codTem}/semanas")]
         public async Task<ActionResult> GetSemanas(string codTem, [FromQuery]string codEmp, [FromQuery] int? vigente = null, [FromQuery] string? semana = null, [FromQuery] int? ano = null)
         {
-            if (string.IsNullOrWhiteSpace(codTem) || string.IsNullOrWhiteSpace(codEmp))
-                return BadRequest("El código de temporada y el código de empresa son requeridos.");
 
             var data = await temporada.GetSemanasTemporadaAsync(codTem, codEmp, vigente, semana, ano);
             return Ok(data);
@@ -37,8 +35,6 @@ namespace ProvexBackendAPI.Controllers
             [FromQuery] string codigoEmpresa,
             [FromQuery] int? soloVigentes)
         {
-            if (string.IsNullOrWhiteSpace(codigoEmpresa))
-                return BadRequest("El código de la empresa es requeridos.");
             var data = await temporada.ListAsync(codigoTemporada,codigoEmpresa, soloVigentes);
             return Ok(data);
         }

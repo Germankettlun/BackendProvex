@@ -33,11 +33,6 @@ builder.Services.AddScoped<IGenericRepository,GenericRepository>();
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
     ProvexBackendAPI.Repository.UnitOfWork>();
 
-builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
-
-
-
-
 
 
 // Service 

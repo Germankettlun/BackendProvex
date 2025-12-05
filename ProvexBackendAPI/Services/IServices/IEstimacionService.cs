@@ -10,10 +10,11 @@ namespace ProvexBackendAPI.Services.IServices
         Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa);
         Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId);
 
-        Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(
-         EstimacionBisemanalQueryDto req);
+        Task<EstructuraDistribucionDto> GetEstimacionBisemanalAsync(EstimacionBisemanalQueryDto req);
 
-        Task<List<EstimacionSemanalDto>> GetResumenSemanalAsync(string codigoEmpresa, string idTemporada, int idEstimacion);
+        Task<List<ResumenSemanalEstimacionDto>> GetResumenSemanalAsync(int idEstimacion);
+
+        Task<DetalleDistribucionesEstimacionDto> GetDetalleDistribucionesAsync(int idEstimacion);
 
 
     }
