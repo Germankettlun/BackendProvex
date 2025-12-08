@@ -5,6 +5,7 @@ using ProvexBackendAPI.Data.Models;
 using ProvexBackendAPI.Repository.IRepository;
 using System.Data;
 using System.Linq.Expressions;
+using Serilog;
 
 namespace ProvexBackendAPI.Repository
 {
@@ -148,6 +149,8 @@ namespace ProvexBackendAPI.Repository
             var connectionState = conn.State;
             try
             {
+                // Log entrada SP lectura
+                Log.Information("[DB_IN] SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
                 if (connectionState != ConnectionState.Open) await conn.OpenAsync();
                 using (var cmd = conn.CreateCommand())
                 {
@@ -162,10 +165,22 @@ namespace ProvexBackendAPI.Repository
                     }
                     
                 }
+                Log.Information("[DB_OUT] SP: {StoredProc} | Rows: {Rows}", query, dt.Rows.Count);
+            }
+            catch (SqlException ex)
+            {
+                Log.Error(ex, "[DB_ERR] SQL Error in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "[DB_ERR] Timeout in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
             }
             catch (Exception ex)
             {
-                throw ex;
+                Log.Error(ex, "[DB_ERR] Exception in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
             }
             finally
             {
@@ -186,6 +201,7 @@ namespace ProvexBackendAPI.Repository
             var connectionState = conn.State;
             try
             {
+                Log.Information("[DB_IN] SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
                 if (connectionState != ConnectionState.Open) await conn.OpenAsync();
                 using (var cmd = conn.CreateCommand())
                 {
@@ -194,14 +210,39 @@ namespace ProvexBackendAPI.Repository
                     cmd.Parameters.AddRange(parameters);
                     await cmd.ExecuteNonQueryAsync();
                 }
+                Log.Information("[DB_OUT] SP: {StoredProc} | Status: OK", query);
             }
-            catch
+            catch (SqlException ex)
             {
+                Log.Error(ex, "[DB_ERR] SQL Error in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "[DB_ERR] Timeout in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[DB_ERR] Exception in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
                 throw;
             }
             finally
             {
                 if (connectionState != ConnectionState.Closed) conn.Close();
+            }
+        }
+
+        private static string FormatParams(SqlParameter[] parameters)
+        {
+            if (parameters == null || parameters.Length == 0) return "<no-params>";
+            try
+            {
+                return string.Join(", ", parameters.Select(p => $"{p.ParameterName}={(p.Value == null || p.Value == DBNull.Value ? "NULL" : p.Value)}"));
+            }
+            catch
+            {
+                return "<params-format-error>";
             }
         }
     }

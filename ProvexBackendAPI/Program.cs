@@ -15,62 +15,68 @@ using ProvexBackendAPI.Repository;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
+using Serilog;
 using System.Text;
 
-
 var builder = WebApplication.CreateBuilder(args);
+// Evitar duplicados: limpiar proveedores por defecto al usar Serilog
+builder.Logging.ClearProviders();
 
+// ===== Serilog =====
+var environmentName = builder.Environment.EnvironmentName;
+// Normalizar nombre de carpeta: Development -> dev, Production -> prod, Staging -> staging
+var envFolder = environmentName.Equals("Development", StringComparison.OrdinalIgnoreCase)
+    ? "dev"
+    : environmentName.Equals("Production", StringComparison.OrdinalIgnoreCase)
+        ? "prod"
+        : environmentName.ToLowerInvariant();
+var logDir = Path.Combine("Logs", envFolder);
+Directory.CreateDirectory(logDir);
+var logFilePath = Path.Combine(logDir, $"provex-api-{envFolder}-.log");
 
+// Configura Serilog: lee appsettings y asegura sinks de consola y archivo por entorno
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .CreateLogger();
 
-// Repo + Service
-// Repo
+builder.Host.UseSerilog();
+
+// ===== Repo + Service
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserRepository,
                            ProvexBackendAPI.Repository.UserRepository>();
-
-builder.Services.AddScoped<IGenericRepository,GenericRepository>();
-
-
+builder.Services.AddScoped<IGenericRepository, GenericRepository>();
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
     ProvexBackendAPI.Repository.UnitOfWork>();
-
-
 
 // Service 
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IUserService,
                            ProvexBackendAPI.Services.UserService>();
-
 builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
-
-
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
 builder.Services.AddScoped<IEstimacionService, EstimacionService>();
 
-
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-
-
 // ===== EF Core + SQL Server =====
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .EnableSensitiveDataLogging()
+           .LogTo(message => Log.Information("[EF] {Message}", message), LogLevel.Information));
 
 // Controllers 
 builder.Services.AddControllers(options =>
 {
     //Filtro del middleware
     options.Filters.Add<ApiResponseWrapperFilter>();
-}
-);
+    options.Filters.Add(new RequestLoggingActionFilter());
+});
 
-
-
-
-
-//.NET Identity con GUID
+// .NET Identity con GUID
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole<Guid>>(o =>
     {
@@ -85,12 +91,7 @@ builder.Services
 var jwt = builder.Configuration.GetSection("Jwt");
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
 
-//if (string.IsNullOrEmpty(secretKey))
-//{
-//    throw new InvalidOperationException("SecretKey no esta configurada");
-//}
-
-//Authentication
+// Authentication (sin eventos extra para no alterar comportamiento)
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -102,21 +103,16 @@ builder.Services.AddAuthentication(options =>
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
-       
         ValidateIssuer = false,
-        //ValidIssuer = jwt["Issuer"],
-        ValidateAudience = false,            
-        // ValidAudience = jwt["Audience"],   
+        ValidateAudience = false,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = signingKey,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
-}
+});
 
-);
-
-//Para utilizar Auth JWT desde Swagger
+// Swagger (sin cambios de esquema)
 builder.Services.AddSwaggerGen(
   options =>
   {
@@ -153,42 +149,24 @@ builder.Services.AddSwaggerGen(
       {
           Version = "v1",
           Title = "API Provex Back",
-          Description = "API para gestionar back",
-          // TermsOfService = new Uri("http://example.com/terms"),
-          //Contact = new OpenApiContact
-          //{
-          //    Name = "Provex",
-          //    Url = new Uri("")
-          //},
-          //License = new OpenApiLicense()
-          //{
-          //    Name = "Licencia de uso",
-          //    Url = new Uri("")
-          //}
-      }
-
-       );
-
-
+          Description = "API para gestionar back"
+      });
   }
 );
-//Versionamiento API
+
+// Versionamiento API
 var apiVersioningBuilder = builder.Services.AddApiVersioning(option =>
 {
     option.AssumeDefaultVersionWhenUnspecified = true;
     option.DefaultApiVersion = new ApiVersion(1, 0);
     option.ReportApiVersions = true;
-
-}
-);
-//Versionamiento API Swagger
+});
+// Versionamiento API Swagger
 apiVersioningBuilder.AddApiExplorer(option =>
 {
-    option.GroupNameFormat = "'v'VVV"; //v2, v2,v3...
-    option.SubstituteApiVersionInUrl = true; //api/v{version}/products
-
-}
-);
+    option.GroupNameFormat = "'v'VVV";
+    option.SubstituteApiVersionInUrl = true;
+});
 
 // ===== CORS - Configuración Flexible por Entorno =====
 builder.Services.AddCors(o =>
@@ -198,11 +176,6 @@ builder.Services.AddCors(o =>
         if (builder.Environment.IsDevelopment() ||
             builder.Environment.EnvironmentName == "Staging")
         {
-            // ========================================
-            // DEVELOPMENT / STAGING: Modo permisivo
-            // ========================================
-            // Permite cualquier origen, método y header
-            // Útil para desarrollo local y pruebas
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
             p.AllowAnyOrigin()
              .AllowAnyHeader()
@@ -210,76 +183,92 @@ builder.Services.AddCors(o =>
         }
         else
         {
-            // ========================================
-            // PRODUCTION: Modo restringido (lista explícita)
-            // ========================================
-            var allowedOrigins = new[]
-            {
-                "http://10.115.1.253:3000",  // Front interno actual
-                "https://intranet.provexsa.com"   // Front público futuro (ejemplo)
-            };
-
             Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
-            Console.WriteLine("   Orígenes permitidos:");
-            foreach (var origin in allowedOrigins)
+            p.SetIsOriginAllowed(origin =>
             {
-                Console.WriteLine($"   - {origin}");
-            }
+                if (string.IsNullOrEmpty(origin)) 
+                {
+                    Console.WriteLine("⚠️ CORS: Origen vacío o nulo - RECHAZADO");
+                    return false;
+                }
 
-            p.WithOrigins(allowedOrigins)
-             .AllowAnyHeader()        // Authorization, Content-Type, etc.
-             .AllowAnyMethod()        // GET, POST, PUT, DELETE, etc.
-             .AllowCredentials();     // Soporta credentials=true si el front lo usa
+                try
+                {
+                    var uri = new Uri(origin);
+                    var host = uri.Host;
+                    var scheme = uri.Scheme;
+
+                    Console.WriteLine($"🌍 CORS: Evaluando origen: {origin}");
+                    Console.WriteLine($"   └─ Host: {host} | Scheme: {scheme} | Port: {uri.Port}");
+
+                    if (host.StartsWith("10.115.")) return true;
+                    if (host == "localhost" || host == "127.0.0.1") return true;
+
+                    if (scheme == "https")
+                    {
+                        if (host.EndsWith(".provexsa.cl") || host == "provexsa.cl") return true;
+                        if (host.EndsWith(".provex.com") || host == "provex.com") return true;
+                    }
+
+                    Console.WriteLine($"   ❌ RECHAZADO - No cumple con ninguna regla");
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ CORS: Error al validar origen '{origin}': {ex.Message}");
+                    return false;
+                }
+            })
+             .AllowAnyHeader()
+             .AllowAnyMethod()
+             .AllowCredentials();
         }
     });
 });
 
-
 var app = builder.Build();
 
-// Mostrar entorno actual en los logs
-Console.WriteLine($"🚀 Iniciando API en entorno: {app.Environment.EnvironmentName}");
+// Enriquecimiento de RequestId y User para todos los logs
+app.Use(async (context, next) =>
+{
+    var requestId = context.TraceIdentifier;
+    var user = context.User?.Identity?.IsAuthenticated == true
+        ? (context.User.Identity?.Name
+            ?? context.User.FindFirst("sub")?.Value
+            ?? context.User.FindFirst("id")?.Value
+            ?? "Authenticated")
+        : "Anonymous";
 
-// ========================================
-// Configurar Swagger según el entorno
-// ========================================
+    using (Serilog.Context.LogContext.PushProperty("RequestId", requestId))
+    using (Serilog.Context.LogContext.PushProperty("User", user))
+    {
+        await next();
+    }
+});
+
+// Mostrar entorno actual en los logs
+Log.Information("🚀 [STARTUP] API iniciada en entorno: {Env}", environmentName);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        // options.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
     });
 }
-else if (app.Environment.IsProduction())
+
+// Serilog de requests HTTP (no cambia respuesta)
+app.UseSerilogRequestLogging(opts =>
 {
-    // En producción, también habilitar Swagger pero en una ruta específica
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        options.RoutePrefix = "swagger"; // Swagger estará disponible en /swagger
-    });
-}
+    opts.MessageTemplate = "HTTP {RequestMethod} {RequestPath} respondió {StatusCode} en {Elapsed:0.0000} ms";
+});
 
 app.UseMiddleware<ExceptionMiddleware>();
 
+// Orden crítico del pipeline
 app.UseCors();
-
-if (app.Configuration.GetValue<bool>("UseHttpsRedirection", false) || 
-    app.Urls.Any(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
-{
-    Console.WriteLine("🔒 HTTPS Redirection habilitado");
-    app.UseHttpsRedirection();
-}
-else
-{
-    Console.WriteLine("⚠️ HTTPS Redirection deshabilitado - ejecutando solo HTTP");
-}
-
-// 3. Authentication y Authorization al final
-//    Se ejecutan después de CORS y redirecciones
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
