@@ -22,6 +22,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Evitar duplicados: limpiar proveedores por defecto al usar Serilog
 builder.Logging.ClearProviders();
 
+// Forzar UTF-8 en salida de consola (evita “respondi¢” en Windows)
+Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+
 // ===== Serilog =====
 var environmentName = builder.Environment.EnvironmentName;
 // Normalizar nombre de carpeta: Development -> dev, Production -> prod, Staging -> staging
@@ -64,9 +67,13 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 // ===== EF Core + SQL Server =====
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-           .EnableSensitiveDataLogging()
-           .LogTo(message => Log.Information("[EF] {Message}", message), LogLevel.Information));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+#if DEBUG
+    options.EnableSensitiveDataLogging();
+#endif
+    options.LogTo(message => Log.Information("[EF] {Message}", message), LogLevel.Information);
+});
 
 // Controllers 
 builder.Services.AddControllers(options =>
@@ -184,41 +191,13 @@ builder.Services.AddCors(o =>
         else
         {
             Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
-            p.SetIsOriginAllowed(origin =>
+            var allowedOrigins = new[]
             {
-                if (string.IsNullOrEmpty(origin)) 
-                {
-                    Console.WriteLine("⚠️ CORS: Origen vacío o nulo - RECHAZADO");
-                    return false;
-                }
-
-                try
-                {
-                    var uri = new Uri(origin);
-                    var host = uri.Host;
-                    var scheme = uri.Scheme;
-
-                    Console.WriteLine($"🌍 CORS: Evaluando origen: {origin}");
-                    Console.WriteLine($"   └─ Host: {host} | Scheme: {scheme} | Port: {uri.Port}");
-
-                    if (host.StartsWith("10.115.")) return true;
-                    if (host == "localhost" || host == "127.0.0.1") return true;
-
-                    if (scheme == "https")
-                    {
-                        if (host.EndsWith(".provexsa.cl") || host == "provexsa.cl") return true;
-                        if (host.EndsWith(".provex.com") || host == "provex.com") return true;
-                    }
-
-                    Console.WriteLine($"   ❌ RECHAZADO - No cumple con ninguna regla");
-                    return false;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"⚠️ CORS: Error al validar origen '{origin}': {ex.Message}");
-                    return false;
-                }
-            })
+                "https://intranet.provexsa.com",
+                "https://provexsa.cl",
+                "https://www.provexsa.cl"
+            };
+            p.WithOrigins(allowedOrigins)
              .AllowAnyHeader()
              .AllowAnyMethod()
              .AllowCredentials();
