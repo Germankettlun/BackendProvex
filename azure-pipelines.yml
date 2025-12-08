@@ -1,8 +1,8 @@
 # =========================
-# Orquestador - Llama al pipeline real en /pipelines
+# Orquestador - Llama al pipeline real en /Pipelines
 # =========================
 # Este archivo solo sirve como punto de entrada (trigger)
-# La l√≥gica real est√° en: pipelines/azure-pipelines-backend.yml
+# La lÛgica real est· en: ProvexBackendAPI/Pipelines/azure-pipelines-backend.yml
 # =========================
 
 trigger:
@@ -21,4 +21,4 @@ pr:
 # EXTENDS: Llamar al pipeline modular
 # =========================
 extends:
-  template: pipelines/azure-pipelines-backend.yml
+  template: ProvexBackendAPI/Pipelines/azure-pipelines-backend.yml

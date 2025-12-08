@@ -119,10 +119,14 @@ namespace ProvexBackendAPI.Services
             var claims = new List<Claim>
             {
                 new Claim("username", username),
-                new Claim("roles", JsonSerializer.Serialize(rolesLimpios))
             };
 
-            
+            foreach (var rol in rolesLimpios)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, rol)); 
+            }
+
+
             var creds = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
             var minutes = _jwt.AccessTokenMinutes <= 0 ? 120 : _jwt.AccessTokenMinutes;
             var expiresAtUtc = DateTime.UtcNow.AddMinutes(minutes);

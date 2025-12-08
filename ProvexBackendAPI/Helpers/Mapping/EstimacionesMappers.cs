@@ -1,6 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Helpers.Shared.Extensions;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
+using static ProvexBackendAPI.Dto.EstimacionesDto;
 
 namespace ProvexBackendAPI.Helpers.Mapping
 {

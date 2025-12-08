@@ -8,10 +8,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models.Users;
-using ProvexBackendAPI.Features.Estimaciones.Repository;
-using ProvexBackendAPI.Features.Estimaciones.Repository.IRepository;
-using ProvexBackendAPI.Features.Estimaciones.Services;
-using ProvexBackendAPI.Features.Estimaciones.Services.IServices;
 using ProvexBackendAPI.Filters;
 using ProvexBackendAPI.Infrastructure.Auth;
 using ProvexBackendAPI.Middleware;
@@ -33,17 +29,9 @@ builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUserReposito
 
 builder.Services.AddScoped<IGenericRepository,GenericRepository>();
 
+
 builder.Services.AddScoped<ProvexBackendAPI.Repository.IRepository.IUnitOfWork,
     ProvexBackendAPI.Repository.UnitOfWork>();
-
-builder.Services.AddScoped<IComboRepository, ComboRepository>();
-
-builder.Services.AddScoped<ITemporadasRepository, TemporadasRepository>();
-
-builder.Services.AddScoped<IDistribucionRepository, DistribucionRepository>();
-builder.Services.AddScoped<IEstimacionesRepository, EstimacionesRepository>();
-
-
 
 
 
@@ -58,14 +46,12 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
-builder.Services.AddScoped<IEstimacionesService, EstimacionesService>()
-    .AddScoped<IEstimacionService, EstimacionService>();
+builder.Services.AddScoped<IEstimacionService, EstimacionService>();
 
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();
 
-builder.Services.AddScoped<ISemanaVigenteProvider, SemanaVigenteProvider>();
 
 
 // ===== EF Core + SQL Server =====

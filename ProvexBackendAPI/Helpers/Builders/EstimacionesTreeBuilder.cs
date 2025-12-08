@@ -1,6 +1,6 @@
 ﻿using ProvexBackendAPI.Helpers.Semanas;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Estimaciones.EstimacionesDto;
-using static ProvexBackendAPI.Features.Estimaciones.Dto.Semanas.SemanasDto;
+using static ProvexBackendAPI.Dto.EstimacionesDto;
+using static ProvexBackendAPI.Dto.SemanasDto;
 
 namespace ProvexBackendAPI.Helpers.Builders
 {
@@ -14,7 +14,9 @@ namespace ProvexBackendAPI.Helpers.Builders
             var root = new EstructuraDistribucionDto
             {
                 PesoBaseEspecie = rows.FirstOrDefault()?.PesoBaseEspecie,
+                CodigoEspecie = rows.FirstOrDefault()?.CodigoEspecie,
                 Especie = rows.FirstOrDefault()?.Especie,
+                UnidadMedidaEspecie = rows.FirstOrDefault()?.UnidadMedidaEspecie,
                 Items = new List<ItemNode>()
             };
 

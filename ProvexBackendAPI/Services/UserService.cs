@@ -35,7 +35,11 @@ namespace ProvexBackendAPI.Services
 
         public Task<bool> IsUniqueUser(string username)
         {
-           return _userRepository.IsUniqueUser(username);
+
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("username es obligatorio.", nameof(username));
+
+            return _userRepository.IsUniqueUser(username);
         }
     }
 }
