@@ -349,6 +349,50 @@ namespace ProvexBackendAPI.Services
 
         }
 
+        public async Task<EstimacionDto> ObtenerEstimacion(int idEstimacion)
+        {
+
+            if (idEstimacion <= 0)
+                throw new ArgumentException("idEstimacion inválido.", nameof(idEstimacion));
+
+            try
+            {
+
+                var estimacion = await repository.GetFirst<Estimacion>(z => z.idEstimacion == idEstimacion);
+
+                if (estimacion == null)
+                {
+                    throw new Exceptions.NotFoundException($"No se encontró la estimación con ID {idEstimacion}.");
+                }
+
+                var dto = new EstimacionDto
+                {
+                    IdEstimacion = estimacion.idEstimacion,
+                    IdEmpresa = estimacion.idEmpresa,
+                    IdTemporada = estimacion.idTemporada,
+                    IdEspecie = estimacion.idEspecie,
+                    IdVariedad = estimacion.idVariedad,
+                    IdProductor = estimacion.idProductor,
+                    IdEnvaseCosecha = estimacion.idEnvaseCosecha,
+                    IdFrigorifico = estimacion.idFrigorifico,
+                    IdPacking = estimacion.idPacking,
+                    AnioInicio = estimacion.anioInicio,
+                    SemanaInicio = estimacion.semanaInicio,
+                    CajasContratadas = estimacion.cajasContratadas,
+                    PorcentajeExportacion = estimacion.porcentajeExportacion,
+                    KiloEnvase = estimacion.kiloEnvase,
+                    PesoFijo = estimacion.pesoFijo
+                };
+
+                return dto;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+
         public async Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
         {
             if (dto is null) throw new ArgumentNullException(nameof(dto));

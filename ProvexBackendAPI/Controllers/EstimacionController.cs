@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Dto;
+using ProvexBackendAPI.Exceptions;
+using ProvexBackendAPI.Services;
 using ProvexBackendAPI.Services.IServices;
 using static ProvexBackendAPI.Dto.EstimacionesDto;
 
@@ -30,6 +32,14 @@ namespace ProvexBackendAPI.Controllers
         {
             var data = await estimacion.GetEstimacionBisemanalAsync(q);
             return Ok(data);
+        }
+
+        [HttpGet("ObtenerEstimacion/{idEstimacion:int}")]
+        public async Task<IActionResult> ObtenerEstimacion(int idEstimacion)
+        {
+
+            var result = await estimacion.ObtenerEstimacion(idEstimacion);
+            return Ok(result);
         }
 
 

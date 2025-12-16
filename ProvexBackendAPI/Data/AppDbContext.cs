@@ -19,6 +19,8 @@ namespace ProvexBackendAPI.Data
         }
 
         public virtual DbSet<Zona> Zonas { get; set; }
+
+        public virtual DbSet<Estimacion> Estimaciones { get; set; }
         public virtual DbSet<EstimacionBisemanal> EstimacionBisemanales { get; set; }
 
         public virtual DbSet<Temporada> Temporadas { get; set; }
@@ -40,7 +42,7 @@ namespace ProvexBackendAPI.Data
             builder.Entity<IdentityRoleClaim<Guid>>().ToTable("RolClaims", schema);
             builder.Entity<IdentityUserToken<Guid>>().ToTable("UsuarioTokens", schema);
 
-            // —— (Opcional) si quieres que SQL genere GUIDs secuenciales
+            //GUIDs secuenciales
             builder.Entity<ApplicationUser>()
                    .Property(u => u.Id)
                    .HasDefaultValueSql("NEWSEQUENTIALID()");
@@ -49,7 +51,9 @@ namespace ProvexBackendAPI.Data
                     .HasDefaultValueSql("NEWSEQUENTIALID()");
 
             builder.Entity<Zona>().ToTable("Zona", "Estimaciones");
+            builder.Entity<Estimacion>().ToTable("ESTIMACION", "Estimaciones");
             builder.Entity<EstimacionBisemanal>().ToTable("ESTIMACION_BISEMANAL", "Estimaciones");
+            
             //Temporadas
             builder.Entity<Temporada>(entity =>
             {

@@ -380,6 +380,39 @@ namespace ProvexBackendAPI.Dto
 
         }
 
+        public class EstimacionDto
+        {
+            public int IdEstimacion { get; set; }
+
+            public string IdEmpresa { get; set; }
+
+            public string IdTemporada { get; set; }
+
+            public string IdEspecie { get; set; }
+
+            public string IdVariedad { get; set; }
+
+            public string IdProductor { get; set; }
+
+            public int? IdEnvaseCosecha { get; set; }
+
+            public string? IdFrigorifico { get; set; }
+
+            public string? IdPacking { get; set; }
+
+            public int AnioInicio { get; set; }
+
+            public string SemanaInicio { get; set; }
+
+            public int? CajasContratadas { get; set; }
+
+            public double? PorcentajeExportacion { get; set; }
+
+            public decimal? KiloEnvase { get; set; }
+
+            public decimal? PesoFijo { get; set; }
+        }
+
     }  
 }
 
