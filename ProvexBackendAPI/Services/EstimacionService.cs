@@ -803,7 +803,7 @@ namespace ProvexBackendAPI.Services
 
                 case 3:
                     //ENVASE
-                    cajasEstimadas = !row.Table.Columns.Contains("ENVASE_BASE_SIN_EXP") || row["ENVASE_BASE_SIN_EXP"] == DBNull.Value ? 0m : Convert.ToDecimal(row["ENVASE_BASE_SIN_EXP"]); 
+                    cajasEstimadas = !row.Table.Columns.Contains("ENVASES_BASE_SIN_EXP") || row["ENVASES_BASE_SIN_EXP"] == DBNull.Value ? 0m : Convert.ToDecimal(row["ENVASES_BASE_SIN_EXP"]); 
                     cajasProducidas = !row.Table.Columns.Contains("ENVASES_P") || row["ENVASES_P"] == DBNull.Value ? 0m : Convert.ToDecimal(row["ENVASES_P"]);
                     cajasAnteriorEstimado = row["ENVASES_E_ANTERIOR_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_E_ANTERIOR_SIN_EXP"]);
                     cajasAnteriorProducido = row["ENVASES_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_P_ANTERIOR"]);
