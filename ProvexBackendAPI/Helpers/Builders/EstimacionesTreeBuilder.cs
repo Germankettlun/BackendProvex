@@ -26,6 +26,7 @@ namespace ProvexBackendAPI.Helpers.Builders
                 EstId = r.Est_ID ?? -1,
                 IdProductor = r.Est_ID.HasValue ? null : r.IdProductor,
                 Especie = r.Est_ID.HasValue ? null : r.Especie,
+                CodigoVariedad = r.Est_ID.HasValue ? null : r.CodigoVariedad,
                 Variedad = r.Est_ID.HasValue ? null : r.Variedad
             });
 
@@ -37,6 +38,7 @@ namespace ProvexBackendAPI.Helpers.Builders
                 {
                     Id_Productor = any.IdProductor,
                     Productor = any.Productor,
+                    CodigoVariedad = any.CodigoVariedad,
                     Variedad = any.Variedad,
                     Agronomo = any.Agronomo,
                     DistribucionCalibre = any.DistribucionCalibre,

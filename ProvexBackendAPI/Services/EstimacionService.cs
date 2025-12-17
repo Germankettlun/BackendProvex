@@ -87,14 +87,14 @@ namespace ProvexBackendAPI.Services
 
             var dataTable = await repository.GetDataTable("[Estimaciones].[usp_UI_EstimacionSemanal_Resumen]", parameters);
 
-            var filas = dataTable.AsEnumerable().Select(MapResumenSemanalRow).ToList();
+            var filas = dataTable.AsEnumerable().Select(MapResumenSemanalRow).Where(f => f.Anio.HasValue && f.Anio.Value > 0 && !string.IsNullOrWhiteSpace(f.Semana_Nro)).ToList();
 
             //Construir DTOs
             foreach (var fila in filas)
             {
                 var idEst = idEstimacion.ToString();
 
-                // --- CABECERA / RESUMEN ---
+                //CABECERA / RESUMEN
                 if (!resumen.TryGetValue(idEst, out var estim))
                 {
                     estim = new ResumenSemanalEstimacionDto
@@ -218,44 +218,50 @@ namespace ProvexBackendAPI.Services
             // 2) Segundo SP
             var dtPorDia = await repository.GetDataTable("[Estimaciones].[usp_UI_EstimacionSemanal_DetalleDistribucionXDia]",new[]{new SqlParameter("@ID_ESTIMACION", idEstimacion)});
 
+            if (dtSemana == null || dtSemana.Rows.Count == 0)
+            {
+                return new DetalleDistribucionesEstimacionDto
+                {
+                    IdEstimacion = idEstimacion,
+                    Semanas = new List<DetalleDistribucionesSemanalDto>()
+                };
+            }
+
             //Agrupar por Semana-Año y armar un DetalleDistribucionesSemanalDto por cada grupo
-            var semanas = dtSemana.AsEnumerable()
-                .GroupBy(r => new
+            var semanas = dtSemana.AsEnumerable().Where(r => r["ANIO"] != DBNull.Value && r["SEMANA_NRO"] != DBNull.Value)
+            .GroupBy(r => new
                 {
                     Anio = r.Field<int>("ANIO"),
                     Semana = r.Field<int>("SEMANA_NRO")
                 })
-                .Select(g =>
-                {
-                    var any = g.First();
+                 .Select(g =>
+                     {
+                        var any = g.First();
 
-                    var anio = any.Field<int>("ANIO");
-                    var semanaNro = any.Field<int>("SEMANA_NRO");
+                        var anio = any.Field<int>("ANIO");
+                        var semanaNro = any.Field<int>("SEMANA_NRO");
 
-                    var categoriasRaw = any.Field<string?>("CATEGORIAS_SEMANA");
-                    var calibresRaw = any.Field<string?>("CALIBRES_SEMANA");
+                        var categoriasRaw = any.Field<string?>("CATEGORIAS_SEMANA");
+                        var calibresRaw = any.Field<string?>("CALIBRES_SEMANA");
 
-                    var aplicaDefaultPctExp = any.Field<int?>("APLICA_DEFAULT_PCT_EXP");
+                        var aplicaDefaultPctExp = any.Field<int?>("APLICA_DEFAULT_PCT_EXP");
 
-                    return new DetalleDistribucionesSemanalDto
-                    {
-                        Anio = anio,
-                        Semana = semanaNro.ToString(),
+                return new DetalleDistribucionesSemanalDto
+                 {
+                    Anio = anio,
+                    Semana = semanaNro.ToString(),
 
+                    DistribucionCategoria = BuildDistribucionCategoria(categoriasRaw, aplicaDefaultPctExp),
+                    DistribucionCalibre = BuildDistribucionCalibre(calibresRaw, aplicaDefaultPctExp),
 
-                        DistribucionCategoria = BuildDistribucionCategoria(categoriasRaw, aplicaDefaultPctExp),
-                        DistribucionCalibre = BuildDistribucionCalibre(calibresRaw, aplicaDefaultPctExp),
-
-
-                        PackingPorDia = BuildPackingPorDiaSemana(dtPorDia, anio, semanaNro.ToString()),
-                        FrigorificoPorDia = BuildFrigorificoPorDiaSemana(dtPorDia, anio, semanaNro.ToString())
-                    };
-                })
+                    PackingPorDia = BuildPackingPorDiaSemana(dtPorDia, anio, semanaNro.ToString()),
+                     FrigorificoPorDia = BuildFrigorificoPorDiaSemana(dtPorDia, anio, semanaNro.ToString())
+                  };
+         })
                 .OrderBy(x => x.Anio)
                 .ThenBy(x => x.Semana)
                 .ToList();
 
-           
             return new DetalleDistribucionesEstimacionDto
             {
                 IdEstimacion = idEstimacion,
@@ -339,6 +345,50 @@ namespace ProvexBackendAPI.Services
             catch (Exception e)
             {
                 throw new Exception(e.Message);
+            }
+
+        }
+
+        public async Task<EstimacionDto> ObtenerEstimacion(int idEstimacion)
+        {
+
+            if (idEstimacion <= 0)
+                throw new ArgumentException("idEstimacion inválido.", nameof(idEstimacion));
+
+            try
+            {
+
+                var estimacion = await repository.GetFirst<Estimacion>(z => z.idEstimacion == idEstimacion);
+
+                if (estimacion == null)
+                {
+                    throw new Exceptions.NotFoundException($"No se encontró la estimación con ID {idEstimacion}.");
+                }
+
+                var dto = new EstimacionDto
+                {
+                    IdEstimacion = estimacion.idEstimacion,
+                    IdEmpresa = estimacion.idEmpresa,
+                    IdTemporada = estimacion.idTemporada,
+                    IdEspecie = estimacion.idEspecie,
+                    IdVariedad = estimacion.idVariedad,
+                    IdProductor = estimacion.idProductor,
+                    IdEnvaseCosecha = estimacion.idEnvaseCosecha,
+                    IdFrigorifico = estimacion.idFrigorifico,
+                    IdPacking = estimacion.idPacking,
+                    AnioInicio = estimacion.anioInicio,
+                    SemanaInicio = estimacion.semanaInicio,
+                    CajasContratadas = estimacion.cajasContratadas,
+                    PorcentajeExportacion = estimacion.porcentajeExportacion,
+                    KiloEnvase = estimacion.kiloEnvase,
+                    PesoFijo = estimacion.pesoFijo
+                };
+
+                return dto;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
 
         }
@@ -743,7 +793,7 @@ namespace ProvexBackendAPI.Services
 
                 case 2:
                     //KILOS
-                    cajasEstimadas = row["KILOS_BASE_SIN_EXP"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["KILOS_BASE_SIN_EXP"]);
+                    cajasEstimadas = !row.Table.Columns.Contains("KILOS_BASE_SIN_EXP") || row["KILOS_BASE_SIN_EXP"] == DBNull.Value ? 0m : Convert.ToDecimal(row["KILOS_BASE_SIN_EXP"]); 
                     cajasProducidas = !row.Table.Columns.Contains("KILOS_P") || row["KILOS_P"] == DBNull.Value ? 0m : Convert.ToDecimal(row["KILOS_P"]);
                     cajasAnteriorEstimado = row["KILOS_E_ANTERIOR_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["KILOS_E_ANTERIOR_SIN_EXP"]);
                     cajasAnteriorProducido = row["KILOS_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["KILOS_P_ANTERIOR"]);
@@ -753,7 +803,7 @@ namespace ProvexBackendAPI.Services
 
                 case 3:
                     //ENVASE
-                    cajasEstimadas = row["ENVASE_BASE_SIN_EXP"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(row["ENVASE_BASE_SIN_EXP"]);
+                    cajasEstimadas = !row.Table.Columns.Contains("ENVASES_BASE_SIN_EXP") || row["ENVASES_BASE_SIN_EXP"] == DBNull.Value ? 0m : Convert.ToDecimal(row["ENVASES_BASE_SIN_EXP"]); 
                     cajasProducidas = !row.Table.Columns.Contains("ENVASES_P") || row["ENVASES_P"] == DBNull.Value ? 0m : Convert.ToDecimal(row["ENVASES_P"]);
                     cajasAnteriorEstimado = row["ENVASES_E_ANTERIOR_SIN_EXP"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_E_ANTERIOR_SIN_EXP"]);
                     cajasAnteriorProducido = row["ENVASES_P_ANTERIOR"] == DBNull.Value ? (int?)null : Convert.ToInt32(row["ENVASES_P_ANTERIOR"]);
@@ -778,7 +828,7 @@ namespace ProvexBackendAPI.Services
                 // Raíz
                 PesoBaseEspecie = row["ESPECIE_KILO_BASE"] == DBNull.Value? 0.0 : Convert.ToDouble(row["ESPECIE_KILO_BASE"]),
 
-                CodigoEspecie = row.Table.Columns.Contains("COD_ESP") ? (row.IsNull("COD_ESP") ? "" : row["COD_ESP"]?.ToString() ?? "") : "",
+                CodigoEspecie = row.Table.Columns.Contains("ID_ESPECIE") ? (row.IsNull("ID_ESPECIE") ? "" : row["ID_ESPECIE"]?.ToString() ?? "") : "",
 
                 Especie = row.Table.Columns.Contains("NOM_ESP") ? (row.IsNull("NOM_ESP") ? "" : row["NOM_ESP"]?.ToString() ?? "") : "",
 
@@ -789,7 +839,7 @@ namespace ProvexBackendAPI.Services
 
                 Productor = row.Table.Columns.Contains("NOM_PROD") ? (row.IsNull("NOM_PROD") ? "" : row["NOM_PROD"]?.ToString() ?? "") : "",
 
-                CodigoVariedad = row.Table.Columns.Contains("COD_VAR") ? (row.IsNull("COD_VAR") ? "" : row["COD_VAR"]?.ToString() ?? "") : "",
+                CodigoVariedad = row.Table.Columns.Contains("ID_VARIEDAD") ? (row.IsNull("ID_VARIEDAD") ? "" : row["ID_VARIEDAD"]?.ToString() ?? "") : "",
 
                 Variedad = row.Table.Columns.Contains("NOM_VAR") ? (row.IsNull("NOM_VAR") ? "" : row["NOM_VAR"]?.ToString() ?? "") : "",
 
