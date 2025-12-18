@@ -93,8 +93,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await estimacion.IngresarEstimacion(request, userId.Value);
-                return Ok();
+                var result = await estimacion.IngresarEstimacion(request, userId.Value);
+                return Ok(result);
 
             }
             catch (Exception e)
@@ -105,11 +105,11 @@ namespace ProvexBackendAPI.Controllers
         }
 
         [HttpPost("ActualizarExportacionSemanal")]
-        public async Task ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
+        public async Task<ActionResult> ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
         {
             var userId = await token.GetUserIdFromClaimsAsync(User);
-            await estimacion.IngresarPorcentajeExportacionSemanal(input, userId.Value);
-            return;
+            var result = await estimacion.IngresarPorcentajeExportacionSemanal(input, userId.Value);
+            return Ok(result);
         }
 
         [HttpGet("ObtenerZonas/{codEmpresa}")]

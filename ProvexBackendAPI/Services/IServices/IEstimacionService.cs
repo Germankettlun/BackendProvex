@@ -5,8 +5,8 @@ namespace ProvexBackendAPI.Services.IServices
 {
     public interface IEstimacionService
     {
-        Task IngresarEstimacion(IngresarEstimacionRequest request, Guid userId);
-        Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input, Guid userId);
+        Task<SpResponse> IngresarEstimacion(IngresarEstimacionRequest request, Guid userId);
+        Task<SpResponse> IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input, Guid userId);
         Task<List<ZonaDTO>> ObtenerZonas(string codEmpresa);
 
         Task<EstimacionDto> ObtenerEstimacion(int idEstimacion);
