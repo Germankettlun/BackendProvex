@@ -407,7 +407,7 @@ namespace ProvexBackendAPI.Services
 
         }
 
-        public async Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
+        public async Task<SpResponse> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
         {
             if (dto is null) throw new ArgumentNullException(nameof(dto));
 
@@ -433,7 +433,14 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@IDUSUARIO_GUID", userId)
                };
 
-                await repository.SpVoid(query, parameters);
+               var result = await repository.SpResponse(query, parameters);
+
+                if (!result.Ok)
+                {
+                    throw new InvalidOperationException(result.Mensaje ?? "No se pudo crear/actualizar la estimación.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

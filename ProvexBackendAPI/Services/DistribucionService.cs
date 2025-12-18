@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using ProvexBackendAPI.Helpers.Validation;
 using ProvexBackendAPI.Repository;
@@ -7,6 +8,7 @@ using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.IO.Pipelines;
 using System.Runtime.Intrinsics.Arm;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
@@ -428,26 +430,45 @@ namespace ProvexBackendAPI.Services
             return grouped;
         }
 
-        public async Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId)
+        public async Task<SpResponse> DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId)
         {
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
 
+            
+            var result = new SpResponse
+            {
+                Ok = true,
+                Mensaje = "No se enviaron categorías para guardar.",
+                Filas = 0,
+                Id = null
+            };
+
+
+           
             foreach (var cat in req.Categorias ?? Enumerable.Empty<DistribucionCategoriaPredeterminadoGuardarDto>())
             {
                 //Predeterminado
                 var predParams = new[]
                 {
-            new SqlParameter("@IdEstimacion", req.IdEstimacion),
-            new SqlParameter("@IdCategoria", cat.IdCategoria),
-            new SqlParameter("@PorcentajePredeterminado", (object?)cat.PorcentajePredeterminado ?? DBNull.Value),
-            new SqlParameter("@IdUsuario", usuarioId)
-        };
+                    new SqlParameter("@IdEstimacion", req.IdEstimacion),
+                    new SqlParameter("@IdCategoria", cat.IdCategoria),
+                    new SqlParameter("@PorcentajePredeterminado", (object?)cat.PorcentajePredeterminado ?? DBNull.Value),
+                    new SqlParameter("@IdUsuario", usuarioId)
+                };
 
-                await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Predeterminado",predParams);
+                var resultPredeterminado = await repository.SpResponse("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Predeterminado",predParams);
 
-                // Semanas
-                foreach (var s in cat.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
+                    if (!resultPredeterminado.Ok)
+                    {
+                        var msg = resultPredeterminado.Mensaje ?? "Error al guardar distribución predeterminada.";
+                        throw new InvalidOperationException( $"Categoría {cat.IdCategoria}: {msg}");
+                    }
+
+                    result = resultPredeterminado;
+
+                    // Semanas
+                    foreach (var s in cat.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
                 {
                     var semanaParams = new[]
                     {
@@ -459,10 +480,27 @@ namespace ProvexBackendAPI.Services
                         new SqlParameter("@IdUsuario", usuarioId) 
                     };
 
-                    await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Semana", semanaParams);
-                }
+                    var semanaResult = await repository.SpResponse("[Estimaciones].usp_INSERT_UPDATE_DistribucionCategoria_Semana", semanaParams);
+
+                        if (!semanaResult.Ok)
+                        {
+                            var msg = semanaResult.Mensaje ?? "Error al guardar distribución por semana.";
+                            throw new InvalidOperationException(
+                                $"Categoría {cat.IdCategoria}, Semana {s.Semana}-{s.Anio}: {msg}"
+                            );
+                        }
+
+                        result = semanaResult;
+                    }
+
+               
             }
+
+            return result;
+
         }
+           
+     
 
         public async Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId)
         {

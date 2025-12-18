@@ -1,4 +1,5 @@
-﻿using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
+﻿using ProvexBackendAPI.Dto;
+using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
@@ -17,7 +18,7 @@ namespace ProvexBackendAPI.Services.IServices
 
         Task<List<DistribucionExportacionEstimacionResponseDto>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
 
-        Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId);
+        Task<SpResponse> DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId);
 
         Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId);
 
