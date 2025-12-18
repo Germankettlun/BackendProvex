@@ -502,10 +502,18 @@ namespace ProvexBackendAPI.Services
            
      
 
-        public async Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId)
+        public async Task<SpResponse> DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId)
         {
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
+
+            var result = new SpResponse
+            {
+                Ok = true,
+                Mensaje = "No se enviaron calibres para guardar.",
+                Filas = 0,
+                Id = null
+            };
 
             foreach (var cal in req.Calibres ?? Enumerable.Empty<DistribucionCalibrePredeterminadoGuardarDto>())
             {
@@ -518,7 +526,15 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@IdUsuario", usuarioId)
                 };
 
-                await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Predeterminado",predParams);
+                var resultPredeterminado = await repository.SpResponse("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Predeterminado",predParams);
+
+                if (!resultPredeterminado.Ok)
+                {
+                    var msg = resultPredeterminado.Mensaje ?? "Error al guardar distribución predeterminada.";
+                    throw new InvalidOperationException($"Calibre {cal.IdCalibre}: {msg}");
+                }
+
+                result = resultPredeterminado;
 
                 // Semanas
                 foreach (var s in cal.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
@@ -533,9 +549,21 @@ namespace ProvexBackendAPI.Services
                          new SqlParameter("@IdUsuario", usuarioId)
                     };
 
-                    await repository.SpVoid("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Semana",semanaParams);
+                    var semanaResult = await repository.SpResponse("[Estimaciones].usp_INSERT_UPDATE_DistribucionCalibre_Semana",semanaParams);
+
+                    if (!semanaResult.Ok)
+                    {
+                        var msg = semanaResult.Mensaje ?? "Error al guardar distribución por semana.";
+                        throw new InvalidOperationException(
+                            $"Calibre {cal.IdCalibre}, Semana {s.Semana}-{s.Anio}: {msg}"
+                        );
+                    }
+
+                    result = semanaResult;
                 }
             }
+
+            return result;
         }
 
         public async Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId)
