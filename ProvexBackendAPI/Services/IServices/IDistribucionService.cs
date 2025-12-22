@@ -22,7 +22,7 @@ namespace ProvexBackendAPI.Services.IServices
 
         Task<SpResponse> DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId);
+        Task<SpResponse> DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId);
 
         Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId);
 
