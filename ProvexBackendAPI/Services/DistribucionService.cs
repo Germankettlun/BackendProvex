@@ -691,7 +691,7 @@ namespace ProvexBackendAPI.Services
             };
         }
 
-        public async Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
+        public async Task<SpResponse> DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId)
         {
             if (req is null || req.IdEstimacionBisemanal <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
@@ -708,6 +708,9 @@ namespace ProvexBackendAPI.Services
                     throw new ArgumentException("El porcentaje debe estar entre 0 y 100.");
             }
 
+            var totalFilas = 0;
+            int? ultimoId = null;
+            var mensajes = new List<string>();
 
             //NO replicar a la semana 
 
@@ -732,11 +735,29 @@ namespace ProvexBackendAPI.Services
                         new SqlParameter("@IdUsuario",    usuarioId)
                     };
 
-                    await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", upsertParams);
+                  var resp = await repository.SpResponse("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", upsertParams);
+
+                    if (resp is null || !resp.Ok)
+                        throw new InvalidOperationException(resp?.Mensaje ?? "Error al guardar la distribución de frigorífico.");
+
+                    totalFilas += resp.Filas;
+                    if (resp.Id.HasValue)
+                        ultimoId = resp.Id;
+
+                    if (!string.IsNullOrWhiteSpace(resp.Mensaje))
+                        mensajes.Add(resp.Mensaje);
                 }
 
-                return;
+                return new SpResponse
+                {
+                    Ok = true,
+                    Filas = totalFilas,
+                    Id = ultimoId,
+                    Mensaje = mensajes.Count == 0 ? "Distribución de frigorífico guardada correctamente." : string.Join(" ", mensajes.Distinct())
+                };
+
             }
+
 
             //Replicar a TODA LA SEMANA
 
@@ -772,10 +793,30 @@ namespace ProvexBackendAPI.Services
                         new SqlParameter("@IdUsuario",    usuarioId)
                     };
 
-                    await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", upsertParamsSemana);
+                   var resp = await repository.SpResponse("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPacking_Dia]", upsertParamsSemana);
+
+                    if (resp is null || !resp.Ok)
+                        throw new InvalidOperationException(resp?.Mensaje ?? "Error al replicar la distribución de frigorífico en la semana.");
+
+                    totalFilas += resp.Filas;
+                    if (resp.Id.HasValue)
+                        ultimoId = resp.Id;
+
+                    if (!string.IsNullOrWhiteSpace(resp.Mensaje))
+                        mensajes.Add(resp.Mensaje);
                 }
             }
+
+            return new SpResponse
+            {
+                Ok = true,
+                Filas = totalFilas,
+                Id = ultimoId,
+                Mensaje = mensajes.Count == 0 ? "Distribución de frigorífico guardada y replicada correctamente en la semana." : string.Join(" ", mensajes.Distinct())
+            };
+
         }
+     
 
         public async Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId)
         {
