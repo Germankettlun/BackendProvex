@@ -818,10 +818,19 @@ namespace ProvexBackendAPI.Services
         }
      
 
-        public async Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId)
+        public async Task<SpResponse> DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId)
         {
             if (req is null || req.IdEstimacion <= 0)
                 throw new ArgumentException("Parámetros inválidos.");
+
+            var result = new SpResponse
+            {
+                Ok = true,
+                Mensaje = "No se enviaron % de distribución para guardar.",
+                Filas = 0,
+                Id = null
+            };
+
 
             // Porcentaje predeterminado
             var predeterminadoParams = new[]
@@ -831,10 +840,18 @@ namespace ProvexBackendAPI.Services
                         new SqlParameter("@id_usuario_guid",    userId)
                    };
 
-            await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPorcentajeExportacion_Predeterminado]", predeterminadoParams);
+            var resultPredeterminado = await repository.SpResponse("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPorcentajeExportacion_Predeterminado]", predeterminadoParams);
 
-            // Semanas
-            foreach (var s in req.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
+            if (!resultPredeterminado.Ok)
+            {
+                var msg = resultPredeterminado.Mensaje ?? "Error al guardar distribución predeterminada.";
+                throw new InvalidOperationException($"{msg}");
+            }
+
+            result = resultPredeterminado;
+
+                // Semanas
+                foreach (var s in req.Semanas ?? Enumerable.Empty<PorcentajePorSemanaGuardarDto>())
             {
 
                 var semanaParams = new[]
@@ -846,10 +863,19 @@ namespace ProvexBackendAPI.Services
                         new SqlParameter("@id_usuario_guid",    userId)
                    };
 
-                await repository.SpVoid("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPorcentajeExportacion_Semana]", semanaParams);
+                var semanaResult = await repository.SpResponse("[Estimaciones].[usp_INSERT_UPDATE_DistribucionPorcentajeExportacion_Semana]", semanaParams);
 
+                if (!semanaResult.Ok)
+                {
+                    var msg = semanaResult.Mensaje ?? "Error al guardar distribución por semana.";
+                    throw new InvalidOperationException( $" {msg}");
+                }
+
+                result = semanaResult;
 
             }
+
+            return result;
 
         }
 

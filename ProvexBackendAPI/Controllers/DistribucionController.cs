@@ -162,8 +162,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await   distribucion.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
-                return Ok();
+                var result = await   distribucion.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
+                return Ok(result);
             }
             catch (Exception e)
             {

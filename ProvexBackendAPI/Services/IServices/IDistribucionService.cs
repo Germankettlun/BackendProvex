@@ -26,7 +26,7 @@ namespace ProvexBackendAPI.Services.IServices
 
         Task<SpResponse> DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId);
+        Task<SpResponse> DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId);
 
     }
 }
