@@ -33,7 +33,7 @@ namespace ProvexBackendAPI.Controllers
         [FromQuery] int idEstimacion,
         [FromQuery] int? semanasAntes,
         [FromQuery] int? semanasDespues
-    )
+        )
         {
 
             var data = await distribucion.GetDistribucionCategoriaAsync(idEstimacion, semanasAntes, semanasDespues);
