@@ -7,10 +7,10 @@
 
         public string Especie { get; set; } = default!; 
 
-        public string Version { get; set; } = default!; 
+        public int? Version { get; set; } 
         public string Descripcion { get; set; } = default!; 
 
-        public DateTime Fecha { get; set; }  
+        public String Fecha { get; set; }  
 
         public Guid IdUsuario { get; set; } 
         public string Usuario { get; set; } = default!;   

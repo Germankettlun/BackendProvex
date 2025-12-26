@@ -45,9 +45,9 @@ namespace ProvexBackendAPI.Services
                     IdVersion = row.Field<int>("IDVERSION"),
                     IdEspecie = row.Field<string>("IDESPECIE")!,
                     Especie = row.Field<string>("ESPECIE")!,
-                    Version = row.Field<string>("VERSION")!,
+                    Version = row.Field<int>("VERSION")!,
                     Descripcion = row.Field<string>("DESCRIPCION")!,
-                    Fecha = row.Field<DateTime>("FECHA"),
+                    Fecha = row.Field<String>("FECHA"),
                     IdUsuario = row.Field<Guid>("IDUSUARIO"), 
                     Usuario = row.Field<string>("USUARIO")!
                 });
