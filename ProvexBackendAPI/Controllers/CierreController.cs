@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Services.IServices;
 
 namespace ProvexBackendAPI.Controllers
@@ -34,6 +35,23 @@ namespace ProvexBackendAPI.Controllers
         {
             var data = await cierre.GetListadoCierreVersion(idEmpresa,idTemporada,idEspecie,descripcion);
             return Ok(data);
+        }
+
+        [HttpPost("generarCierre")]
+        public async Task<ActionResult> GenerarCierre(IngresarCierreRequest request)
+        {
+            try
+            {
+                var userId = await token.GetUserIdFromClaimsAsync(User);
+                var result = await cierre.GenerarCierre(request, userId.Value);
+                return Ok(result);
+
+            }
+            catch (Exception e)
+            {
+
+                throw new Exception(e.Message);
+            }
         }
 
 

@@ -55,5 +55,36 @@ namespace ProvexBackendAPI.Services
 
             return result;
         }
+
+        public async Task<SpResponse> GenerarCierre(IngresarCierreRequest request, Guid userId)
+        {
+            try
+            {
+
+
+                var parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@ID_EMPRESA", request.idEmpresa),
+                    new SqlParameter("@ID_TEMPORADA", request.idTemporada),
+                    new SqlParameter("@ID_ESPECIE", request.idEspecie),
+                    new SqlParameter("@DESCRIPCION", request.descripcion),
+                    new SqlParameter("@ID_USUARIO", userId)
+                };
+
+                var result = await repository.SpResponse("Estimaciones.sp_GenerarCierre", parameters);
+
+                if (!result.Ok)
+                {
+                    throw new InvalidOperationException(result.Mensaje ?? "No se pudo generar el cierre.");
+                }
+
+                return result;
+
+            }
+            catch (Exception)
+            {
+                throw new Exception("No se pudo generar el cierre.");
+            }
+        }
     }
 }
