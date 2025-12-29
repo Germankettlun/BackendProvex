@@ -37,6 +37,7 @@ namespace ProvexBackendAPI.Services
             new SqlParameter("@CodigoGrupoProductor", SqlDbType.VarChar, 50) { Value = (object?)req.CodigoGrupoProductor?.Trim().ToUpperInvariant() ?? DBNull.Value },
             new SqlParameter("@CodigoProductor",   SqlDbType.NVarChar, 50) { Value = (object?)req.CodigoProductor?.Trim().ToUpperInvariant()    ?? DBNull.Value },
             new SqlParameter("@CodigoVariedad",    SqlDbType.VarChar,  50) { Value = (object?)req.CodigoVariedad?.Trim().ToUpperInvariant()     ?? DBNull.Value },
+            new SqlParameter("@CodigoTemporada",    SqlDbType.VarChar,  10) { Value = (object?)req.CodigoTemporada?.Trim().ToUpperInvariant()     ?? DBNull.Value },
             };
 
             var dataTable = await repository.GetDataTable("[Estimaciones].usp_UI_LlenaComboGenerico",parameters);

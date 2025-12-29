@@ -269,7 +269,7 @@ namespace ProvexBackendAPI.Services
             };
         }
 
-        public async Task IngresarEstimacion(IngresarEstimacionRequest request, Guid userId)
+        public async Task<SpResponse> IngresarEstimacion(IngresarEstimacionRequest request, Guid userId)
         {
             try
             {
@@ -294,17 +294,24 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@peso_fijo", SqlDbType.Decimal){Precision = 18,Scale = 2, Value = request.pesoFijo},
                     new SqlParameter("@id_usuario_guid", userId)
                 };
-                    
-                await repository.SpVoid("Estimaciones.sp_IngresarEstimacion", parameters);
-                
+
+                var result = await repository.SpResponse("Estimaciones.sp_IngresarEstimacion", parameters);
+
+                if (!result.Ok)
+                {
+                    throw new InvalidOperationException(result.Mensaje ?? "No se pudo crear/actualizar la estimación.");
+                }
+
+                return result;
+
             }
             catch (Exception)
             {
-                throw new Exception("Error al crear estimación");
+                throw new Exception("Error al crear/actualizar estimación");
             }
         }
 
-        public async Task IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input, Guid userId)
+        public async Task<SpResponse> IngresarPorcentajeExportacionSemanal(PorcentajeExportacionSemanalDTO input, Guid userId)
         {
             
             try
@@ -318,7 +325,14 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@idUsuario_guid", userId)
                 };
 
-                await repository.SpVoid("Estimaciones.usp_INSERT_UPDATE_Procentaje_Exportacion_Semanal", parameters);
+                var result = await repository.SpResponse("Estimaciones.usp_INSERT_UPDATE_Procentaje_Exportacion_Semanal", parameters);
+
+                if (!result.Ok)
+                {
+                    throw new InvalidOperationException(result.Mensaje ?? "No se pudo crear/actualizar la estimación.");
+                }
+
+                return result;
             }
             catch (Exception)
             {
@@ -393,7 +407,7 @@ namespace ProvexBackendAPI.Services
 
         }
 
-        public async Task UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
+        public async Task<SpResponse> UpsertDiaAsync(UpdateEstimacionBisemanalRequest dto, Guid userId)
         {
             if (dto is null) throw new ArgumentNullException(nameof(dto));
 
@@ -419,7 +433,14 @@ namespace ProvexBackendAPI.Services
                     new SqlParameter("@IDUSUARIO_GUID", userId)
                };
 
-                await repository.SpVoid(query, parameters);
+               var result = await repository.SpResponse(query, parameters);
+
+                if (!result.Ok)
+                {
+                    throw new InvalidOperationException(result.Mensaje ?? "No se pudo crear/actualizar la estimación.");
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

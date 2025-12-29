@@ -72,16 +72,13 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await estimacion.UpsertDiaAsync(request, userId.Value);
-                return Ok("OK"); // 200, data:null
+                var result = await estimacion.UpsertDiaAsync(request, userId.Value);
+                return Ok(result);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception e)
             {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+
+                throw new Exception(e.Message);
             }
 
 
@@ -93,8 +90,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await estimacion.IngresarEstimacion(request, userId.Value);
-                return Ok();
+                var result = await estimacion.IngresarEstimacion(request, userId.Value);
+                return Ok(result);
 
             }
             catch (Exception e)
@@ -105,11 +102,19 @@ namespace ProvexBackendAPI.Controllers
         }
 
         [HttpPost("ActualizarExportacionSemanal")]
-        public async Task ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
+        public async Task<ActionResult> ActualizarExportacionSemanal(PorcentajeExportacionSemanalDTO input)
         {
-            var userId = await token.GetUserIdFromClaimsAsync(User);
-            await estimacion.IngresarPorcentajeExportacionSemanal(input, userId.Value);
-            return;
+            try
+            {
+                var userId = await token.GetUserIdFromClaimsAsync(User);
+            var result = await estimacion.IngresarPorcentajeExportacionSemanal(input, userId.Value);
+            return Ok(result);
+            }
+            catch (Exception e)
+            {
+
+                throw new Exception(e.Message);
+            }
         }
 
         [HttpGet("ObtenerZonas/{codEmpresa}")]

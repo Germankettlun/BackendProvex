@@ -1,4 +1,5 @@
-﻿using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
+﻿using ProvexBackendAPI.Dto;
+using ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionCalibreEspecieDto;
 using static ProvexBackendAPI.Features.Estimaciones.Dto.DistribucionCategoriaEspecie.DistribucionesDto;
 
@@ -17,15 +18,15 @@ namespace ProvexBackendAPI.Services.IServices
 
         Task<List<DistribucionExportacionEstimacionResponseDto>> GetRowsDistribucionPorcentajeExportacionAsync(int idEstimacion, int? semanasAntes, int? semanasDespues);
 
-        Task DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId);
+        Task<SpResponse> DistribucionCategoriaGuardarAsync(DistribucionCategoriaGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId);
+        Task<SpResponse> DistribucionCalibreGuardarAsync(DistribucionCalibreGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId);
+        Task<SpResponse> DistribucionFrigorificoGuardarAsync(DistribucionFrigorificoGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId);
+        Task<SpResponse> DistribucionPackingGuardarAsync(DistribucionPackingGuardarRequest req, Guid usuarioId);
 
-        Task DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId);
+        Task<SpResponse> DistribucionPorcentajeExportacionGuardarAsync(DistribucionPorcentajeExportacionGuardarRequest req, Guid userId);
 
     }
 }

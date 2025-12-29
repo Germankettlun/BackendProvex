@@ -59,6 +59,7 @@ builder.Services.AddScoped<ProvexBackendAPI.Services.IServices.IAuthService,
                            ProvexBackendAPI.Services.AuthService>();
 builder.Services.AddScoped<IComboService, ComboService>();
 builder.Services.AddScoped<ITemporadasService, TemporadasService>();
+builder.Services.AddScoped<ICierreService, CierreService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
 builder.Services.AddScoped<IEstimacionService, EstimacionService>();
 
