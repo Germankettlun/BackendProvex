@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
@@ -15,7 +16,7 @@ namespace ProvexBackendAPI.Services
         {
             this.repository = repository;
         }
-        public async Task<IReadOnlyList<CierreVersionDto>> GetListadoCierreVersion(string idEmpresa, string idTemporada, string? idEspecie, string? descripcion)
+        public async Task<IReadOnlyList<CierreVersionDto>> GetListadoCierreVersion(string idEmpresa, string idTemporada, int? version, string? descripcion)
         {
             if (string.IsNullOrWhiteSpace(idEmpresa))
                 throw new ArgumentException("CodigoEmpresa es obligatorio.", nameof(idEmpresa));
@@ -27,7 +28,7 @@ namespace ProvexBackendAPI.Services
             {
             new SqlParameter("@ID_EMPRESA",       SqlDbType.NVarChar, 10) { Value = idEmpresa.Trim().ToUpperInvariant() },
             new SqlParameter("@ID_TEMPORADA",     SqlDbType.VarChar,  10) { Value = idTemporada.Trim().ToUpperInvariant() },
-            new SqlParameter("@ID_ESPECIE",     SqlDbType.NVarChar, 10) { Value = (object?)idEspecie?.Trim().ToUpperInvariant() ?? DBNull.Value },
+            new SqlParameter("@VERSION", version),
             new SqlParameter("@DESCRIPCION", SqlDbType.VarChar, 200) { Value = (object?)descripcion?.Trim().ToUpperInvariant() ?? DBNull.Value }
             };
 
@@ -43,8 +44,6 @@ namespace ProvexBackendAPI.Services
                 result.Add(new CierreVersionDto
                 {
                     IdVersion = row.Field<int>("IDVERSION"),
-                    IdEspecie = row.Field<string>("IDESPECIE")!,
-                    Especie = row.Field<string>("ESPECIE")!,
                     Version = row.Field<int>("VERSION")!,
                     Descripcion = row.Field<string>("DESCRIPCION")!,
                     Fecha = row.Field<String>("FECHA"),
@@ -66,7 +65,6 @@ namespace ProvexBackendAPI.Services
                 {
                     new SqlParameter("@ID_EMPRESA", request.idEmpresa),
                     new SqlParameter("@ID_TEMPORADA", request.idTemporada),
-                    new SqlParameter("@ID_ESPECIE", request.idEspecie),
                     new SqlParameter("@DESCRIPCION", request.descripcion),
                     new SqlParameter("@ID_USUARIO", userId)
                 };

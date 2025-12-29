@@ -29,11 +29,11 @@ namespace ProvexBackendAPI.Controllers
         public async Task<IActionResult> GetListadoCierreVersion(
             [FromQuery] string idEmpresa,
             [FromQuery] string idTemporada,
-            [FromQuery] string? idEspecie,
+            [FromQuery] int? version,
             [FromQuery] string? descripcion
         )
         {
-            var data = await cierre.GetListadoCierreVersion(idEmpresa,idTemporada,idEspecie,descripcion);
+            var data = await cierre.GetListadoCierreVersion(idEmpresa,idTemporada,version,descripcion);
             return Ok(data);
         }
 
