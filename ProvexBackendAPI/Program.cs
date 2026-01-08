@@ -62,6 +62,7 @@ builder.Services.AddScoped<ITemporadasService, TemporadasService>();
 builder.Services.AddScoped<ICierreService, CierreService>();
 builder.Services.AddScoped<IDistribucionService, DistribucionService>();
 builder.Services.AddScoped<IEstimacionService, EstimacionService>();
+builder.Services.AddScoped<IComercial, ComercialService>();
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITokenService, TokenService>();
