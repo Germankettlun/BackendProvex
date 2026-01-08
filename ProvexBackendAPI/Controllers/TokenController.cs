@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ProvexBackendAPI.Controllers
@@ -14,7 +15,9 @@ namespace ProvexBackendAPI.Controllers
             this.antiforgery = antiforgery;
         }
 
+        
         [HttpGet("token")]
+        [AllowAnonymous]
         public async Task<string> GetToken()
         {
             var tokens = antiforgery.GetTokens(HttpContext);
