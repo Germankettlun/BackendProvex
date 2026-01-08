@@ -207,6 +207,8 @@ builder.Services.AddCors(o =>
     });
 });
 
+builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
+
 var app = builder.Build();
 
 // Enriquecimiento de RequestId y User para todos los logs
@@ -252,6 +254,8 @@ app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseAntiforgery();
 
 app.MapControllers();
 
