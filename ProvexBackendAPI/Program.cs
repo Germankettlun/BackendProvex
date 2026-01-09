@@ -187,8 +187,6 @@ builder.Services.AddCors(o =>
             builder.Environment.EnvironmentName == "Staging")
         {
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
-            //p.AllowAnyOrigin()
-            //p.WithOrigins("https://localhost:3000")
             p
             .SetIsOriginAllowed(origin => true)
              .AllowAnyHeader()

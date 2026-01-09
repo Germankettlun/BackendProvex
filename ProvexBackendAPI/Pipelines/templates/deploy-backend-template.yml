@@ -252,7 +252,7 @@ jobs:
                       <environmentVariable name="AzureAd__Domain" value="$azDomain" />
                       <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
                       <environmentVariable name="AzureAd__ClientId" value="$azClient" />
-                      <environmentVariable name="AllowedHosts" value="*" />
+                      
                       <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
                       <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
                       <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
