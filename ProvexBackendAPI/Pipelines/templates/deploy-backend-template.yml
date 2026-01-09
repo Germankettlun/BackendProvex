@@ -251,8 +251,7 @@ jobs:
                       <environmentVariable name="AzureAd__Instance" value="$azInstance" />
                       <environmentVariable name="AzureAd__Domain" value="$azDomain" />
                       <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
-                      <environmentVariable name="AzureAd__ClientId" value="$azClient" />
-                      
+                      <environmentVariable name="AzureAd__ClientId" value="$azClient" />  
                       <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
                       <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
                       <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
@@ -262,7 +261,6 @@ jobs:
                   </aspNetCore>
                     <security>
                         <authentication>
-                            <anonymousAuthentication enabled="true" />
                             <windowsAuthentication enabled="false" />
                         </authentication>
                         <requestFiltering>

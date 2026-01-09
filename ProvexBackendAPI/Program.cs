@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,11 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 // Evitar duplicados: limpiar proveedores por defecto al usar Serilog
 builder.Logging.ClearProviders();
+
+var pathKeys = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys");
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(pathKeys))
+    .SetApplicationName("ERPApiSite");
 
 // Forzar UTF-8 en salida de consola (evita “respondi¢” en Windows)
 Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
@@ -215,7 +221,7 @@ builder.Services.AddCors(o =>
 builder.Services.AddAntiforgery(options => {
     options.HeaderName = "X-XSRF-TOKEN";
     options.Cookie.Name = "XSRF-TOKEN";
-    options.Cookie.SameSite = 0; //SameSiteMode.Lax
+    options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always; //CookieSecurePolicy.SameAsRequest
 });
