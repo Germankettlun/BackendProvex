@@ -205,11 +205,11 @@ builder.Services.AddCors(o =>
                 "https://provexsa.cl",
                 "https://www.provexsa.cl"
             };
-            p.WithOrigins(allowedOrigins)
+            p.SetIsOriginAllowed(origin => true)
              .AllowAnyHeader()
-             .AllowAnyMethod()
              .WithExposedHeaders("X-XSRF-TOKEN")
-             .AllowCredentials();
+             .AllowCredentials()
+             .AllowAnyMethod();
         }
     });
 });
