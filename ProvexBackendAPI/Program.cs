@@ -207,7 +207,13 @@ builder.Services.AddCors(o =>
     });
 });
 
-builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
+builder.Services.AddAntiforgery(options => {
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.Name = "XSRF-TOKEN";
+    options.Cookie.SameSite = 0; //SameSiteMode.Lax
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; //CookieSecurePolicy.SameAsRequest
+});
 
 var app = builder.Build();
 

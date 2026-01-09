@@ -6,5 +6,6 @@ namespace ProvexBackendAPI.Services.IServices
     {
         Task<List<ComboItemDto>> ObtenerAgrupacionEspecieCalibre(RequestContextDTO contextDTO);
         Task<List<ComboItemDto>> ObtenerCalibres(string empresa, string especie);
+        void CrearAgrupacion(CrearAgrupacionRequest request);
     }
 }

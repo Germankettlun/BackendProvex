@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Data.Models.Users;
 using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Repository.IRepository;
 using ProvexBackendAPI.Services.IServices;
@@ -54,6 +55,41 @@ namespace ProvexBackendAPI.Services
             }
 
             return listaGrupoCalibre;
+        }
+
+        public async void CrearAgrupacion(CrearAgrupacionRequest request)
+        {
+            try
+            {
+                DataTable dt = new();
+
+                dt.Columns.Add("ID_CALIBRE", typeof(string));
+
+                foreach (var item in request.IdsCalibres)
+                {
+                    dt.Rows.Add(item.Value);
+                }
+
+                var parameters = new SqlParameter[]
+                    {
+                    new SqlParameter("@IdTemporada", request.idTemporada),
+                    new SqlParameter("@codEmpresa", request.idEmpresa),
+                    new SqlParameter("@IdEspecie", request.idEspecie),
+                    new SqlParameter("@IdsCalibres", dt)
+                    {
+                        SqlDbType = SqlDbType.Structured,
+                        TypeName = "dbo.listaCalibres"
+                    },
+                    new SqlParameter("@NombreAgrupacion", request.descripcion)
+                    };
+
+                await repository.SpVoid("[ProgramaComercial].[sp_CrearAgrupacionDeCalibresPorEspecie]", parameters);
+            }
+            catch (Exception)
+            {
+                throw new Exception("Error al crear la agrupación.");
+            }
+            
         }
 
     }
