@@ -260,6 +260,17 @@ jobs:
                       <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
                     </environmentVariables>
                   </aspNetCore>
+                    <security>
+                        <authentication>
+                            <anonymousAuthentication enabled="true" />
+                            <windowsAuthentication enabled="false" />
+                        </authentication>
+                        <requestFiltering>
+                            <verbs>
+                                <add verb="OPTIONS" allowed="true" />
+                            </verbs>
+                        </requestFiltering>
+                    </security>
                   <httpErrors existingResponse="PassThrough" />
                 </system.webServer>
               </configuration>
