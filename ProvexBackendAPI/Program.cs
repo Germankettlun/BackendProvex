@@ -188,6 +188,8 @@ builder.Services.AddCors(o =>
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
             p.AllowAnyOrigin()
              .AllowAnyHeader()
+             .WithExposedHeaders("X-XSRF-TOKEN")
+             .AllowCredentials()
              .AllowAnyMethod();
         }
         else
@@ -202,13 +204,14 @@ builder.Services.AddCors(o =>
             p.WithOrigins(allowedOrigins)
              .AllowAnyHeader()
              .AllowAnyMethod()
+             .WithExposedHeaders("X-XSRF-TOKEN")
              .AllowCredentials();
         }
     });
 });
 
 builder.Services.AddAntiforgery(options => {
-    options.HeaderName = "X-CSRF-TOKEN";
+    options.HeaderName = "X-XSRF-TOKEN";
     options.Cookie.Name = "XSRF-TOKEN";
     options.Cookie.SameSite = 0; //SameSiteMode.Lax
     options.Cookie.HttpOnly = true;

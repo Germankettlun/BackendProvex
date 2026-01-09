@@ -6,6 +6,7 @@ namespace ProvexBackendAPI.Controllers
 {
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
+    [AllowAnonymous]
     public class TokenController : ControllerBase
     {
         private readonly IAntiforgery antiforgery;
@@ -17,7 +18,6 @@ namespace ProvexBackendAPI.Controllers
 
         
         [HttpGet("token")]
-        [AllowAnonymous]
         public async Task<string> GetToken()
         {
             var tokens = antiforgery.GetTokens(HttpContext);
