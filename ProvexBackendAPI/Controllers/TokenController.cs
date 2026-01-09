@@ -7,6 +7,7 @@ namespace ProvexBackendAPI.Controllers
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
     [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
     public class TokenController : ControllerBase
     {
         private readonly IAntiforgery antiforgery;
