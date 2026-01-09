@@ -37,5 +37,12 @@ namespace ProvexBackendAPI.Controllers
             return res;
         }
 
+        [AllowAnonymous]
+        [HttpPost("crearAgrupacion")]
+        public void CrearAgrupacion(CrearAgrupacionRequest request)
+        {
+            comercial.CrearAgrupacion(request);
+        }
+
     }
 }
