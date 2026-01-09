@@ -187,7 +187,10 @@ builder.Services.AddCors(o =>
             builder.Environment.EnvironmentName == "Staging")
         {
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
-            p.AllowAnyOrigin()
+            //p.AllowAnyOrigin()
+            //p.WithOrigins("https://localhost:3000")
+            p
+            .SetIsOriginAllowed(origin => true)
              .AllowAnyHeader()
              .WithExposedHeaders("X-XSRF-TOKEN")
              .AllowCredentials()
@@ -202,11 +205,11 @@ builder.Services.AddCors(o =>
                 "https://provexsa.cl",
                 "https://www.provexsa.cl"
             };
-            p.WithOrigins(allowedOrigins)
+            p.SetIsOriginAllowed(origin => true)
              .AllowAnyHeader()
-             .AllowAnyMethod()
              .WithExposedHeaders("X-XSRF-TOKEN")
-             .AllowCredentials();
+             .AllowCredentials()
+             .AllowAnyMethod();
         }
     });
 });
