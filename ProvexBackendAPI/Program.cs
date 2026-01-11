@@ -194,11 +194,15 @@ builder.Services.AddCors(o =>
         {
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
             p
-            .SetIsOriginAllowed(origin => true)
+            //.SetIsOriginAllowed(origin => true)
+             .WithOrigins(
+                "http://localhost:3000",
+                "https://dev.intranet.provexsa.com"
+                )
              .AllowAnyHeader()
-             .WithExposedHeaders("X-XSRF-TOKEN")
+             .AllowAnyMethod()
              .AllowCredentials()
-             .AllowAnyMethod();
+             .WithExposedHeaders("X-XSRF-TOKEN");
         }
         else
         {
