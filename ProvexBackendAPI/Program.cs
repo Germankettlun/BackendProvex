@@ -200,9 +200,7 @@ builder.Services.AddCors(o =>
                 "https://dev.intranet.provexsa.com"
                 )
              .AllowAnyHeader()
-             .AllowAnyMethod()
-             .AllowCredentials()
-             .WithExposedHeaders("X-XSRF-TOKEN");
+             .AllowAnyMethod();
         }
         else
         {
@@ -215,19 +213,10 @@ builder.Services.AddCors(o =>
             };
             p.SetIsOriginAllowed(origin => true)
              .AllowAnyHeader()
-             .WithExposedHeaders("X-XSRF-TOKEN")
              .AllowCredentials()
              .AllowAnyMethod();
         }
     });
-});
-
-builder.Services.AddAntiforgery(options => {
-    options.HeaderName = "X-XSRF-TOKEN";
-    options.Cookie.Name = "XSRF-TOKEN";
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; //CookieSecurePolicy.SameAsRequest
 });
 
 var app = builder.Build();
@@ -280,8 +269,6 @@ app.UseCors();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseAntiforgery();
 
 app.MapControllers();
 
