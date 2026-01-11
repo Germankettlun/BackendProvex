@@ -76,6 +76,12 @@ namespace ProvexBackendAPI.Controllers
 
             return Ok(response);
         }
+
+        [HttpGet("test")]
+        public async Task<string> Test()
+        {
+            return "TEST";
+        }
     }
 }
 
