@@ -1,0 +1,26 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build output
+bin/
+obj/
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+# (si usas paquetes locales)
+packages/
+
+# Configuración local
+appsettings.Development.json
+launchSettings.json
+
+# Logs y SQLite
+*.log
+*.sqlite
