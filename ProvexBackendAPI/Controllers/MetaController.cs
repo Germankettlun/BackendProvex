@@ -78,9 +78,14 @@ namespace ProvexBackendAPI.Controllers
         }
 
         [HttpGet("test")]
-        public async Task<string> Test()
+        public async Task<object> Test()
         {
-            return "TEST";
+            var aux = new
+            {
+                Headers = Request.Headers["Authorization"].ToString(),
+            };
+
+            return aux;
         }
     }
 }
