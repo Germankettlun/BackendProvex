@@ -266,7 +266,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 
 // Orden crítico del pipeline
 app.UseCors();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
