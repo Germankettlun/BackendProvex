@@ -257,7 +257,17 @@ builder.Services.AddCors(o =>
                     }
 
                     // ========================================
-                    // REGLA 3: Dominios de producción (solo HTTPS)
+                    // REGLA 3: Subdominios de desarrollo (HTTP permitido)
+                    // ========================================
+                    // Permite subdominios dev.* en HTTP para entornos de staging
+                    if (host.StartsWith("dev.") && host.EndsWith(".provexsa.cl"))
+                    {
+                        Console.WriteLine($"   ✅ PERMITIDO - Subdominio de desarrollo (HTTP/HTTPS)");
+                        return true;
+                    }
+
+                    // ========================================
+                    // REGLA 4: Dominios de producción (solo HTTPS)
                     // ========================================
                     // Solo permite dominios públicos si usan HTTPS por seguridad
                     if (scheme == "https")
