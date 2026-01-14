@@ -427,3 +427,6 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,windows
+/CORS_CAMBIO_DEV_HTTP.md
+/CORS_CONFIG_RESUMEN.md
+/CORS_TESTING_GUIDE.md
