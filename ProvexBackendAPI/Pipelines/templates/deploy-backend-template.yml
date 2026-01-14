@@ -251,8 +251,7 @@ jobs:
                       <environmentVariable name="AzureAd__Instance" value="$azInstance" />
                       <environmentVariable name="AzureAd__Domain" value="$azDomain" />
                       <environmentVariable name="AzureAd__TenantId" value="$azTenant" />
-                      <environmentVariable name="AzureAd__ClientId" value="$azClient" />
-                      <environmentVariable name="AllowedHosts" value="*" />
+                      <environmentVariable name="AzureAd__ClientId" value="$azClient" />  
                       <environmentVariable name="BuildInfo__BuildNumber" value="$buildNumber" />
                       <environmentVariable name="BuildInfo__BuildId" value="$buildId" />
                       <environmentVariable name="BuildInfo__CommitHash" value="$commitHash" />
@@ -260,6 +259,16 @@ jobs:
                       <environmentVariable name="BuildInfo__BuildDate" value="$buildDate" />
                     </environmentVariables>
                   </aspNetCore>
+                    <security>
+                        <authentication>
+                            <windowsAuthentication enabled="false" />
+                        </authentication>
+                        <requestFiltering>
+                            <verbs>
+                                <add verb="OPTIONS" allowed="true" />
+                            </verbs>
+                        </requestFiltering>
+                    </security>
                   <httpErrors existingResponse="PassThrough" />
                 </system.webServer>
               </configuration>

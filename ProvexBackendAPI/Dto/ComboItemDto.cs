@@ -21,5 +21,6 @@ namespace ProvexBackendAPI.Dto
         public string? CodigoGrupoProductor { get; set; }
         public string? CodigoProductor { get; set; }
         public string? CodigoVariedad { get; set; }
+        public string? CodigoTemporada { get; set; }
     }
 }

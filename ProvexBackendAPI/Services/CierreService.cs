@@ -1,0 +1,88 @@
+﻿using Microsoft.Data.SqlClient;
+using ProvexBackendAPI.Data.Models.Users;
+using ProvexBackendAPI.Dto;
+using ProvexBackendAPI.Repository.IRepository;
+using ProvexBackendAPI.Services.IServices;
+using System.Data;
+
+namespace ProvexBackendAPI.Services
+{
+    public class CierreService : ICierreService
+
+    {
+        private readonly IGenericRepository repository;
+
+        public CierreService(IGenericRepository repository)
+        {
+            this.repository = repository;
+        }
+        public async Task<IReadOnlyList<CierreVersionDto>> GetListadoCierreVersion(string idEmpresa, string idTemporada, int? version, string? descripcion)
+        {
+            if (string.IsNullOrWhiteSpace(idEmpresa))
+                throw new ArgumentException("CodigoEmpresa es obligatorio.", nameof(idEmpresa));
+
+            if (string.IsNullOrWhiteSpace(idTemporada))
+                throw new ArgumentException("CodigoTemporada es obligatorio.", nameof(idTemporada));
+
+            var parameters = new[]
+            {
+            new SqlParameter("@ID_EMPRESA",       SqlDbType.NVarChar, 10) { Value = idEmpresa.Trim().ToUpperInvariant() },
+            new SqlParameter("@ID_TEMPORADA",     SqlDbType.VarChar,  10) { Value = idTemporada.Trim().ToUpperInvariant() },
+            new SqlParameter("@VERSION", version),
+            new SqlParameter("@DESCRIPCION", SqlDbType.VarChar, 200) { Value = (object?)descripcion?.Trim().ToUpperInvariant() ?? DBNull.Value }
+            };
+
+            var dataTable = await repository.GetDataTable("[Estimaciones].[usp_ESTIMACION_CIERRE_VERSION]", parameters);
+
+            var result = new List<CierreVersionDto>();
+
+            if (dataTable == null || dataTable.Rows.Count == 0)
+                return result;
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                result.Add(new CierreVersionDto
+                {
+                    IdVersion = row.Field<int>("IDVERSION"),
+                    Version = row.Field<int>("VERSION")!,
+                    Descripcion = row.Field<string>("DESCRIPCION")!,
+                    Fecha = row.Field<String>("FECHA"),
+                    IdUsuario = row.Field<Guid>("IDUSUARIO"), 
+                    Usuario = row.Field<string>("USUARIO")!
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<SpResponse> GenerarCierre(IngresarCierreRequest request, Guid userId)
+        {
+            try
+            {
+
+
+                var parameters = new SqlParameter[]
+                {
+                    new SqlParameter("@ID_EMPRESA", request.idEmpresa),
+                    new SqlParameter("@ID_TEMPORADA", request.idTemporada),
+                    new SqlParameter("@DESCRIPCION", request.descripcion),
+                    new SqlParameter("@ID_USUARIO", userId)
+                };
+
+                var result = await repository.SpResponse("Estimaciones.sp_GenerarCierre", parameters);
+
+                if (!result.Ok)
+                {
+                    throw new InvalidOperationException(result.Mensaje ?? "No se pudo generar el cierre.");
+                }
+
+                return result;
+
+            }
+            catch (Exception)
+            {
+                throw new Exception("No se pudo generar el cierre.");
+            }
+        }
+    }
+}

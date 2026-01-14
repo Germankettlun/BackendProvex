@@ -2,7 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using ProvexBackendAPI.Data;
 using ProvexBackendAPI.Data.Models;
+using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Repository.IRepository;
+using Serilog;
 using System.Data;
 using System.Linq.Expressions;
 
@@ -148,6 +150,8 @@ namespace ProvexBackendAPI.Repository
             var connectionState = conn.State;
             try
             {
+                // Log entrada SP lectura
+                Log.Information("[DB_IN] SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
                 if (connectionState != ConnectionState.Open) await conn.OpenAsync();
                 using (var cmd = conn.CreateCommand())
                 {
@@ -162,10 +166,22 @@ namespace ProvexBackendAPI.Repository
                     }
                     
                 }
+                Log.Information("[DB_OUT] SP: {StoredProc} | Rows: {Rows}", query, dt.Rows.Count);
+            }
+            catch (SqlException ex)
+            {
+                Log.Error(ex, "[DB_ERR] SQL Error in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "[DB_ERR] Timeout in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
             }
             catch (Exception ex)
             {
-                throw ex;
+                Log.Error(ex, "[DB_ERR] Exception in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
             }
             finally
             {
@@ -186,6 +202,7 @@ namespace ProvexBackendAPI.Repository
             var connectionState = conn.State;
             try
             {
+                Log.Information("[DB_IN] SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
                 if (connectionState != ConnectionState.Open) await conn.OpenAsync();
                 using (var cmd = conn.CreateCommand())
                 {
@@ -194,14 +211,115 @@ namespace ProvexBackendAPI.Repository
                     cmd.Parameters.AddRange(parameters);
                     await cmd.ExecuteNonQueryAsync();
                 }
+                Log.Information("[DB_OUT] SP: {StoredProc} | Status: OK", query);
             }
-            catch
+            catch (SqlException ex)
             {
+                Log.Error(ex, "[DB_ERR] SQL Error in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "[DB_ERR] Timeout in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[DB_ERR] Exception in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
                 throw;
             }
             finally
             {
                 if (connectionState != ConnectionState.Closed) conn.Close();
+            }
+        }
+
+        public async Task<SpResponse> SpResponse(string query, SqlParameter[] parameters)
+        {
+            var conn = _context.Database.GetDbConnection();
+            var connectionState = conn.State;
+
+            try
+            {
+                Log.Information("[DB_IN] SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+
+                if (connectionState != ConnectionState.Open)
+                    await conn.OpenAsync();
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = query;
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddRange(parameters);
+
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (!await reader.ReadAsync())
+                        {
+                            // El SP no devolvió filas
+                            var emptyResult = new SpResponse
+                            {
+                                Ok = false,
+                                Mensaje = "El procedimiento almacenado no devolvió resultados.",
+                                Filas = 0,
+                                Id = null
+                            };
+
+                            Log.Warning("[DB_OUT] SP: {StoredProc} | Status: Sin filas", query);
+                            return emptyResult;
+                        }
+
+                       
+                        int okOrdinal = reader.GetOrdinal("Ok");
+                        int mensajeOrdinal = reader.GetOrdinal("Mensaje");
+                        int filasOrdinal = reader.GetOrdinal("Filas");
+                        int idOrdinal = reader.GetOrdinal("Id");
+
+                        var result = new SpResponse
+                        {
+                            Ok = !reader.IsDBNull(okOrdinal) && reader.GetBoolean(okOrdinal),
+                            Mensaje = reader.IsDBNull(mensajeOrdinal) ? null : reader.GetString(mensajeOrdinal),
+                            Filas = reader.IsDBNull(filasOrdinal) ? 0 : reader.GetInt32(filasOrdinal),
+                            Id = reader.IsDBNull(idOrdinal) ? (int?)null : reader.GetInt32(idOrdinal)
+                        };
+
+                        Log.Information("[DB_OUT] SP: {StoredProc} | Status: {@Result}", query, result);
+                        return result;
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                Log.Error(ex, "[DB_ERR] SQL Error in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (TimeoutException ex)
+            {
+                Log.Error(ex, "[DB_ERR] Timeout in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[DB_ERR] Exception in SP: {StoredProc} | Params: {Params}", query, FormatParams(parameters));
+                throw;
+            }
+            finally
+            {
+                if (connectionState != ConnectionState.Closed)
+                    conn.Close();
+            }
+        }
+
+        private static string FormatParams(SqlParameter[] parameters)
+        {
+            if (parameters == null || parameters.Length == 0) return "<no-params>";
+            try
+            {
+                return string.Join(", ", parameters.Select(p => $"{p.ParameterName}={(p.Value == null || p.Value == DBNull.Value ? "NULL" : p.Value)}"));
+            }
+            catch
+            {
+                return "<params-format-error>";
             }
         }
     }

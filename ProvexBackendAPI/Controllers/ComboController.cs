@@ -1,4 +1,5 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProvexBackendAPI.Dto;
 using ProvexBackendAPI.Services.IServices;
@@ -9,7 +10,7 @@ namespace ProvexBackendAPI.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
     [ApiVersionNeutral]
-    //[Authorize]
+    [Authorize]
     public class ComboController : ControllerBase
     {
         private readonly IComboService combo;

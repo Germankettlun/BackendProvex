@@ -33,7 +33,7 @@ namespace ProvexBackendAPI.Controllers
         [FromQuery] int idEstimacion,
         [FromQuery] int? semanasAntes,
         [FromQuery] int? semanasDespues
-    )
+        )
         {
 
             var data = await distribucion.GetDistribucionCategoriaAsync(idEstimacion, semanasAntes, semanasDespues);
@@ -98,8 +98,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await distribucion.DistribucionCategoriaGuardarAsync(req, userId.Value);
-                return NoContent();
+                var result = await distribucion.DistribucionCategoriaGuardarAsync(req, userId.Value);
+                return Ok(result);
             }
             catch(Exception e)
             {
@@ -114,8 +114,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await distribucion.DistribucionCalibreGuardarAsync(req, userId.Value);
-                return NoContent();
+                var result = await distribucion.DistribucionCalibreGuardarAsync(req, userId.Value);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -130,8 +130,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await distribucion.DistribucionFrigorificoGuardarAsync(req, userId.Value);
-                return NoContent();
+                var result =  await distribucion.DistribucionFrigorificoGuardarAsync(req, userId.Value);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -146,8 +146,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await distribucion.DistribucionPackingGuardarAsync(req, userId.Value);
-                return NoContent();
+                var result = await distribucion.DistribucionPackingGuardarAsync(req, userId.Value);
+                return Ok(result);
             }
             catch (Exception e)
             {
@@ -162,8 +162,8 @@ namespace ProvexBackendAPI.Controllers
             try
             {
                 var userId = await token.GetUserIdFromClaimsAsync(User);
-                await   distribucion.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
-                return Ok();
+                var result = await   distribucion.DistribucionPorcentajeExportacionGuardarAsync(req, userId.Value);
+                return Ok(result);
             }
             catch (Exception e)
             {

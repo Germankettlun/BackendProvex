@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using ProvexBackendAPI.Dto;
 using System.Data;
 using System.Linq.Expressions;
 
@@ -19,5 +20,6 @@ namespace ProvexBackendAPI.Repository.IRepository
         Task<bool> Exists<TEntity>(Expression<Func<TEntity, bool>> predicate) where TEntity : class;
         Task<DataTable> GetDataTable(string query, SqlParameter[] parameters);
         Task SpVoid(string query, SqlParameter[] parameters);
+        Task<SpResponse> SpResponse(string query, SqlParameter[] parameters);
     }
 }
