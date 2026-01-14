@@ -192,29 +192,85 @@ builder.Services.AddCors(o =>
         if (builder.Environment.IsDevelopment() ||
             builder.Environment.EnvironmentName == "Staging")
         {
+            // ========================================
+            // DEVELOPMENT / STAGING: Modo con credenciales
+            // ========================================
             Console.WriteLine("🔓 CORS: Modo PERMISIVO activado (Development/Staging)");
-            p
-            //.SetIsOriginAllowed(origin => true)
-             .WithOrigins(
+            p.WithOrigins(
                 "http://localhost:3000",
                 "https://dev.intranet.provexsa.com"
-                )
-             .AllowAnyHeader()
-             .AllowAnyMethod();
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // ✅ CRÍTICO: Permite cookies/JWT
         }
         else
         {
+            // ========================================
+            // PRODUCTION: Modo restringido con validación dinámica
+            // ========================================
             Console.WriteLine("🔒 CORS: Modo RESTRINGIDO activado (Production)");
-            var allowedOrigins = new[]
+            p.SetIsOriginAllowed(origin =>
             {
-                "https://intranet.provexsa.com",
-                "https://provexsa.cl",
-                "https://www.provexsa.cl"
-            };
-            p.SetIsOriginAllowed(origin => true)
-             .AllowAnyHeader()
-             .AllowCredentials()
-             .AllowAnyMethod();
+                if (string.IsNullOrEmpty(origin))
+                {
+                    Log.Warning("⚠️ CORS: Origen vacío o nulo - RECHAZADO");
+                    return false;
+                }
+
+                try
+                {
+                    var uri = new Uri(origin);
+                    var host = uri.Host;
+                    var scheme = uri.Scheme;
+
+                    Log.Information("🌍 CORS: Evaluando origen: {Origin} | Host: {Host} | Scheme: {Scheme}", 
+                        origin, host, scheme);
+
+                    // REGLA 1: Red interna 10.115.x.x (HTTP/HTTPS)
+                    if (host.StartsWith("10.115."))
+                    {
+                        Log.Information("   ✅ PERMITIDO - Red interna 10.115.x.x");
+                        return true;
+                    }
+
+                    // REGLA 2: Localhost (HTTP/HTTPS)
+                    if (host == "localhost" || host == "127.0.0.1")
+                    {
+                        Log.Information("   ✅ PERMITIDO - Localhost");
+                        return true;
+                    }
+
+                    // REGLA 3: Subdominios de desarrollo dev.* (HTTP/HTTPS)
+                    if (host.StartsWith("dev.") && host.EndsWith(".provexsa.com"))
+                    {
+                        Log.Information("   ✅ PERMITIDO - Subdominio de desarrollo (HTTP/HTTPS)");
+                        return true;
+                    }
+
+                    // REGLA 4: Dominios de producción (solo HTTPS)
+                    if (scheme == "https")
+                    {
+                        if (host.EndsWith(".provexsa.com") || host == "provexsa.com" ||
+                            host.EndsWith(".provexsa.cl") || host == "provexsa.cl")
+                        {
+                            Log.Information("   ✅ PERMITIDO - Dominio de producción (HTTPS)");
+                            return true;
+                        }
+                    }
+
+                    Log.Warning("   ❌ RECHAZADO - No cumple con ninguna regla: {Origin}", origin);
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "⚠️ CORS: Error al validar origen '{Origin}'", origin);
+                    return false;
+                }
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // ✅ Permite cookies/JWT con validación específica
         }
     });
 });
