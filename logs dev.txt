@@ -1,0 +1,385 @@
+logs ngix :
+
+root@vps-debian-main:~# tail /var/log/nginx/error.log
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 SSL_shutdown: 1
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 event timer del: 9: 8522233474
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 reusable connection: 0
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 free: 000055C7F73536D0
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 free: 0000000000000000
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 free: 000055C7F73047A0, unused: 0
+2026/01/15 16:57:24 [debug] 1570968#1570968: *19277 free: 000055C7F7271920, unused: 384
+2026/01/15 16:57:24 [debug] 1570968#1570968: timer delta: 361
+2026/01/15 16:57:24 [debug] 1570968#1570968: worker cycle
+2026/01/15 16:57:24 [debug] 1570968#1570968: epoll timer: -1
+root@vps-debian-main:~# tail /var/log/nginx/access.log
+186.189.78.178 - - [15/Jan/2026:16:54:19 -0300] "GET /favicon.ico?favicon.d9d68d1f.ico HTTP/1.1" 200 21401 "https://dev.intranet.provexsa.com/login" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+185.16.39.146 - - [15/Jan/2026:16:54:35 -0300] "GET / HTTP/1.1" 404 153 "-" "Mozilla/5.0"
+147.185.132.24 - - [15/Jan/2026:16:55:43 -0300] "GET / HTTP/1.1" 200 12008 "-" "Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity"
+185.16.39.146 - - [15/Jan/2026:16:56:10 -0300] "GET / HTTP/1.1" 404 153 "-" "Mozilla/5.0"
+8.209.215.40 - - [15/Jan/2026:16:56:23 -0300] "POST /cgi-bin/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/bin/sh HTTP/1.1" 400 157 "-" "-"
+137.184.9.70 - - [15/Jan/2026:16:57:17 -0300] "GET / HTTP/1.1" 301 169 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+137.184.9.70 - - [15/Jan/2026:16:57:17 -0300] "GET /favicon.ico HTTP/1.1" 301 169 "http://intranet.provexsa.com/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+137.184.9.70 - - [15/Jan/2026:16:57:18 -0300] "GET / HTTP/1.1" 307 16 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+137.184.9.70 - - [15/Jan/2026:16:57:23 -0300] "GET /login HTTP/1.1" 200 4538 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+137.184.9.70 - - [15/Jan/2026:16:57:24 -0300] "GET /favicon.ico HTTP/1.1" 200 21385 "https://intranet.provexsa.com/login" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+root@vps-debian-main:~# tail /var/log/nginx/login_access.log
+2026-01-15T15:40:11-03:00 rid=54a97cfd5db27a6c975048109c3b479e ip=190.114.38.115 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=403 ustatus=403 uaddr=10.115.1.252:3002 rt=0.003 urt=0.004 ua="Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0"
+2026-01-15T15:40:46-03:00 rid=a099f4de0e08395e4d014d8a90e398d0 ip=190.114.38.115 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=403 ustatus=403 uaddr=10.115.1.252:3002 rt=0.004 urt=0.004 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+2026-01-15T16:06:13-03:00 rid=b1f365012344074e9e103d598a4c73b9 ip=190.114.38.115 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=200 ustatus=200 uaddr=10.115.1.252:3002 rt=0.427 urt=0.427 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+2026-01-15T16:08:16-03:00 rid=50593f6eefc0e0ce8d243ed363c74056 ip=190.114.38.115 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=200 ustatus=200 uaddr=10.115.1.252:3002 rt=0.297 urt=0.297 ua="Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0"
+2026-01-15T16:18:04-03:00 rid=8fc2ff437e7bc1fe7b95ce27dde9204d ip=190.114.38.115 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=200 ustatus=200 uaddr=10.115.1.252:3002 rt=0.253 urt=0.253 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+2026-01-15T16:20:25-03:00 rid=122eca496fe59c0658b9661a3c9a04a5 ip=190.114.38.115 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=200 ustatus=200 uaddr=10.115.1.252:3002 rt=0.228 urt=0.229 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0"
+2026-01-15T16:26:16-03:00 rid=7f559696cd6fd0a62d4b8643a0765602 ip=190.8.90.70 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=200 ustatus=200 uaddr=10.115.1.252:3002 rt=0.279 urt=0.279 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+2026-01-15T16:49:48-03:00 rid=dcd696d98c8fb0baa36bc6dfbccaac37 ip=190.8.90.70 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=200 ustatus=200 uaddr=10.115.1.252:3002 rt=0.237 urt=0.238 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0"
+2026-01-15T16:53:39-03:00 rid=ad37a26659b98add248d762c6f547b6c ip=186.189.78.178 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=403 ustatus=403 uaddr=10.115.1.252:3002 rt=0.003 urt=0.004 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+2026-01-15T16:54:27-03:00 rid=220fe3483bb289e968f8d712c0dd6b3c ip=186.189.78.178 xff="-" host="dev.intranet.provexsa.com" origin="https://dev.intranet.provexsa.com" method=POST uri="/api/auth/login" status=403 ustatus=403 uaddr=10.115.1.252:3002 rt=0.003 urt=0.003 ua="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+
+
+
+Los middleward
+
+2026-01-15T19:59:43.964699150Z   "hasToken": true,
+2026-01-15T19:59:43.964727516Z   "tokenLength": 163,
+2026-01-15T19:59:43.964737500Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T19:59:43.964746357Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T19:59:43.964757223Z }
+2026-01-15T19:59:43.964765872Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/catalog
+2026-01-15T19:59:43.964798052Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/catalog
+2026-01-15T19:59:43.971359974Z 🟢 [BUILD PETITION] rid=1ce1ffe6-0756-4a1b-903f-3860fbecd3e9 start {
+2026-01-15T19:59:43.971389907Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:43.971403202Z   method: 'GET',
+2026-01-15T19:59:43.971412207Z   hasToken: true
+2026-01-15T19:59:43.971420849Z }
+2026-01-15T19:59:44.004204872Z 🟢 [BUILD PETITION] rid=8eb34468-9466-4390-afd2-03cfb8c2988a complete {
+2026-01-15T19:59:44.004318088Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=GRUPO_PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:44.004349187Z   method: 'GET',
+2026-01-15T19:59:44.004371505Z   status: 200,
+2026-01-15T19:59:44.004395795Z   ok: true
+2026-01-15T19:59:44.004418321Z }
+2026-01-15T19:59:44.009009865Z 🟢 [BUILD PETITION] rid=266cefa7-8c7b-4077-b0b3-cc8cd7834481 complete {
+2026-01-15T19:59:44.009049817Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=VARIEDAD&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:44.009061630Z   method: 'GET',
+2026-01-15T19:59:44.009070752Z   status: 200,
+2026-01-15T19:59:44.009079369Z   ok: true
+2026-01-15T19:59:44.009087812Z }
+2026-01-15T19:59:44.026160621Z 🟢 [BUILD PETITION] rid=1ce1ffe6-0756-4a1b-903f-3860fbecd3e9 complete {
+2026-01-15T19:59:44.026243536Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:44.026280716Z   method: 'GET',
+2026-01-15T19:59:44.026295543Z   status: 200,
+2026-01-15T19:59:44.026305286Z   ok: true
+2026-01-15T19:59:44.026313826Z }
+2026-01-15T19:59:47.333328422Z 🔍 [MIDDLEWARE] {
+2026-01-15T19:59:47.333467202Z   "timestamp": "2026-01-15T19:59:47.332Z",
+2026-01-15T19:59:47.333483652Z   "method": "GET",
+2026-01-15T19:59:47.333494344Z   "pathname": "/api/estimacion/catalog",
+2026-01-15T19:59:47.333504457Z   "search": "?nombreCombo=VARIEDAD&codigoEspecie=MA&codigoGrupoProductor=25&codigoProductor=&codigoVariedad=",
+2026-01-15T19:59:47.333574638Z   "hasToken": true,
+2026-01-15T19:59:47.333588718Z   "tokenLength": 163,
+2026-01-15T19:59:47.333598524Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T19:59:47.333608545Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T19:59:47.333618507Z }
+2026-01-15T19:59:47.333627973Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/catalog
+2026-01-15T19:59:47.333638082Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/catalog
+2026-01-15T19:59:47.341731085Z 🟢 [BUILD PETITION] rid=bdfdae3d-dbad-4f96-93cc-3053e5c6a88d start {
+2026-01-15T19:59:47.341781805Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=VARIEDAD&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:47.341796542Z   method: 'GET',
+2026-01-15T19:59:47.341806659Z   hasToken: true
+2026-01-15T19:59:47.341816405Z }
+2026-01-15T19:59:47.350457640Z 🔍 [MIDDLEWARE] {
+2026-01-15T19:59:47.350517947Z   "timestamp": "2026-01-15T19:59:47.349Z",
+2026-01-15T19:59:47.350529157Z   "method": "GET",
+2026-01-15T19:59:47.350538408Z   "pathname": "/api/estimacion/catalog",
+2026-01-15T19:59:47.350547507Z   "search": "?nombreCombo=GRUPO_PRODUCTOR&codigoEspecie=MA&codigoGrupoProductor=25&codigoProductor=&codigoVariedad=",
+2026-01-15T19:59:47.350557813Z   "hasToken": true,
+2026-01-15T19:59:47.350566420Z   "tokenLength": 163,
+2026-01-15T19:59:47.350575067Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T19:59:47.350584282Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T19:59:47.350593421Z }
+2026-01-15T19:59:47.350602101Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/catalog
+2026-01-15T19:59:47.350611339Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/catalog
+2026-01-15T19:59:47.362112047Z 🟢 [BUILD PETITION] rid=1283aad9-ab24-4445-911a-fb690f30512f start {
+2026-01-15T19:59:47.362226743Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=GRUPO_PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:47.362241703Z   method: 'GET',
+2026-01-15T19:59:47.362251213Z   hasToken: true
+2026-01-15T19:59:47.362259821Z }
+2026-01-15T19:59:47.364988235Z 🟢 [BUILD PETITION] rid=bdfdae3d-dbad-4f96-93cc-3053e5c6a88d complete {
+2026-01-15T19:59:47.365020884Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=VARIEDAD&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:47.365059449Z   method: 'GET',
+2026-01-15T19:59:47.365082000Z   status: 200,
+2026-01-15T19:59:47.365104458Z   ok: true
+2026-01-15T19:59:47.365125347Z }
+2026-01-15T19:59:47.370758044Z 🔍 [MIDDLEWARE] {
+2026-01-15T19:59:47.370798507Z   "timestamp": "2026-01-15T19:59:47.370Z",
+2026-01-15T19:59:47.370816704Z   "method": "GET",
+2026-01-15T19:59:47.370825839Z   "pathname": "/api/estimacion/catalog",
+2026-01-15T19:59:47.370834695Z   "search": "?nombreCombo=PRODUCTOR&codigoEspecie=MA&codigoGrupoProductor=25&codigoProductor=&codigoVariedad=",
+2026-01-15T19:59:47.370844584Z   "hasToken": true,
+2026-01-15T19:59:47.370853511Z   "tokenLength": 163,
+2026-01-15T19:59:47.370862317Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T19:59:47.370871200Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T19:59:47.370880028Z }
+2026-01-15T19:59:47.370888407Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/catalog
+2026-01-15T19:59:47.370897460Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/catalog
+2026-01-15T19:59:47.378949597Z 🟢 [BUILD PETITION] rid=9ae9c4a3-a88b-4477-99b9-cb7cf933b111 start {
+2026-01-15T19:59:47.379033124Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:47.379050690Z   method: 'GET',
+2026-01-15T19:59:47.379061219Z   hasToken: true
+2026-01-15T19:59:47.379070870Z }
+2026-01-15T19:59:47.382435422Z 🟢 [BUILD PETITION] rid=1283aad9-ab24-4445-911a-fb690f30512f complete {
+2026-01-15T19:59:47.382465964Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=GRUPO_PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:47.382478335Z   method: 'GET',
+2026-01-15T19:59:47.382487396Z   status: 200,
+2026-01-15T19:59:47.382513455Z   ok: true
+2026-01-15T19:59:47.382522784Z }
+2026-01-15T19:59:47.397211371Z 🟢 [BUILD PETITION] rid=9ae9c4a3-a88b-4477-99b9-cb7cf933b111 complete {
+2026-01-15T19:59:47.397294132Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T19:59:47.397311690Z   method: 'GET',
+2026-01-15T19:59:47.397320937Z   status: 200,
+2026-01-15T19:59:47.397330368Z   ok: true
+2026-01-15T19:59:47.397338857Z }
+2026-01-15T20:00:02.825898698Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:02.826751311Z   "timestamp": "2026-01-15T20:00:02.825Z",
+2026-01-15T20:00:02.826770648Z   "method": "GET",
+2026-01-15T20:00:02.826795183Z   "pathname": "/",
+2026-01-15T20:00:02.826806277Z   "search": "",
+2026-01-15T20:00:02.826815578Z   "hasToken": true,
+2026-01-15T20:00:02.826824466Z   "tokenLength": 163,
+2026-01-15T20:00:02.826833305Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:02.826842411Z   "referer": null
+2026-01-15T20:00:02.826851139Z }
+2026-01-15T20:00:02.826859751Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /
+2026-01-15T20:00:02.826872124Z ✅ [MIDDLEWARE] Permitido: /
+2026-01-15T20:00:02.945608739Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:02.945711252Z   "timestamp": "2026-01-15T20:00:02.945Z",
+2026-01-15T20:00:02.945726849Z   "method": "GET",
+2026-01-15T20:00:02.945736034Z   "pathname": "/login",
+2026-01-15T20:00:02.945744896Z   "search": "",
+2026-01-15T20:00:02.945753611Z   "hasToken": true,
+2026-01-15T20:00:02.945762271Z   "tokenLength": 163,
+2026-01-15T20:00:02.945771167Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:02.945780569Z   "referer": null
+2026-01-15T20:00:02.945789103Z }
+2026-01-15T20:00:02.945797674Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /login
+2026-01-15T20:00:02.945809456Z 🔄 [MIDDLEWARE] Con token en /login, redirigiendo a /estimacion
+2026-01-15T20:00:02.977576701Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:02.977648635Z   "timestamp": "2026-01-15T20:00:02.977Z",
+2026-01-15T20:00:02.977698195Z   "method": "GET",
+2026-01-15T20:00:02.977722189Z   "pathname": "/estimacion",
+2026-01-15T20:00:02.977742010Z   "search": "",
+2026-01-15T20:00:02.977761184Z   "hasToken": true,
+2026-01-15T20:00:02.977780755Z   "tokenLength": 163,
+2026-01-15T20:00:02.977798626Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:02.977816588Z   "referer": null
+2026-01-15T20:00:02.977833775Z }
+2026-01-15T20:00:02.977851839Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /estimacion
+2026-01-15T20:00:02.977870184Z ✅ [MIDDLEWARE] Permitido: /estimacion
+2026-01-15T20:00:03.228627645Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:03.228692587Z   "timestamp": "2026-01-15T20:00:03.228Z",
+2026-01-15T20:00:03.228709360Z   "method": "GET",
+2026-01-15T20:00:03.228718567Z   "pathname": "/api/temporadas",
+2026-01-15T20:00:03.228763244Z   "search": "?codigoEmpresa=PRX",
+2026-01-15T20:00:03.228775214Z   "hasToken": true,
+2026-01-15T20:00:03.228784260Z   "tokenLength": 163,
+2026-01-15T20:00:03.228792667Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:03.228801087Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:03.228809438Z }
+2026-01-15T20:00:03.228818407Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/temporadas
+2026-01-15T20:00:03.228827176Z ✅ [MIDDLEWARE] API privada con token permitida: /api/temporadas
+2026-01-15T20:00:03.234593674Z 🟢 [BUILD PETITION] rid=1c9486c1-40eb-4206-9c62-3444ed9bd964 start {
+2026-01-15T20:00:03.234623510Z   url: 'https://dev.api2.provexsa.cl/api/v1/temporadas?codigoEmpresa=PRX',
+2026-01-15T20:00:03.234634517Z   method: 'GET',
+2026-01-15T20:00:03.234643247Z   hasToken: true
+2026-01-15T20:00:03.234651620Z }
+2026-01-15T20:00:03.249067848Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:03.249153763Z   "timestamp": "2026-01-15T20:00:03.248Z",
+2026-01-15T20:00:03.249166826Z   "method": "GET",
+2026-01-15T20:00:03.249176799Z   "pathname": "/api/prueba",
+2026-01-15T20:00:03.249185783Z   "search": "",
+2026-01-15T20:00:03.249203511Z   "hasToken": true,
+2026-01-15T20:00:03.249212352Z   "tokenLength": 163,
+2026-01-15T20:00:03.249221199Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:03.249229948Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:03.249239131Z }
+2026-01-15T20:00:03.249248519Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/prueba
+2026-01-15T20:00:03.249258726Z ✅ [MIDDLEWARE] API privada con token permitida: /api/prueba
+2026-01-15T20:00:03.253957315Z 👉 Llamando a API: https://dev.api2.provexsa.cl/api/v1
+2026-01-15T20:00:03.261793956Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:03.261829668Z   "timestamp": "2026-01-15T20:00:03.261Z",
+2026-01-15T20:00:03.262038883Z   "method": "GET",
+2026-01-15T20:00:03.262056708Z   "pathname": "/api/estimacion/catalog",
+2026-01-15T20:00:03.262066636Z   "search": "?nombreCombo=ESPECIE&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=",
+2026-01-15T20:00:03.262076765Z   "hasToken": true,
+2026-01-15T20:00:03.262100263Z   "tokenLength": 163,
+2026-01-15T20:00:03.262110556Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:03.262122110Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:03.262141630Z }
+2026-01-15T20:00:03.262158163Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/catalog
+2026-01-15T20:00:03.262189310Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/catalog
+2026-01-15T20:00:03.268100646Z 🟢 [BUILD PETITION] rid=b0a9a372-985d-42f2-aea1-6a4c10b45193 start {
+2026-01-15T20:00:03.268172866Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T20:00:03.268190820Z   method: 'GET',
+2026-01-15T20:00:03.268200186Z   hasToken: true
+2026-01-15T20:00:03.268208700Z }
+2026-01-15T20:00:03.275461178Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:03.275556392Z   "timestamp": "2026-01-15T20:00:03.275Z",
+2026-01-15T20:00:03.275582096Z   "method": "GET",
+2026-01-15T20:00:03.275607733Z   "pathname": "/api/estimacion/semana",
+2026-01-15T20:00:03.275631098Z   "search": "?idTemporada=T7",
+2026-01-15T20:00:03.275657865Z   "hasToken": true,
+2026-01-15T20:00:03.275692433Z   "tokenLength": 163,
+2026-01-15T20:00:03.275723453Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:03.275744776Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:03.275767672Z }
+2026-01-15T20:00:03.275808856Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/semana
+2026-01-15T20:00:03.275835851Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/semana
+2026-01-15T20:00:03.283157717Z 🟢 [BUILD PETITION] rid=83dd4846-a0c6-4bfa-94c3-f29677285669 start {
+2026-01-15T20:00:03.283215088Z   url: 'https://dev.api2.provexsa.cl/api/v1/temporadas/T7/semanas?codEmp=PRX',
+2026-01-15T20:00:03.283233201Z   method: 'GET',
+2026-01-15T20:00:03.283257421Z   hasToken: true
+2026-01-15T20:00:03.283271585Z }
+2026-01-15T20:00:03.287790539Z 🟢 [BUILD PETITION] rid=1c9486c1-40eb-4206-9c62-3444ed9bd964 complete {
+2026-01-15T20:00:03.287837003Z   url: 'https://dev.api2.provexsa.cl/api/v1/temporadas?codigoEmpresa=PRX',
+2026-01-15T20:00:03.287854654Z   method: 'GET',
+2026-01-15T20:00:03.287868825Z   status: 200,
+2026-01-15T20:00:03.287882661Z   ok: true
+2026-01-15T20:00:03.287896576Z }
+2026-01-15T20:00:03.308512882Z 👉 Status API: 200
+2026-01-15T20:00:03.314699330Z 🟢 [BUILD PETITION] rid=83dd4846-a0c6-4bfa-94c3-f29677285669 complete {
+2026-01-15T20:00:03.314767241Z   url: 'https://dev.api2.provexsa.cl/api/v1/temporadas/T7/semanas?codEmp=PRX',
+2026-01-15T20:00:03.314791630Z   method: 'GET',
+2026-01-15T20:00:03.314811043Z   status: 200,
+2026-01-15T20:00:03.314830319Z   ok: true
+2026-01-15T20:00:03.314849034Z }
+2026-01-15T20:00:03.324344190Z 🟢 [BUILD PETITION] rid=b0a9a372-985d-42f2-aea1-6a4c10b45193 complete {
+2026-01-15T20:00:03.324411320Z   url: 'https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=',
+2026-01-15T20:00:03.324424917Z   method: 'GET',
+2026-01-15T20:00:03.324433707Z   status: 200,
+2026-01-15T20:00:03.324441981Z   ok: true
+2026-01-15T20:00:03.324450124Z }
+2026-01-15T20:00:03.337781774Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:03.337834494Z   "timestamp": "2026-01-15T20:00:03.337Z",
+2026-01-15T20:00:03.337846419Z   "method": "GET",
+2026-01-15T20:00:03.337855435Z   "pathname": "/api/estimacion/semana",
+2026-01-15T20:00:03.337864297Z   "search": "?idTemporada=T7",
+2026-01-15T20:00:03.337872869Z   "hasToken": true,
+2026-01-15T20:00:03.337881475Z   "tokenLength": 163,
+2026-01-15T20:00:03.337890612Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:03.337899526Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:03.337908257Z }
+2026-01-15T20:00:03.337917163Z 📍 API ROUTE CHECK - isApiRoute: true, isPublicApiPath: false, pathname: /api/estimacion/semana
+2026-01-15T20:00:03.337931057Z ✅ [MIDDLEWARE] API privada con token permitida: /api/estimacion/semana
+2026-01-15T20:00:03.346044325Z 🟢 [BUILD PETITION] rid=72cb70a6-4002-4381-aff7-b4e30fbc7d17 start {
+2026-01-15T20:00:03.346095139Z   url: 'https://dev.api2.provexsa.cl/api/v1/temporadas/T7/semanas?codEmp=PRX',
+2026-01-15T20:00:03.346118981Z   method: 'GET',
+2026-01-15T20:00:03.346137153Z   hasToken: true
+2026-01-15T20:00:03.346155021Z }
+2026-01-15T20:00:03.358851365Z 🟢 [BUILD PETITION] rid=72cb70a6-4002-4381-aff7-b4e30fbc7d17 complete {
+2026-01-15T20:00:03.358980593Z   url: 'https://dev.api2.provexsa.cl/api/v1/temporadas/T7/semanas?codEmp=PRX',
+2026-01-15T20:00:03.359011448Z   method: 'GET',
+2026-01-15T20:00:03.359030614Z   status: 200,
+2026-01-15T20:00:03.359048118Z   ok: true
+2026-01-15T20:00:03.359066878Z }
+2026-01-15T20:00:05.473964213Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:05.474026511Z   "timestamp": "2026-01-15T20:00:05.473Z",
+2026-01-15T20:00:05.474039101Z   "method": "GET",
+2026-01-15T20:00:05.474048080Z   "pathname": "/estimacion/cierre",
+2026-01-15T20:00:05.474056828Z   "search": "",
+2026-01-15T20:00:05.474065841Z   "hasToken": true,
+2026-01-15T20:00:05.474074436Z   "tokenLength": 163,
+2026-01-15T20:00:05.474082976Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:05.474114295Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:05.474124708Z }
+2026-01-15T20:00:05.474133091Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /estimacion/cierre
+2026-01-15T20:00:05.474142058Z ✅ [MIDDLEWARE] Permitido: /estimacion/cierre
+2026-01-15T20:00:05.500936747Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:05.500992551Z   "timestamp": "2026-01-15T20:00:05.500Z",
+2026-01-15T20:00:05.501002959Z   "method": "GET",
+2026-01-15T20:00:05.501011929Z   "pathname": "/comercial",
+2026-01-15T20:00:05.501020646Z   "search": "",
+2026-01-15T20:00:05.501029347Z   "hasToken": true,
+2026-01-15T20:00:05.501037947Z   "tokenLength": 163,
+2026-01-15T20:00:05.501052507Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:05.501061672Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:05.501070713Z }
+2026-01-15T20:00:05.501079101Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /comercial
+2026-01-15T20:00:05.501092472Z ✅ [MIDDLEWARE] Permitido: /comercial
+2026-01-15T20:00:05.516178647Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:05.516241023Z   "timestamp": "2026-01-15T20:00:05.515Z",
+2026-01-15T20:00:05.516252845Z   "method": "GET",
+2026-01-15T20:00:05.516262285Z   "pathname": "/comercial/configuracion",
+2026-01-15T20:00:05.516271270Z   "search": "",
+2026-01-15T20:00:05.516281065Z   "hasToken": true,
+2026-01-15T20:00:05.516289788Z   "tokenLength": 163,
+2026-01-15T20:00:05.516298345Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:05.516307588Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:05.516316365Z }
+2026-01-15T20:00:05.516324756Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /comercial/configuracion
+2026-01-15T20:00:05.516336741Z ✅ [MIDDLEWARE] Permitido: /comercial/configuracion
+2026-01-15T20:00:07.458212169Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:00:07.458266259Z   "timestamp": "2026-01-15T20:00:07.457Z",
+2026-01-15T20:00:07.458277362Z   "method": "GET",
+2026-01-15T20:00:07.458286569Z   "pathname": "/login",
+2026-01-15T20:00:07.458295217Z   "search": "",
+2026-01-15T20:00:07.458303913Z   "hasToken": false,
+2026-01-15T20:00:07.458313260Z   "tokenLength": 0,
+2026-01-15T20:00:07.458322139Z   "userAgent": "Mozilla/5.0 (Android 16; Mobile; rv:140.0) Gecko/1",
+2026-01-15T20:00:07.458331070Z   "referer": "https://dev.intranet.provexsa.com/estimacion"
+2026-01-15T20:00:07.458357563Z }
+2026-01-15T20:00:07.458432861Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /login
+2026-01-15T20:00:07.458447621Z ✅ [MIDDLEWARE] Permitido: /login
+2026-01-15T20:03:48.202116505Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:03:48.202335906Z   "timestamp": "2026-01-15T20:03:48.201Z",
+2026-01-15T20:03:48.202353604Z   "method": "GET",
+2026-01-15T20:03:48.202363582Z   "pathname": "/robots.txt",
+2026-01-15T20:03:48.202372466Z   "search": "",
+2026-01-15T20:03:48.202381088Z   "hasToken": false,
+2026-01-15T20:03:48.202389942Z   "tokenLength": 0,
+2026-01-15T20:03:48.202398546Z   "userAgent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko;",
+2026-01-15T20:03:48.202407448Z   "referer": null
+2026-01-15T20:03:48.202416039Z }
+2026-01-15T20:03:48.202424384Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /robots.txt
+2026-01-15T20:03:48.202442344Z 🔄 [MIDDLEWARE] Sin token, redirigiendo a /login desde: /robots.txt
+2026-01-15T20:03:48.352631170Z 🔍 [MIDDLEWARE] {
+2026-01-15T20:03:48.352718585Z   "timestamp": "2026-01-15T20:03:48.352Z",
+2026-01-15T20:03:48.352738520Z   "method": "GET",
+2026-01-15T20:03:48.352751430Z   "pathname": "/login",
+2026-01-15T20:03:48.352769467Z   "search": "",
+2026-01-15T20:03:48.352785390Z   "hasToken": false,
+2026-01-15T20:03:48.352802605Z   "tokenLength": 0,
+2026-01-15T20:03:48.352820359Z   "userAgent": "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko;",
+2026-01-15T20:03:48.352836697Z   "referer": "https://dev.intranet.provexsa.com/robots.txt"
+2026-01-15T20:03:48.352853892Z }
+2026-01-15T20:03:48.352871534Z 📍 API ROUTE CHECK - isApiRoute: false, isPublicApiPath: false, pathname: /login
+2026-01-15T20:03:48.352907525Z ✅ [MIDDLEWARE] Permitido: /login
+
+
+
+Logs wraper
+
+{"timestamp":"2026-01-15T19:59:35.421Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/temporadas/T7/semanas?codEmp=PRX","statusCode":200,"duration":59,"requestId":"e86643b8-da8c-47dd-b7f9-4de642dd6f54","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:35.430Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":91,"requestId":"dd011a03-8cb1-4621-817c-243041c43bb0","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:35.478Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/temporadas/T7/semanas?codEmp=PRX","statusCode":200,"duration":24,"requestId":"14ca928f-032d-4bdf-9d6d-7632dad6d5cc","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:35.488Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/temporadas/T7/semanas?codEmp=PRX","statusCode":200,"duration":19,"requestId":"229e46e7-ca34-4fe0-a86b-2c565f1b2820","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:44.005Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=GRUPO_PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":51,"requestId":"8eb34468-9466-4390-afd2-03cfb8c2988a","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:44.009Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=VARIEDAD&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":67,"requestId":"266cefa7-8c7b-4077-b0b3-cc8cd7834481","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:44.027Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":55,"requestId":"1ce1ffe6-0756-4a1b-903f-3860fbecd3e9","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:47.365Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=VARIEDAD&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":24,"requestId":"bdfdae3d-dbad-4f96-93cc-3053e5c6a88d","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:47.383Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=GRUPO_PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":22,"requestId":"1283aad9-ab24-4445-911a-fb690f30512f","responseMessage":null}
+{"timestamp":"2026-01-15T19:59:47.398Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=PRODUCTOR&codigoEmpresa=PRX&codigoEspecie=MA&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":20,"requestId":"9ae9c4a3-a88b-4477-99b9-cb7cf933b111","responseMessage":null}
+{"timestamp":"2026-01-15T20:00:03.290Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/temporadas?codigoEmpresa=PRX","statusCode":200,"duration":56,"requestId":"1c9486c1-40eb-4206-9c62-3444ed9bd964","responseMessage":null}
+{"timestamp":"2026-01-15T20:00:03.316Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/temporadas/T7/semanas?codEmp=PRX","statusCode":200,"duration":34,"requestId":"83dd4846-a0c6-4bfa-94c3-f29677285669","responseMessage":null}
+{"timestamp":"2026-01-15T20:00:03.324Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":200,"duration":57,"requestId":"b0a9a372-985d-42f2-aea1-6a4c10b45193","responseMessage":null}
+{"timestamp":"2026-01-15T20:00:03.361Z","level":"INFO","message":"Petición HTTP exitosa","method":"GET","path":"/temporadas/T7/semanas?codEmp=PRX","statusCode":200,"duration":16,"requestId":"72cb70a6-4002-4381-aff7-b4e30fbc7d17","responseMessage":null}
+
+
+{"timestamp":"2026-01-15T18:55:34.919Z","level":"ERROR","message":"Error HTTP","data":{"url":"/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","method":"GET","status":401,"requestId":"00a2cb75-d667-484d-af1c-786f79a8d132","response":"HTTP 401 (Unauthorized) from https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad="},"method":"GET","path":"/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad=","statusCode":401,"duration":160,"requestId":"00a2cb75-d667-484d-af1c-786f79a8d132","responseError":"HTTP 401 (Unauthorized) from https://dev.api2.provexsa.cl/api/v1/Combo/GetCombo?nombreCombo=ESPECIE&codigoEmpresa=PRX&codigoEspecie=&codigoGrupoProductor=&codigoProductor=&codigoVariedad="}
+{"timestamp":"2026-01-15T18:55:34.923Z","level":"ERROR","message":"Error HTTP","data":{"url":"/temporadas/T7/semanas?codEmp=PRX","method":"GET","status":401,"requestId":"af7e8fc1-78c4-4b5f-a0d6-aafd3820dba5","response":"HTTP 401 (Unauthorized) from https://dev.api2.provexsa.cl/api/v1/temporadas/T7/semanas?codEmp=PRX"},"method":"GET","path":"/temporadas/T7/semanas?codEmp=PRX","statusCode":401,"duration":130,"requestId":"af7e8fc1-78c4-4b5f-a0d6-aafd3820dba5","responseError":"HTTP 401 (Unauthorized) from https://dev.api2.provexsa.cl/api/v1/temporadas/T7/semanas?codEmp=PRX"}
+{"timestamp":"2026-01-15T18:55:34.926Z","level":"ERROR","message":"Error HTTP","data":{"url":"/temporadas?codigoEmpresa=PRX","method":"GET","status":401,"requestId":"3657ee52-543b-4981-9388-1692c95f1ed0","response":"HTTP 401 (Unauthorized) from https://dev.api2.provexsa.cl/api/v1/temporadas?codigoEmpresa=PRX"},"method":"GET","path":"/temporadas?codigoEmpresa=PRX","statusCode":401,"duration":188,"requestId":"3657ee52-543b-4981-9388-1692c95f1ed0","responseError":"HTTP 401 (Unauthorized) from https://dev.api2.provexsa.cl/api/v1/temporadas?codigoEmpresa=PRX"}
+{"timestamp":"2026-01-15T19:05:26.136Z","level":"INFO","message":"SIGTERM recibido - Iniciando graceful shutdown","uptime":3575.659742301,"pid":1}
+{"timestamp":"2026-01-15T19:05:55.255Z","level":"INFO","message":"Server wrapper inicializado","nodeVersion":"v20.20.0","platform":"linux","arch":"x64","pid":1,"logDir":"/app/logs"}
+{"timestamp":"2026-01-15T19:07:48.222Z","level":"ERROR","message":"[CLIENT] TypeError: NetworkError when attempting to fetch resource.","data":{"message":"NetworkError when attempting to fetch resource.","name":"TypeError","stack":"","componentName":"GlobalErrorHandler","userAction":"unhandled_rejection","severity":"high","url":"http://localhost:3002/login","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0","online":true,"timestamp":"2026-01-15T19:12:04.062Z","viewport":"1920x690","source":"browser"},"method":"CLIENT_ERROR","path":"http://localhost:3002/login","statusCode":500}
+{"timestamp":"2026-01-15T19:18:57.146Z","level":"INFO","message":"SIGTERM recibido - Iniciando graceful shutdown","uptime":782.231339415,"pid":1}
+{"timestamp":"2026-01-15T19:19:11.266Z","level":"INFO","message":"Server wrapper inicializado","nodeVersion":"v20.20.0","platform":"linux","arch":"x64","pid":1,"logDir":"/app/logs"}
+{"timestamp":"2026-01-15T19:19:50.167Z","level":"ERROR","message":"Error HTTP","data":{"url":"/authentication/login","method":"POST","status":401,"requestId":"5e7691dc-1234-4f44-8fd2-b1744325c651","requestParams":"{\"Username\":\"test\",\"Password\":\"test\"}","response":"{\"Data\":null,\"StatusCode\":401,\"Success\":false,\"Message\":\"Usuario o contrase\\u00F1a incorrectos.\"}"},"method":"POST","path":"/authentication/login","statusCode":401,"duration":123,"requestId":"5e7691dc-1234-4f44-8fd2-b1744325c651","requestParams":"{\"Username\":\"test\",\"Password\":\"test\"}","responseError":"{\"Data\":null,\"StatusCode\":401,\"Success\":false,\"Message\":\"Usuario o contrase\\u00F1a incorrectos.\"}"}
+
+

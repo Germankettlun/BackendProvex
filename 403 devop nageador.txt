@@ -1,0 +1,48 @@
+General 
+equest URL
+https://dev.intranet.provexsa.com/api/auth/login
+Request Method
+POST
+Status Code
+403 Forbidden
+Remote Address
+45.176.116.25:443
+Referrer Policy
+strict-origin-when-cross-origin
+
+
+Response Header
+HTTP/1.1 403 Forbidden
+Server: nginx/1.22.1
+Date: Thu, 15 Jan 2026 19:54:27 GMT
+Transfer-Encoding: chunked
+Connection: keep-alive
+X-Request-Id: 220fe3483bb289e968f8d712c0dd6b3c
+Access-Control-Allow-Origin: https://dev.intranet.provexsa.com
+Vary: Origin
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization, Origin, X-Requested-With
+Access-Control-Max-Age: 86400
+X-Upstream-Addr: 10.115.1.252:3002
+X-Upstream-Status: 403
+Cache-Control: no-store
+
+Request Header
+POST /api/auth/login HTTP/1.1
+Accept: */*
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: es-419,es;q=0.9
+Connection: keep-alive
+Content-Length: 52
+Content-Type: application/json
+Host: dev.intranet.provexsa.com
+Origin: https://dev.intranet.provexsa.com
+Referer: https://dev.intranet.provexsa.com/login
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
+sec-ch-ua: "Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
